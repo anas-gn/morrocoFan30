@@ -1,3 +1,3 @@
-public class match {
+public class matchController {
     
 }
