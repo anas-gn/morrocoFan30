@@ -10,7 +10,6 @@ public class TeamDTO {
     private String imageUrl;
     private String coach;
     private String description;
-     private int groupeId;
 
     public TeamDTO() {
     }
@@ -20,16 +19,8 @@ public class TeamDTO {
         this.imageUrl = imageUrl;
         this.coach = coach;
         this.description = description;
-        this.groupeId=gr;
     }
 
-    public int getGroupeId() {
-        return groupeId;
-    }
-
-    public void setGroupeId(int groupeId) {
-        this.groupeId = groupeId;
-    }
 
     public int getId() {
         return id;

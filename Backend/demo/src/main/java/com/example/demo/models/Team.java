@@ -16,14 +16,7 @@ public class Team {
     private String description;
 
     @OneToMany(mappedBy = "teams", cascade = CascadeType.ALL)
-    private List<Match> matches;
-
-    @OneToMany(mappedBy = "teams", cascade = CascadeType.ALL)
     private List<Player> players;
-
-    @ManyToOne
-    @JoinColumn(name = "groupeID")
-    private Groupe gr;
 
     @OneToMany(mappedBy = "teams", cascade = CascadeType.ALL)
     private List<CulturelContent> cc;
@@ -31,31 +24,13 @@ public class Team {
     @OneToMany(mappedBy = "teams", cascade = CascadeType.ALL)
     private List<News> nw;
 
-    public Team(String name, String imageUrl, String coach, String description, List<Match> m, List<Player> players,
-            Groupe gr) {
+    public Team(String name, String imageUrl, String coach, String description, List<Player> players) {
         this.name = name;
         this.imageUrl = imageUrl;
-        this.matches = m;
+
         this.players = players;
         this.coach = coach;
-        this.gr = gr;
         this.description = description;
-    }
-
-    public Groupe getGr() {
-        return gr;
-    }
-
-    public void setGr(Groupe gr) {
-        this.gr = gr;
-    }
-
-    public List<Match> getMatches() {
-        return matches;
-    }
-
-    public void setMatches(List<Match> matches) {
-        this.matches = matches;
     }
 
     public int getId() {
