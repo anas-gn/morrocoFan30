@@ -1,3 +1,4 @@
-public class team {
+package com.example.demo.controllers;
+public class TeamController{
     
 }

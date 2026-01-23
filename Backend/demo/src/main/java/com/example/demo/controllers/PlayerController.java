@@ -1,3 +1,4 @@
-public class player {
+package com.example.demo.controllers;
+public class PlayerController {
     
 }
