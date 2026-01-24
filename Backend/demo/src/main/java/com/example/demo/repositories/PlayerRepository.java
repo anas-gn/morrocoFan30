@@ -5,6 +5,7 @@ import com.example.demo.models.Player;
 import java.util.List;
 
 public interface PlayerRepository extends JpaRepository<Player, Integer> {
-    List<Player> findByTId(int teamId);
+    List<Player> findByTId(int id);
+    Player findById(int id);
     List<Player> findByNameContainingIgnoreCase(String name);
 }

@@ -83,4 +83,12 @@ public class Player {
         this.t = t;
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
 }

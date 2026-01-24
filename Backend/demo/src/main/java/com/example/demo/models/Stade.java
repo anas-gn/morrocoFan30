@@ -142,4 +142,9 @@ public class Stade {
     public void setResponsable(Responsable responsable) {
         this.responsable = responsable;
     }
+
+    public Stade findById(int id2) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findById'");
+    }
 }

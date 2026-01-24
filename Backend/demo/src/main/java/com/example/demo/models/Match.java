@@ -102,4 +102,14 @@ public class Match {
         this.st = st;
     }
 
+    public Object map(Object object) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'map'");
+    }
+
+    public Match orElse(Object object) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'orElse'");
+    }
+
 }

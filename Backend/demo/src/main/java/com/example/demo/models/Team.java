@@ -97,11 +97,11 @@ public class Team {
         this.cc = cc;
     }
 
-    public List<News> getNw() {
+    public List<News> getNews() {
         return nw;
     }
 
-    public void setNw(List<News> nw) {
+    public void setNews(List<News> nw) {
         this.nw = nw;
     }
 
