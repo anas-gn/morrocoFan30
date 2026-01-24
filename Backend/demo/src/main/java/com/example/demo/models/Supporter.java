@@ -1,6 +1,7 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "Supporters")
@@ -34,7 +35,11 @@ public class Supporter {
     @Column(name = "imageUrl", length = 255)
     private String imageUrl;
 
-    // Getters et Setters
+    
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Prediction> predictions;
+
+    
     public Long getId() {
         return id;
     }
@@ -105,5 +110,14 @@ public class Supporter {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    
+    public List<Prediction> getPredictions() {
+        return predictions;
+    }
+
+    public void setPredictions(List<Prediction> predictions) {
+        this.predictions = predictions;
     }
 }
