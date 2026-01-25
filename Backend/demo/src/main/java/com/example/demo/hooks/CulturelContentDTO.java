@@ -16,9 +16,8 @@ public class CulturelContentDTO {
     public CulturelContentDTO() {
     }
 
-    public CulturelContentDTO(int id, String title, String author, String description, String detail, String imageUrl,
+    public CulturelContentDTO(String title, String author, String description, String detail, String imageUrl,
             LocalDateTime dateOfCreation, int teamId) {
-        this.id = id;
         this.title = title;
         this.author = author;
         this.description = description;

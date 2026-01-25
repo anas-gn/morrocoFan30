@@ -16,9 +16,9 @@ public class NewsDTO {
     public NewsDTO() {
     }
 
-    public NewsDTO(int id, String title, String author, String description, String detail, String imageUrl,
+    public NewsDTO(String title, String author, String description, String detail, String imageUrl,
             LocalDateTime dateOfCreation, int teamId) {
-        this.id = id;
+
         this.title = title;
         this.author = author;
         this.description = description;

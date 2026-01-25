@@ -29,19 +29,35 @@ public class Transport {
     @JoinColumn(name = "cityID", referencedColumnName = "id")
     private CityHost city;
 
-    // Constructors
-    public Transport() {
-    }
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "trajetID", nullable = true)
+    private Trajet trajet;
 
-    public Transport(Integer id, String name, Float priceProxim, String description,
-            Integer capacity, String imageUrl, CityHost city) {
-        this.id = id;
+    public Transport(String name, Float priceProxim, String description, Integer capacity, String imageUrl,
+            CityHost city, Trajet trajet) {
         this.name = name;
         this.priceProxim = priceProxim;
         this.description = description;
         this.capacity = capacity;
         this.imageUrl = imageUrl;
         this.city = city;
+        this.trajet = trajet;
+    }
+
+    // Constructors
+    public Transport() {
+    }
+
+    public Transport(String name, Float priceProxim, String description,
+            Integer capacity, String imageUrl, CityHost city) {
+
+        this.name = name;
+        this.priceProxim = priceProxim;
+        this.description = description;
+        this.capacity = capacity;
+        this.imageUrl = imageUrl;
+        this.city = city;
+        this.trajet = null;
     }
 
     // Getters and Setters
@@ -99,5 +115,13 @@ public class Transport {
 
     public void setCity(CityHost city) {
         this.city = city;
+    }
+
+    public Trajet getTrajet() {
+        return trajet;
+    }
+
+    public void setTrajet(Trajet trajet) {
+        this.trajet = trajet;
     }
 }

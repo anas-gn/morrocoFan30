@@ -2,7 +2,7 @@ package com.example.demo.hooks;
 
 public class ResponsableDTO {
 
-    private Long id;
+    private int id;
     private String name;
     private Integer age;
     private String email;
@@ -13,9 +13,9 @@ public class ResponsableDTO {
     public ResponsableDTO() {
     }
 
-    public ResponsableDTO(Long id, String name, Integer age, String email, String phone, String country,
+    public ResponsableDTO(String name, Integer age, String email, String phone, String country,
             String imageUrl) {
-        this.id = id;
+
         this.name = name;
         this.age = age;
         this.email = email;
@@ -24,11 +24,11 @@ public class ResponsableDTO {
         this.imageUrl = imageUrl;
     }
 
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 

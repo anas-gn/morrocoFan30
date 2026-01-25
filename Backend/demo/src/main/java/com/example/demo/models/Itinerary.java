@@ -21,7 +21,6 @@ public class Itinerary {
     )
     private List<Attraction> attractions;
 
-    // ✅ Constructeurs
     public Itinerary() {}
 
     public Itinerary(String title, int duration) {
