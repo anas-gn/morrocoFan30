@@ -152,7 +152,7 @@ public class MatchController {
     // matche winner
     @GetMapping("/matches/winner/{id}")
     public TeamDTO getMatcheWinner(@PathVariable int id) {
-        Match m = matchRepo.findById(id).orElse(null);
+        Match m = matchRepo.findById(id);
         if (m == null) {
             return null;
         } else {
@@ -179,7 +179,7 @@ public class MatchController {
         dto.setStatut(match.getStatut());
         dto.setType(match.getType());
 
-        if (match.getStade() != null) {
+     if (match.getStade() != null) {
             dto.setStadeId(match.getStade().getId());
         }
 
@@ -194,6 +194,7 @@ public class MatchController {
         dto.setImageUrl(team.getImageUrl());
         dto.setName(team.getName());
         dto.setDescription(team.getDescription());
+        
 
         return dto;
     }

@@ -14,6 +14,8 @@ public class Team {
     private String imageUrl;
     private String coach;
     private String description;
+    
+    
 
     @OneToMany(mappedBy = "teams", cascade = CascadeType.ALL)
     private List<Player> players;

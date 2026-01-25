@@ -16,7 +16,7 @@ public class Match {
     private String referee;
     private String statut;
     private String type;
-
+    private int treeId;
 
     @OneToMany(mappedBy = "matches", cascade = CascadeType.ALL)
     private List<Prediction> p;
@@ -28,14 +28,29 @@ public class Match {
     @JoinColumn(name = "stadeID")
     private Stade st;
 
-    public Match(LocalDateTime dateOfMatch, Stade st, String referee, String statut, String type) {
+    public Match(LocalDateTime dateOfMatch, String referee, String statut, String type, Stade st) {
         this.dateOfMatch = dateOfMatch;
         this.referee = referee;
         this.statut = statut;
         this.type = type;
         this.st = st;
-      
 
+    }
+
+    public List<Prediction> getP() {
+        return p;
+    }
+
+    public void setP(List<Prediction> p) {
+        this.p = p;
+    }
+
+    public Stade getSt() {
+        return st;
+    }
+
+    public void setSt(Stade st) {
+        this.st = st;
     }
 
     public int getId() {
@@ -102,14 +117,12 @@ public class Match {
         this.st = st;
     }
 
-    public Object map(Object object) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'map'");
+    public int getTreeId() {
+        return treeId;
     }
 
-    public Match orElse(Object object) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'orElse'");
+    public void setTreeId(int treeId) {
+        this.treeId = treeId;
     }
 
 }

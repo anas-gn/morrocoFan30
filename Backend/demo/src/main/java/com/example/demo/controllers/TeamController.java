@@ -5,9 +5,8 @@ import com.example.demo.repositories.StadeRepository;
 import com.example.demo.repositories.TeamRepository;
 import com.example.demo.repositories.MatchTeamRepository;
 
-import java.sql.Date;
 import java.util.List;
-import java.util.Optional;
+
 import java.util.stream.Collectors;
 import com.example.demo.hooks.NewsDTO;
 import com.example.demo.hooks.CulturelContentDTO;
@@ -21,18 +20,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.hooks.MatchDTO;
 import com.example.demo.hooks.PlayerDTO;
 import com.example.demo.hooks.TeamDTO;
 import com.example.demo.models.Match;
 import com.example.demo.models.News;
 import com.example.demo.models.CulturelContent;
-import com.example.demo.models.MatchTeam;
-import com.example.demo.models.Player;
-import com.example.demo.models.Stade;
-import com.example.demo.models.Team;
 
-import org.springframework.web.bind.annotation.PutMapping;
+import com.example.demo.models.Player;
+
+import com.example.demo.models.Team;
 
 @RestController
 @RequestMapping("/api/teams")
@@ -65,6 +61,17 @@ public class TeamController {
         }
     }
 
+    @DeleteMapping("/teams/delete/{id}")
+    public boolean deleteTeam(@PathVariable int id) {
+        Team mm = TeamRepository.findById(id).orElse(null);
+        if (mm == null) {
+            return false;
+        } else {
+            TeamRepository.deleteById(id);
+            return true;
+        }
+    }
+
     @GetMapping("/teams/plyers/{id}")
     public List<PlayerDTO> getAllPlayersTeam(@PathVariable int id) {
 
@@ -90,8 +97,9 @@ public class TeamController {
         }
 
     }
-     @GetMapping("/teams/contenuCultirel/{id}")
-    public List<CulturelContent> getAllCulturelTeam(@PathVariable int id) {
+
+    @GetMapping("/teams/contenuCultirel/{id}")
+    public List<CulturelContentDTO> getAllCulturelTeam(@PathVariable int id) {
 
         Team t = TeamRepository.findById(id).orElse(null);
         if (t == null) {
@@ -103,19 +111,28 @@ public class TeamController {
 
     }
 
+    // add team
+    @PostMapping("/team/add")
+    public boolean addMatch(@RequestBody Team m) {
+        if (m == null) {
+            return false;
+        } else {
+            TeamRepository.save(m);
+            return true;
+        }
+    }
 
-    private CulturelContentDTO convertNewsToDTO(CulturelContent cc) {
+    private CulturelContentDTO convertCultureToDTO(CulturelContent cc) {
         CulturelContentDTO dto = new CulturelContentDTO();
         dto.setId(cc.getId());
         dto.setTitle(cc.getTitle());
         dto.setAuthor(cc.getAuthor());
         dto.setDescription(cc.getDescription());
-        dto.setImage(cc.getImage());
-        dto.setDateC(cc.getDateC());
+        dto.setImageUrl(cc.getImageUrl());
+        dto.setDateOfCreation(cc.getDateOfCreation());
 
         return dto;
     }
-
 
     private NewsDTO convertNewsToDTO(News neew) {
         NewsDTO dto = new NewsDTO();
@@ -123,8 +140,8 @@ public class TeamController {
         dto.setTitle(neew.getTitle());
         dto.setAuthor(neew.getAuthor());
         dto.setDescription(neew.getDescription());
-        dto.setImage(neew.getImage());
-        dto.setDateC(neew.getDateC());
+        dto.setImageUrl(neew.getImageUrl());
+        dto.setDateOfCreation(neew.getDateOfCreation());
 
         return dto;
     }

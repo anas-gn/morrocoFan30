@@ -48,10 +48,7 @@ CREATE TABLE Groups (
   name VARCHAR(100)
 );
 
-CREATE TABLE Trees (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  type VARCHAR(100)
-);
+
 
 CREATE TABLE Matches (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -60,6 +57,7 @@ CREATE TABLE Matches (
   status VARCHAR(50),
   type VARCHAR(50),
   stadeID INT,
+  treeID INT,
   FOREIGN KEY (stadeID) REFERENCES Stades(id) ON DELETE CASCADE
 );
 
