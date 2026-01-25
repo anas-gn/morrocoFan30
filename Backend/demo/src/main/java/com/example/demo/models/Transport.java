@@ -30,7 +30,7 @@ public class Transport {
     private CityHost city;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "trajetID", nullable = true)
+    @JoinColumn(name = "routesID", nullable = true)
     private Trajet trajet;
 
     public Transport(String name, Float priceProxim, String description, Integer capacity, String imageUrl,

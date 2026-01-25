@@ -134,8 +134,9 @@ CREATE TABLE Routes (
   name VARCHAR(100),
   description TEXT,
   priceProxim FLOAT,
-  cityID INT,
-  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
+  cityHostFromID INT,
+  cityHostToID INT,
+  FOREIGN KEY (cityHostFromID,cityHostToID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Foods (
@@ -157,7 +158,9 @@ CREATE TABLE Transports (
   capacity INT,
   imageUrl VARCHAR(255),
   cityID INT,
+  routesID INT,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
+  FOREIGN KEY (routesID) REFERENCES Routes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Events (

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "trajets")
+@Table(name = "Routes")
 public class Trajet {
 
     @Id
@@ -28,7 +28,7 @@ public class Trajet {
     @JoinColumn(name = "cityHostToID", nullable = false)
     private CityHost cityHostTo;
 
-    @OneToMany(mappedBy = "trajet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "Routes", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transport> transports;
 
  
