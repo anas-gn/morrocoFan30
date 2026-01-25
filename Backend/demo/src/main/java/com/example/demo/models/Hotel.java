@@ -1,9 +1,9 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
-import java.util.List;
 
 @Entity
+@Table(name = "Hotels")
 public class Hotel {
 
     @Id
@@ -12,66 +12,51 @@ public class Hotel {
 
     private String name;
     private String address;
-    private int stars;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private String email;
+    private String phone;
+    private String imageUrl;
+    private String urlReservation;
 
     @ManyToOne
-    @JoinColumn(name = "city_id")
+    @JoinColumn(name = "cityID")
     private CityHost cityHost;
 
-    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL)
-    private List<Image> images;
-
-    // ✅ Constructeurs
     public Hotel() {}
 
-    public Hotel(String name, String address, int stars) {
+    public Hotel(String name, String address, String description) {
         this.name = name;
         this.address = address;
-        this.stars = stars;
+        this.description = description;
     }
 
-    // ✅ Getters & Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getName() {
-        return name;
-    }
- 
-    public void setName(String name) {
-        this.name = name;
-    }
- 
-    public String getAddress() {
-        return address;
-    }
- 
-    public void setAddress(String address) {
-        this.address = address;
-    }
- 
-    public int getStars() {
-        return stars;
-    }
- 
-    public void setStars(int stars) {
-        this.stars = stars;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public CityHost getCityHost() {
-        return cityHost;
-    }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
 
-    public void setCityHost(CityHost cityHost) {
-        this.cityHost = cityHost;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public List<Image> getImages() {
-        return images;
-    }
- 
-    public void setImages(List<Image> images) {
-        this.images = images;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getUrlReservation() { return urlReservation; }
+    public void setUrlReservation(String urlReservation) { this.urlReservation = urlReservation; }
+
+    public CityHost getCityHost() { return cityHost; }
+    public void setCityHost(CityHost cityHost) { this.cityHost = cityHost; }
 }

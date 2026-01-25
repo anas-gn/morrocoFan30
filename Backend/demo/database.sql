@@ -21,6 +21,8 @@ CREATE TABLE Stades (
   imageUrl VARCHAR(255),
   address VARCHAR(255),
   dateOfConstruction DATE
+  cityID INT,
+  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Supporters (
@@ -48,11 +50,6 @@ CREATE TABLE Groups (
   name VARCHAR(100)
 );
 
-CREATE TABLE Trees (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  type VARCHAR(100)
-);
-
 CREATE TABLE Matches (
   id INT AUTO_INCREMENT PRIMARY KEY,
   DateOfMatch DATETIME,
@@ -60,6 +57,7 @@ CREATE TABLE Matches (
   status VARCHAR(50),
   type VARCHAR(50),
   stadeID INT,
+  treeID INT,
   FOREIGN KEY (stadeID) REFERENCES Stades(id) ON DELETE CASCADE
 );
 
