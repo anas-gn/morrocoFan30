@@ -37,9 +37,33 @@ public class Supporter {
 
     
     @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Favorite> favorites;
+
+    
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Prediction> predictions;
 
     
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Review> reviews;
+
+    
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Report> reports;
+
+    
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Message> messages;
+
+    
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Notification> notifications;
+
+    
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Itinerary> itineraries;
+
+    // Getters et Setters
     public Long getId() {
         return id;
     }
@@ -113,11 +137,59 @@ public class Supporter {
     }
 
     
+    public List<Favorite> getFavorites() {
+        return favorites;
+    }
+
+    public void setFavorites(List<Favorite> favorites) {
+        this.favorites = favorites;
+    }
+
     public List<Prediction> getPredictions() {
         return predictions;
     }
 
     public void setPredictions(List<Prediction> predictions) {
         this.predictions = predictions;
+    }
+
+    public List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
+    }
+
+    public List<Report> getReports() {
+        return reports;
+    }
+
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
+    }
+
+    public List<Message> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<Message> messages) {
+        this.messages = messages;
+    }
+
+    public List<Notification> getNotifications() {
+        return notifications;
+    }
+
+    public void setNotifications(List<Notification> notifications) {
+        this.notifications = notifications;
+    }
+
+    public List<Itinerary> getItineraries() {
+        return itineraries;
+    }
+
+    public void setItineraries(List<Itinerary> itineraries) {
+        this.itineraries = itineraries;
     }
 }
