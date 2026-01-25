@@ -1,15 +1,17 @@
 package com.example.demo.repositories;
-import java.util.List;
 
-import com.example.demo.models.Attraction;
-import com.example.demo.models.Hotel;
 import com.example.demo.models.Image;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ImageRepository extends JpaRepository<Image, Long> {
-List<Image> findByHotel(Hotel hotel);
-List<Image> findByAttraction(Attraction attraction);
 
+    List<Image> findByOwnerID(Long ownerID);
+
+    List<Image> findByType(String type);
+
+    List<Image> findByOwnerIDAndType(Long ownerID, String type);
 }
