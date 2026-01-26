@@ -2,6 +2,7 @@ package com.example.demo.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Events")
@@ -11,10 +12,10 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "name", length = 100)
+    @Column(length = 100, nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "dateOfEvent")
@@ -27,25 +28,26 @@ public class Event {
     private String imageUrl;
 
     @ManyToOne
-    @JoinColumn(name = "cityID", referencedColumnName = "id")
+    @JoinColumn(name = "cityID")
     private CityHost city;
 
-    // Constructors
-    public Event() {
-    }
+    @Transient
+    private List<Image> images;
 
-    public Event(Integer id, String name, String description, LocalDateTime dateOfEvent,
-                 Float priceProxim, String imageUrl, CityHost city) {
-        this.id = id;
+    // Constructors
+    public Event() {}
+
+    public Event( String name, String description,
+                 LocalDateTime dateOfEvent, Float priceProxim, CityHost city) {
         this.name = name;
         this.description = description;
         this.dateOfEvent = dateOfEvent;
         this.priceProxim = priceProxim;
-        this.imageUrl = imageUrl;
         this.city = city;
     }
 
-    // Getters and Setters
+    // Getters & Setters
+
     public Integer getId() {
         return id;
     }
@@ -86,14 +88,6 @@ public class Event {
         this.priceProxim = priceProxim;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
     public CityHost getCity() {
         return city;
     }
@@ -101,5 +95,12 @@ public class Event {
     public void setCity(CityHost city) {
         this.city = city;
     }
+
+    public List<Image> getImages() {
+        return images;
+    }
+
+    public void setImages(List<Image> images) {
+        this.images = images;
+    }
 }
-   
