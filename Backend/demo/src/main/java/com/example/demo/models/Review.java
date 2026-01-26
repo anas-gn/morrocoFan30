@@ -28,52 +28,29 @@ public class Review {
     @JoinColumn(name = "matchID", nullable = false)
     private Match match;
 
-    // Getters et Setters
-    public Long getId() {
-        return id;
-    }
+    
+    public Review() {}
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
+   
+    public Review(String description, Integer rating, LocalDateTime dateOfCreation, Supporter supporter, Match match) {
         this.description = description;
-    }
-
-    public Integer getRating() {
-        return rating;
-    }
-
-    public void setRating(Integer rating) {
         this.rating = rating;
-    }
-
-    public LocalDateTime getDateOfCreation() {
-        return dateOfCreation;
-    }
-
-    public void setDateOfCreation(LocalDateTime dateOfCreation) {
         this.dateOfCreation = dateOfCreation;
-    }
-
-    public Supporter getSupporter() {
-        return supporter;
-    }
-
-    public void setSupporter(Supporter supporter) {
         this.supporter = supporter;
-    }
-
-    public Match getMatch() {
-        return match;
-    }
-
-    public void setMatch(Match match) {
         this.match = match;
     }
+
+    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public Integer getRating() { return rating; }
+    public void setRating(Integer rating) { this.rating = rating; }
+    public LocalDateTime getDateOfCreation() { return dateOfCreation; }
+    public void setDateOfCreation(LocalDateTime dateOfCreation) { this.dateOfCreation = dateOfCreation; }
+    public Supporter getSupporter() { return supporter; }
+    public void setSupporter(Supporter supporter) { this.supporter = supporter; }
+    public Match getMatch() { return match; }
+    public void setMatch(Match match) { this.match = match; }
 }
