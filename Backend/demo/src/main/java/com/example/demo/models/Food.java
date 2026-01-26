@@ -1,5 +1,7 @@
 package com.example.demo.models;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -28,6 +30,21 @@ public class Food {
     @ManyToOne
     @JoinColumn(name = "cityID", referencedColumnName = "id")
     private CityHost city;
+
+    @Transient
+    private List<Image> images;
+
+    public Food() {
+    }
+    public Food(String name, String category, String description,
+            Float priceProxim, String imageUrl, CityHost city) {
+        this.name = name;
+        this.category = category;
+        this.description = description;
+        this.priceProxim = priceProxim;
+        this.imageUrl = imageUrl;
+        this.city = city;
+    }   
 
     public Integer getId() {
         return id;
@@ -84,4 +101,10 @@ public class Food {
     public void setCity(CityHost city) {
         this.city = city;
     }
+
+    public List<Image> getImages() {
+    return images;}
+
+public void setImages(List<Image> images) {
+    this.images = images;}
 }

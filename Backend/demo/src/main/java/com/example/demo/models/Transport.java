@@ -1,5 +1,8 @@
 package com.example.demo.models;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -32,6 +35,9 @@ public class Transport {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "routesID", nullable = true)
     private Trajet trajet;
+
+    @Transient
+    private List<Image> images ;
 
     public Transport(String name, Float priceProxim, String description, Integer capacity, String imageUrl,
             CityHost city, Trajet trajet) {
@@ -124,4 +130,12 @@ public class Transport {
     public void setTrajet(Trajet trajet) {
         this.trajet = trajet;
     }
+
+    public List<Image> getImages() {
+        return images;
+    }
+    public void setImages(List<Image> images) {
+        this.images = images;
+    }
+    
 }
