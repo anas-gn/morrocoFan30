@@ -9,7 +9,7 @@ public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(name = "dateOfSend")
     private LocalDateTime dateOfSend;
@@ -36,8 +36,8 @@ public class Notification {
     }
 
     
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
     public LocalDateTime getDateOfSend() { return dateOfSend; }
     public void setDateOfSend(LocalDateTime dateOfSend) { this.dateOfSend = dateOfSend; }
     public String getContent() { return content; }

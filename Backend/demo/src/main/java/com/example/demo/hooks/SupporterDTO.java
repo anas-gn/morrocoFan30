@@ -2,21 +2,21 @@ package com.example.demo.hooks;
 
 public class SupporterDTO {
 
-    private Long id;
+    private int id;
     private String name;
     private Integer age;
     private String email;
     private String phone;
     private String country;
     private Integer totalPoints;
-    private Long imageId; 
+    private int imageId; 
 
     
     public SupporterDTO() {}
 
     
-    public SupporterDTO(Long id, String name, Integer age, String email,
-                        String phone, String country, Integer totalPoints, Long imageId) {
+    public SupporterDTO(int id, String name, Integer age, String email,
+                        String phone, String country, Integer totalPoints, int imageId) {
         this.id = id;
         this.name = name;
         this.age = age;
@@ -28,8 +28,8 @@ public class SupporterDTO {
     }
 
     
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -49,6 +49,6 @@ public class SupporterDTO {
     public Integer getTotalPoints() { return totalPoints; }
     public void setTotalPoints(Integer totalPoints) { this.totalPoints = totalPoints; }
 
-    public Long getImageId() { return imageId; }
-    public void setImageId(Long imageId) { this.imageId = imageId; }
+    public int getImageId() { return imageId; }
+    public void setImageId(int imageId) { this.imageId = imageId; }
 }
