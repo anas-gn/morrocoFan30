@@ -197,6 +197,14 @@ CREATE TABLE Itinerary_Attraction (
 );
 
 
+CREATE TABLE itineraryAttractions (
+  itineraryID INT,
+  attractionID INT,
+  PRIMARY KEY (itineraryID, attractionID),
+  FOREIGN KEY (itineraryID) REFERENCES Itineraries(id) ON DELETE CASCADE,
+  FOREIGN KEY (attractionID) REFERENCES Attractions(id) ON DELETE CASCADE
+);
+
 CREATE TABLE Itineraries (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(150),

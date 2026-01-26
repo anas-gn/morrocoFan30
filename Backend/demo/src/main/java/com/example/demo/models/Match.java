@@ -11,7 +11,6 @@ public class Match {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
     private LocalDateTime dateOfMatch;
     private String referee;
     private String statut;
