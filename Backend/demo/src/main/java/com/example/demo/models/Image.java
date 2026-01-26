@@ -8,22 +8,22 @@ public class Image {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private String imageUrl;
     private String type;
-    private Long ownerID;
+    private int ownerID;
 
     public Image() {}
 
-    public Image(String imageUrl, String type, Long ownerID) {
+    public Image(String imageUrl, String type, int ownerID) {
         this.imageUrl = imageUrl;
         this.type = type;
         this.ownerID = ownerID;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
@@ -31,6 +31,6 @@ public class Image {
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
 
-    public Long getOwnerID() { return ownerID; }
-    public void setOwnerID(Long ownerID) { this.ownerID = ownerID; }
+    public int getOwnerID() { return ownerID; }
+    public void setOwnerID(int ownerID) { this.ownerID = ownerID; }
 }

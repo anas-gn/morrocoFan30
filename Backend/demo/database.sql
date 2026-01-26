@@ -188,22 +188,8 @@ CREATE TABLE Attractions (
   cityID INT,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
-CREATE TABLE Itinerary_Attraction (
-  itinerary_id INT,
-  attraction_id INT,
-  PRIMARY KEY (itinerary_id, attraction_id),
-  FOREIGN KEY (itinerary_id) REFERENCES Itineraries(id),
-  FOREIGN KEY (attraction_id) REFERENCES Attractions(id)
-);
 
 
-CREATE TABLE itineraryAttractions (
-  itineraryID INT,
-  attractionID INT,
-  PRIMARY KEY (itineraryID, attractionID),
-  FOREIGN KEY (itineraryID) REFERENCES Itineraries(id) ON DELETE CASCADE,
-  FOREIGN KEY (attractionID) REFERENCES Attractions(id) ON DELETE CASCADE
-);
 
 CREATE TABLE itineraryAttractions (
   itineraryID INT,
@@ -221,7 +207,6 @@ CREATE TABLE Itineraries (
   supporterID INT,
   attractionID INT,
   FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE,
-  FOREIGN KEY (attractionID) REFERENCES Attractions(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Images (
