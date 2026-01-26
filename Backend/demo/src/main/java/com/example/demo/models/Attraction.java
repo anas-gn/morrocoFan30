@@ -15,7 +15,7 @@ public class Attraction {
     private String type;
 
     @ManyToOne
-    @JoinColumn(name = "city_id")
+    @JoinColumn(name = "cityID")
     private CityHost cityHost;
 
     @OneToMany(mappedBy = "attraction", cascade = CascadeType.ALL)

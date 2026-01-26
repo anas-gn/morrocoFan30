@@ -8,16 +8,16 @@ public class Itinerary {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private String title;
     private int duration;
 
     @ManyToMany
     @JoinTable(
-        name = "itinerary_attractions",
-        joinColumns = @JoinColumn(name = "itinerary_id"),
-        inverseJoinColumns = @JoinColumn(name = "attraction_id")
+        name = "itineraryAttractions",
+        joinColumns = @JoinColumn(name = "itineraryID"),
+        inverseJoinColumns = @JoinColumn(name = "attractionID")
     )
     private List<Attraction> attractions;
 
@@ -29,7 +29,7 @@ public class Itinerary {
     }
 
     // ✅ Getters & Setters
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
