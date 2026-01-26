@@ -24,44 +24,26 @@ public class Notification {
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
-    // Getters et Setters
-    public Long getId() {
-        return id;
-    }
+    
+    public Notification() {}
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public LocalDateTime getDateOfSend() {
-        return dateOfSend;
-    }
-
-    public void setDateOfSend(LocalDateTime dateOfSend) {
+    
+    public Notification(LocalDateTime dateOfSend, String content, Boolean isRead, Supporter supporter) {
         this.dateOfSend = dateOfSend;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
         this.content = content;
-    }
-
-    public Boolean getIsRead() {
-        return isRead;
-    }
-
-    public void setIsRead(Boolean isRead) {
         this.isRead = isRead;
-    }
-
-    public Supporter getSupporter() {
-        return supporter;
-    }
-
-    public void setSupporter(Supporter supporter) {
         this.supporter = supporter;
     }
+
+    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public LocalDateTime getDateOfSend() { return dateOfSend; }
+    public void setDateOfSend(LocalDateTime dateOfSend) { this.dateOfSend = dateOfSend; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public Boolean getIsRead() { return isRead; }
+    public void setIsRead(Boolean isRead) { this.isRead = isRead; }
+    public Supporter getSupporter() { return supporter; }
+    public void setSupporter(Supporter supporter) { this.supporter = supporter; }
 }

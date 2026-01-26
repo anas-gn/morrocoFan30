@@ -24,44 +24,26 @@ public class Message {
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
-    // Getters et Setters
-    public Long getId() {
-        return id;
-    }
+    
+    public Message() {}
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
+    
+    public Message(String content, String country, LocalDateTime dateOfSend, Supporter supporter) {
         this.content = content;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
         this.country = country;
-    }
-
-    public LocalDateTime getDateOfSend() {
-        return dateOfSend;
-    }
-
-    public void setDateOfSend(LocalDateTime dateOfSend) {
         this.dateOfSend = dateOfSend;
-    }
-
-    public Supporter getSupporter() {
-        return supporter;
-    }
-
-    public void setSupporter(Supporter supporter) {
         this.supporter = supporter;
     }
+
+    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
+    public LocalDateTime getDateOfSend() { return dateOfSend; }
+    public void setDateOfSend(LocalDateTime dateOfSend) { this.dateOfSend = dateOfSend; }
+    public Supporter getSupporter() { return supporter; }
+    public void setSupporter(Supporter supporter) { this.supporter = supporter; }
 }
