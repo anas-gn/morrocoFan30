@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
+@Table(name = "CityHosts")
 public class CityHost {
 
     @Id
@@ -11,66 +12,46 @@ public class CityHost {
     private Long id;
 
     private String name;
-    private String description;
     private String country;
 
-    @OneToMany(mappedBy = "cityHost", cascade = CascadeType.ALL)
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private String region;
+
+    @OneToMany(mappedBy = "cityHost")
     private List<Hotel> hotels;
 
-    @OneToMany(mappedBy = "cityHost", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "cityHost")
     private List<Attraction> attractions;
 
-    // ✅ Constructeurs
     public CityHost() {}
 
-    public CityHost(String name, String description, String country) {
+    public CityHost(String name, String country, String description, String region) {
         this.name = name;
-        this.description = description;
         this.country = country;
-    }
-
-    // ✅ Getters & Setters
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
- 
-    public void setDescription(String description) {
         this.description = description;
+        this.region = region;
     }
 
-    public String getCountry() {
-        return country;
-    }
- 
-    public void setCountry(String country) {
-        this.country = country;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public List<Hotel> getHotels() {
-        return hotels;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setHotels(List<Hotel> hotels) {
-        this.hotels = hotels;
-    }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
 
-    public List<Attraction> getAttractions() {
-        return attractions;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setAttractions(List<Attraction> attractions) {
-        this.attractions = attractions;
-    }
+    public String getRegion() { return region; }
+    public void setRegion(String region) { this.region = region; }
+
+    public List<Hotel> getHotels() { return hotels; }
+    public void setHotels(List<Hotel> hotels) { this.hotels = hotels; }
+
+    public List<Attraction> getAttractions() { return attractions; }
+    public void setAttractions(List<Attraction> attractions) { this.attractions = attractions; }
 }

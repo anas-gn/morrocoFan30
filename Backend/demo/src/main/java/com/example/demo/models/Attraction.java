@@ -1,9 +1,10 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
-import java.util.List;
+import java.time.LocalTime;
 
 @Entity
+@Table(name = "Attractions")
 public class Attraction {
 
     @Id
@@ -11,67 +12,56 @@ public class Attraction {
     private Long id;
 
     private String name;
-    private String description;
+    private String country;
     private String type;
+    private double priceProxim;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private String address;
+    private LocalTime houreOfOpening;
+    private LocalTime houreOfClosing;
 
     @ManyToOne
     @JoinColumn(name = "cityID")
     private CityHost cityHost;
 
-    @OneToMany(mappedBy = "attraction", cascade = CascadeType.ALL)
-    private List<Image> images;
-
-    // ✅ Constructeurs
     public Attraction() {}
 
-    public Attraction(String name, String description, String type) {
+    public Attraction(String name, String type, double priceProxim) {
         this.name = name;
-        this.description = description;
         this.type = type;
+        this.priceProxim = priceProxim;
     }
 
-    // ✅ Getters & Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getName() {
-        return name;
-    }
- 
-    public void setName(String name) {
-        this.name = name;
-    }
- 
-    public String getDescription() {
-        return description;
-    }
- 
-    public void setDescription(String description) {
-        this.description = description;
-    }
- 
-    public String getType() {
-        return type;
-    }
- 
-    public void setType(String type) {
-        this.type = type;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public CityHost getCityHost() {
-        return cityHost;
-    }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
 
-    public void setCityHost(CityHost cityHost) {
-        this.cityHost = cityHost;
-    }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public List<Image> getImages() {
-        return images;
-    }
- 
-    public void setImages(List<Image> images) {
-        this.images = images;
-    }
+    public double getPriceProxim() { return priceProxim; }
+    public void setPriceProxim(double priceProxim) { this.priceProxim = priceProxim; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
+    public LocalTime getHoureOfOpening() { return houreOfOpening; }
+    public void setHoureOfOpening(LocalTime houreOfOpening) { this.houreOfOpening = houreOfOpening; }
+
+    public LocalTime getHoureOfClosing() { return houreOfClosing; }
+    public void setHoureOfClosing(LocalTime houreOfClosing) { this.houreOfClosing = houreOfClosing; }
+
+    public CityHost getCityHost() { return cityHost; }
+    public void setCityHost(CityHost cityHost) { this.cityHost = cityHost; }
 }

@@ -3,55 +3,34 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "Images")
 public class Image {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String url;
+    private String imageUrl;
+    private String type;
+    private Long ownerID;
 
-    @ManyToOne
-    @JoinColumn(name = "hotel_id")
-    private Hotel hotel;
-
-    @ManyToOne
-    @JoinColumn(name = "attraction_id")
-    private Attraction attraction;
-
-    // ✅ Constructeurs
     public Image() {}
 
-    public Image(String url) {
-        this.url = url;
+    public Image(String imageUrl, String type, Long ownerID) {
+        this.imageUrl = imageUrl;
+        this.type = type;
+        this.ownerID = ownerID;
     }
 
-    // ✅ Getters & Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getUrl() {
-        return url;
-    }
- 
-    public void setUrl(String url) {
-        this.url = url;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public Hotel getHotel() {
-        return hotel;
-    }
- 
-    public void setHotel(Hotel hotel) {
-        this.hotel = hotel;
-    }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public Attraction getAttraction() {
-        return attraction;
-    }
- 
-    public void setAttraction(Attraction attraction) {
-        this.attraction = attraction;
-    }
+    public Long getOwnerID() { return ownerID; }
+    public void setOwnerID(Long ownerID) { this.ownerID = ownerID; }
 }
