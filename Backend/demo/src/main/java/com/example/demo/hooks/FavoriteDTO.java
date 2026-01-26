@@ -4,18 +4,18 @@ import java.time.LocalDateTime;
 
 public class FavoriteDTO {
 
-    private Long id;
+    private int id;
     private LocalDateTime dateOfAdd;
     private String type;
-    private Long ownerId;     
-    private Long supporterId; 
+    private int ownerId;     
+    private int supporterId; 
 
     
     public FavoriteDTO() {}
 
     
-    public FavoriteDTO(Long id, LocalDateTime dateOfAdd, String type,
-                       Long ownerId, Long supporterId) {
+    public FavoriteDTO(int id, LocalDateTime dateOfAdd, String type,
+                       int ownerId, int supporterId) {
         this.id = id;
         this.dateOfAdd = dateOfAdd;
         this.type = type;
@@ -24,8 +24,8 @@ public class FavoriteDTO {
     }
 
     
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public LocalDateTime getDateOfAdd() { return dateOfAdd; }
     public void setDateOfAdd(LocalDateTime dateOfAdd) { this.dateOfAdd = dateOfAdd; }
@@ -33,9 +33,9 @@ public class FavoriteDTO {
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
 
-    public Long getOwnerId() { return ownerId; }
-    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
+    public int getOwnerId() { return ownerId; }
+    public void setOwnerId(int ownerId) { this.ownerId = ownerId; }
 
-    public Long getSupporterId() { return supporterId; }
-    public void setSupporterId(Long supporterId) { this.supporterId = supporterId; }
+    public int getSupporterId() { return supporterId; }
+    public void setSupporterId(int supporterId) { this.supporterId = supporterId; }
 }

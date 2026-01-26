@@ -4,19 +4,19 @@ import java.time.LocalDateTime;
 
 public class ReviewDTO {
 
-    private Long id;
+    private int id;
     private String description;
     private Integer rating;
     private LocalDateTime dateOfCreation;
-    private Long supporterId; 
-    private Long matchId;     
+    private int supporterId; 
+    private int matchId;     
 
     
     public ReviewDTO() {}
 
     
-    public ReviewDTO(Long id, String description, Integer rating,
-                     LocalDateTime dateOfCreation, Long supporterId, Long matchId) {
+    public ReviewDTO(int id, String description, Integer rating,
+                     LocalDateTime dateOfCreation, int supporterId, int matchId) {
         this.id = id;
         this.description = description;
         this.rating = rating;
@@ -26,8 +26,8 @@ public class ReviewDTO {
     }
 
     
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
@@ -38,9 +38,9 @@ public class ReviewDTO {
     public LocalDateTime getDateOfCreation() { return dateOfCreation; }
     public void setDateOfCreation(LocalDateTime dateOfCreation) { this.dateOfCreation = dateOfCreation; }
 
-    public Long getSupporterId() { return supporterId; }
-    public void setSupporterId(Long supporterId) { this.supporterId = supporterId; }
+    public int getSupporterId() { return supporterId; }
+    public void setSupporterId(int supporterId) { this.supporterId = supporterId; }
 
-    public Long getMatchId() { return matchId; }
-    public void setMatchId(Long matchId) { this.matchId = matchId; }
+    public int getMatchId() { return matchId; }
+    public void setMatchId(int matchId) { this.matchId = matchId; }
 }
