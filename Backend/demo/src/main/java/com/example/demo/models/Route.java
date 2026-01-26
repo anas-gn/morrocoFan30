@@ -1,15 +1,16 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "Routes")
-public class Trajet {
+public class Route {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(name = "name", length = 100)
     private String name;
@@ -28,14 +29,14 @@ public class Trajet {
     @JoinColumn(name = "cityHostToID", nullable = false)
     private CityHost cityHostTo;
 
-    @OneToMany(mappedBy = "Routes", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Transport> transports;
+    @OneToMany(mappedBy = "trajet", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Transport> transports = new ArrayList<>();
 
- 
-    public Trajet() {
+    public Route() {
     }
 
-    public Trajet(String name, String description, Float priceProxim, CityHost cityHostFrom, CityHost cityHostTo) {
+    public Route(String name, String description, Float priceProxim,
+                  CityHost cityHostFrom, CityHost cityHostTo) {
         this.name = name;
         this.description = description;
         this.priceProxim = priceProxim;
@@ -43,12 +44,11 @@ public class Trajet {
         this.cityHostTo = cityHostTo;
     }
 
-    // Getters et Setters
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -100,14 +100,19 @@ public class Trajet {
         this.transports = transports;
     }
 
+    // Méthode pour maintenir la relation bidirectionnelle
     public void addTransport(Transport transport) {
-        if (this.transports != null) {
-            this.transports.add(transport);
-            transport.setTrajet(this);
-        }
+        transports.add(transport);
+        transport.setTrajet(this);
     }
 
+    public void removeTransport(Transport transport) {
+        transports.remove(transport);
+        transport.setTrajet(null);
+    }
+
+    // Méthode pratique pour obtenir le nom complet du trajet
     public String getTrajetName() {
-        return this.cityHostFrom.getName() + " → " + this.cityHostTo.getName();
+        return cityHostFrom.getName() + " → " + cityHostTo.getName();
     }
 }

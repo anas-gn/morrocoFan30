@@ -1,4 +1,5 @@
 package com.example.demo.models;
+
 import jakarta.persistence.*;
 import java.util.List;
 
@@ -8,18 +9,26 @@ public class Group {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private String name;
 
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupTeam> groupTeams;
 
-    public Long getId() {
+    public Group() {
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public Group(String name, List<GroupTeam> groupTeams) {
+        this.name = name;
+        this.groupTeams = groupTeams;
+    }
+
+    public void setId(int id) {
         this.id = id;
     }
 

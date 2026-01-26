@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface CityHostRepository extends JpaRepository<CityHost, Long> {
+public interface CityHostRepository extends JpaRepository<CityHost, Integer> {
 }

@@ -9,7 +9,7 @@ public class Message {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(columnDefinition = "TEXT")
     private String content;
@@ -24,10 +24,9 @@ public class Message {
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
-    
-    public Message() {}
+    public Message() {
+    }
 
-    
     public Message(String content, String country, LocalDateTime dateOfSend, Supporter supporter) {
         this.content = content;
         this.country = country;
@@ -35,15 +34,43 @@ public class Message {
         this.supporter = supporter;
     }
 
-    
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
-    public String getCountry() { return country; }
-    public void setCountry(String country) { this.country = country; }
-    public LocalDateTime getDateOfSend() { return dateOfSend; }
-    public void setDateOfSend(LocalDateTime dateOfSend) { this.dateOfSend = dateOfSend; }
-    public Supporter getSupporter() { return supporter; }
-    public void setSupporter(Supporter supporter) { this.supporter = supporter; }
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public LocalDateTime getDateOfSend() {
+        return dateOfSend;
+    }
+
+    public void setDateOfSend(LocalDateTime dateOfSend) {
+        this.dateOfSend = dateOfSend;
+    }
+
+    public Supporter getSupporter() {
+        return supporter;
+    }
+
+    public void setSupporter(Supporter supporter) {
+        this.supporter = supporter;
+    }
 }

@@ -16,9 +16,12 @@ public class News {
     private String detail;
     private String imageUrl;
     private LocalDateTime dateOfCreation;
+
     @ManyToOne
     @JoinColumn(name = "teamID", nullable = false)
     private Team team;
+
+    public News() {}
 
     public News(String title, String author, String description, String detail, String imageUrl, Team team) {
         this.title = title;

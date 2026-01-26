@@ -4,18 +4,18 @@ import java.time.LocalDateTime;
 
 public class MessageDTO {
 
-    private Long id;
+    private int id;
     private String content;
     private String country;
     private LocalDateTime dateOfSend;
-    private Long supporterId; 
+    private int supporterId; 
 
     
     public MessageDTO() {}
 
     
-    public MessageDTO(Long id, String content, String country,
-                      LocalDateTime dateOfSend, Long supporterId) {
+    public MessageDTO(int id, String content, String country,
+                      LocalDateTime dateOfSend, int supporterId) {
         this.id = id;
         this.content = content;
         this.country = country;
@@ -24,8 +24,8 @@ public class MessageDTO {
     }
 
     
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
@@ -36,6 +36,6 @@ public class MessageDTO {
     public LocalDateTime getDateOfSend() { return dateOfSend; }
     public void setDateOfSend(LocalDateTime dateOfSend) { this.dateOfSend = dateOfSend; }
 
-    public Long getSupporterId() { return supporterId; }
-    public void setSupporterId(Long supporterId) { this.supporterId = supporterId; }
+    public int getSupporterId() { return supporterId; }
+    public void setSupporterId(int supporterId) { this.supporterId = supporterId; }
 }

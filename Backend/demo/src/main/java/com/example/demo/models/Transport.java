@@ -30,11 +30,11 @@ public class Transport {
     private CityHost city;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "routesID", nullable = true)
-    private Trajet trajet;
+    @JoinColumn(name = "routeID", nullable = true)
+    private Route trajet;
 
     public Transport(String name, Float priceProxim, String description, Integer capacity, String imageUrl,
-            CityHost city, Trajet trajet) {
+            CityHost city, Route trajet) {
         this.name = name;
         this.priceProxim = priceProxim;
         this.description = description;
@@ -44,7 +44,6 @@ public class Transport {
         this.trajet = trajet;
     }
 
-    // Constructors
     public Transport() {
     }
 
@@ -60,7 +59,6 @@ public class Transport {
         this.trajet = null;
     }
 
-    // Getters and Setters
     public Integer getId() {
         return id;
     }
@@ -117,11 +115,11 @@ public class Transport {
         this.city = city;
     }
 
-    public Trajet getTrajet() {
+    public Route getTrajet() {
         return trajet;
     }
 
-    public void setTrajet(Trajet trajet) {
+    public void setTrajet(Route trajet) {
         this.trajet = trajet;
     }
 }

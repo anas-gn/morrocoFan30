@@ -29,6 +29,18 @@ public class Food {
     @JoinColumn(name = "cityID", referencedColumnName = "id")
     private CityHost city;
 
+    public Food() {
+    }
+
+    public Food(String name, String category, String description, Float priceProxim, String imageUrl, CityHost city) {
+        this.name = name;
+        this.category = category;
+        this.description = description;
+        this.priceProxim = priceProxim;
+        this.imageUrl = imageUrl;
+        this.city = city;
+    }
+
     public Integer getId() {
         return id;
     }

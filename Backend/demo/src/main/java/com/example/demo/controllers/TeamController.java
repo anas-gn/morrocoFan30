@@ -9,7 +9,7 @@ import java.util.List;
 
 import java.util.stream.Collectors;
 import com.example.demo.hooks.NewsDTO;
-import com.example.demo.hooks.CulturelContentDTO;
+import com.example.demo.hooks.CultureDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,7 +24,7 @@ import com.example.demo.hooks.PlayerDTO;
 import com.example.demo.hooks.TeamDTO;
 import com.example.demo.models.Match;
 import com.example.demo.models.News;
-import com.example.demo.models.CulturelContent;
+import com.example.demo.models.Culture;
 
 import com.example.demo.models.Player;
 
@@ -99,13 +99,13 @@ public class TeamController {
     }
 
     @GetMapping("/teams/contenuCultirel/{id}")
-    public List<CulturelContentDTO> getAllCulturelTeam(@PathVariable int id) {
+    public List<CultureDTO> getAllCulturelTeam(@PathVariable int id) {
 
         Team t = TeamRepository.findById(id).orElse(null);
         if (t == null) {
             return null;
         } else {
-            return t.getCc().stream().map(this::convertCultureToDTO)
+            return t.getCultures().stream().map(this::convertCultureToDTO)
                     .collect(Collectors.toList());
         }
 
@@ -122,8 +122,8 @@ public class TeamController {
         }
     }
 
-    private CulturelContentDTO convertCultureToDTO(CulturelContent cc) {
-        CulturelContentDTO dto = new CulturelContentDTO();
+    private CultureDTO convertCultureToDTO(Culture cc) {
+        CultureDTO dto = new CultureDTO();
         dto.setId(cc.getId());
         dto.setTitle(cc.getTitle());
         dto.setAuthor(cc.getAuthor());
@@ -151,10 +151,10 @@ public class TeamController {
         dto.setId(player.getId());
         dto.setGoals(player.getGoals());
         dto.setHeight(player.getHeight());
-        dto.setTeam(player.getTeam());
+        dto.setTeam(player.getTeam().getName());
         dto.setWeight(player.getWeight());
         dto.setName(player.getName());
-        dto.setTeamId(player.getT().getId());
+        dto.setTeamId(player.getTeam().getId());
 
         return dto;
     }

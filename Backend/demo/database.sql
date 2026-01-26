@@ -11,6 +11,14 @@ CREATE TABLE Teams (
   description TEXT
 );
 
+CREATE TABLE CityHosts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100),
+  country VARCHAR(100),
+  description TEXT,
+  region VARCHAR(100)
+);
+
 CREATE TABLE Stades (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100),
@@ -20,7 +28,7 @@ CREATE TABLE Stades (
   videoUrl VARCHAR(255),
   imageUrl VARCHAR(255),
   address VARCHAR(255),
-  dateOfConstruction DATE
+  dateOfConstruction DATE,
   cityID INT,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
@@ -37,19 +45,17 @@ CREATE TABLE Supporters (
   imageUrl VARCHAR(255)
 );
 
-CREATE TABLE CityHosts (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100),
-  country VARCHAR(100),
-  description TEXT,
-  region VARCHAR(100)
-);
-
 CREATE TABLE Groups (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100)
 );
 
+CREATE TABLE Trees (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  type VARCHAR(100),
+  matchID INT,
+  FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE
+);
 
 CREATE TABLE Matches (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -58,8 +64,8 @@ CREATE TABLE Matches (
   status VARCHAR(50),
   type VARCHAR(50),
   stadeID INT,
-  treeID INT,
-  FOREIGN KEY (stadeID) REFERENCES Stades(id) ON DELETE CASCADE
+  FOREIGN KEY (stadeID) REFERENCES Stades(id) ON DELETE CASCADE,
+  FOREIGN KEY (treeID) REFERENCES Trees(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Players (
@@ -72,10 +78,10 @@ CREATE TABLE Players (
 );
 
 CREATE TABLE MatchTeam (
+  id INT AUTO_INCREMENT PRIMARY KEY,
   matchID INT,
   teamID INT,
   goals INT,
-  PRIMARY KEY (matchID, teamID),
   FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
 );
@@ -137,7 +143,8 @@ CREATE TABLE Routes (
   priceProxim FLOAT,
   cityHostFromID INT,
   cityHostToID INT,
-  FOREIGN KEY (cityHostFromID,cityHostToID) REFERENCES CityHosts(id) ON DELETE CASCADE
+  FOREIGN KEY (cityHostFromID) REFERENCES CityHosts(id),
+  FOREIGN KEY (cityHostToID) REFERENCES CityHosts(id)
 );
 
 CREATE TABLE Foods (
@@ -159,9 +166,9 @@ CREATE TABLE Transports (
   capacity INT,
   imageUrl VARCHAR(255),
   cityID INT,
-  routesID INT,
-  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
-  FOREIGN KEY (routesID) REFERENCES Routes(id) ON DELETE CASCADE
+  routeID INT,
+  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE,
+  FOREIGN KEY (routeID) REFERENCES Routes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Events (
@@ -188,30 +195,6 @@ CREATE TABLE Attractions (
   cityID INT,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
-CREATE TABLE Itinerary_Attraction (
-  itinerary_id INT,
-  attraction_id INT,
-  PRIMARY KEY (itinerary_id, attraction_id),
-  FOREIGN KEY (itinerary_id) REFERENCES Itineraries(id),
-  FOREIGN KEY (attraction_id) REFERENCES Attractions(id)
-);
-
-
-CREATE TABLE itineraryAttractions (
-  itineraryID INT,
-  attractionID INT,
-  PRIMARY KEY (itineraryID, attractionID),
-  FOREIGN KEY (itineraryID) REFERENCES Itineraries(id) ON DELETE CASCADE,
-  FOREIGN KEY (attractionID) REFERENCES Attractions(id) ON DELETE CASCADE
-);
-
-CREATE TABLE itineraryAttractions (
-  itineraryID INT,
-  attractionID INT,
-  PRIMARY KEY (itineraryID, attractionID),
-  FOREIGN KEY (itineraryID) REFERENCES Itineraries(id) ON DELETE CASCADE,
-  FOREIGN KEY (attractionID) REFERENCES Attractions(id) ON DELETE CASCADE
-);
 
 CREATE TABLE Itineraries (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -219,8 +202,14 @@ CREATE TABLE Itineraries (
   description TEXT,
   dateToGo DATE,
   supporterID INT,
+  FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE
+);
+
+CREATE TABLE ItineraryAttraction (
+  itineraryID INT,
   attractionID INT,
-  FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE,
+  PRIMARY KEY (itineraryID, attractionID),
+  FOREIGN KEY (itineraryID) REFERENCES Itineraries(id) ON DELETE CASCADE,
   FOREIGN KEY (attractionID) REFERENCES Attractions(id) ON DELETE CASCADE
 );
 

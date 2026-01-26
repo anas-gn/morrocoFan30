@@ -10,7 +10,7 @@ public class Responsable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -36,6 +36,8 @@ public class Responsable {
     @OneToMany(mappedBy = "responsables", cascade = CascadeType.ALL)
     private List<Stade> stade;
 
+    public Responsable() {}
+
     public Responsable(String name, Integer age, String email, String phone, String password, String country,
             String imageUrl) {
         this.name = name;
@@ -47,11 +49,11 @@ public class Responsable {
         this.imageUrl = imageUrl;
     }
 
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 

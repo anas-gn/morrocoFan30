@@ -1,4 +1,5 @@
 package com.example.demo.models;
+
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -8,13 +9,14 @@ public class Report {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private LocalDateTime dateOfReport;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "BOOLEAN")
     private boolean badOrGood;
     private String imageUrl;
 
@@ -22,11 +24,23 @@ public class Report {
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
-    public Long getId() {
+    public Report() {
+    }
+
+    public Report(LocalDateTime dateOfReport, String description, boolean badOrGood, String imageUrl,
+            Supporter supporter) {
+        this.dateOfReport = dateOfReport;
+        this.description = description;
+        this.badOrGood = badOrGood;
+        this.imageUrl = imageUrl;
+        this.supporter = supporter;
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 

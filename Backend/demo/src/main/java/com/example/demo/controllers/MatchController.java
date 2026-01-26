@@ -132,7 +132,7 @@ public class MatchController {
         if (ma != null) {
             ma.setDateOfMatch(m.getDateOfMatch());
             ma.setStade(m.getStade());
-            ma.setStatut(m.getStatut());
+            ma.setStatus(m.getStatus());
             ma.setType(m.getType());
             matchRepo.save(ma);
         }
@@ -161,9 +161,9 @@ public class MatchController {
             int t1 = mt.get(0).getGoals();
             int t2 = mt.get(1).getGoals();
             if (t1 > t2) {
-                winner = mt.get(0).getT();
+                winner = mt.get(0).getTeam();
             } else if (t1 < t2) {
-                winner = mt.get(1).getT();
+                winner = mt.get(1).getTeam();
             } else {
                 winner = null;
             }
@@ -176,7 +176,7 @@ public class MatchController {
         dto.setId(match.getId());
         dto.setDateOfMatch(match.getDateOfMatch());
         dto.setReferee(match.getReferee());
-        dto.setStatut(match.getStatut());
+        dto.setStatut(match.getStatus());
         dto.setType(match.getType());
 
      if (match.getStade() != null) {

@@ -8,7 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MessageRepository extends JpaRepository<Message, Long> {
+public interface MessageRepository extends JpaRepository<Message, Integer> {
     List<Message> findBySupporter(Supporter supporter);
+
     List<Message> findByCountry(String country);
 }

@@ -9,7 +9,7 @@ public class CityHost {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private String name;
     private String country;
@@ -25,7 +25,11 @@ public class CityHost {
     @OneToMany(mappedBy = "cityHost")
     private List<Attraction> attractions;
 
-    public CityHost() {}
+    @OneToMany(mappedBy = "cityHost")
+    private List<Stade> stades;
+
+    public CityHost() {
+    }
 
     public CityHost(String name, String country, String description, String region) {
         this.name = name;
@@ -34,24 +38,59 @@ public class CityHost {
         this.region = region;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public int getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-    public String getCountry() { return country; }
-    public void setCountry(String country) { this.country = country; }
+    public String getName() {
+        return name;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getRegion() { return region; }
-    public void setRegion(String region) { this.region = region; }
+    public String getCountry() {
+        return country;
+    }
 
-    public List<Hotel> getHotels() { return hotels; }
-    public void setHotels(List<Hotel> hotels) { this.hotels = hotels; }
+    public void setCountry(String country) {
+        this.country = country;
+    }
 
-    public List<Attraction> getAttractions() { return attractions; }
-    public void setAttractions(List<Attraction> attractions) { this.attractions = attractions; }
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public List<Hotel> getHotels() {
+        return hotels;
+    }
+
+    public void setHotels(List<Hotel> hotels) {
+        this.hotels = hotels;
+    }
+
+    public List<Attraction> getAttractions() {
+        return attractions;
+    }
+
+    public void setAttractions(List<Attraction> attractions) {
+        this.attractions = attractions;
+    }
 }

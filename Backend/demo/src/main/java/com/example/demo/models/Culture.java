@@ -6,21 +6,30 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Cultures")
-public class CulturelContent {
+public class Culture {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String title;
     private String author;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(columnDefinition = "TEXT")
     private String detail;
+
     private String imageUrl;
     private LocalDateTime dateOfCreation;
+
     @ManyToOne
-    @JoinColumn(name = "teamID", nullable = false)
+    @JoinColumn(name = "teamID")
     private Team team;
 
-    public CulturelContent(String title, String author, String description, String detail, String imageUrl, Team team) {
+    public Culture() {
+    }
+
+    public Culture(String title, String author, String description, String detail, String imageUrl, Team team) {
         this.title = title;
         this.author = author;
         this.description = description;

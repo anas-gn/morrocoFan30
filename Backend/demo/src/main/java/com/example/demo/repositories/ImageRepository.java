@@ -7,11 +7,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ImageRepository extends JpaRepository<Image, Long> {
+public interface ImageRepository extends JpaRepository<Image, Integer> {
 
-    List<Image> findByOwnerID(Long ownerID);
+    List<Image> findByOwnerID(int ownerID);
 
     List<Image> findByType(String type);
 
-    List<Image> findByOwnerIDAndType(Long ownerID, String type);
+    List<Image> findByOwnerIDAndType(int ownerID, String type);
 }

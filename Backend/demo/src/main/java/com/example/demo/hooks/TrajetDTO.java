@@ -6,16 +6,16 @@ public class TrajetDTO {
     private String name;
     private String description;
     private Float priceProxim;
-    private Long cityHostFromID;
+    private int cityHostFromID;
     private String cityHostFromName;
-    private Long cityHostToID;
+    private int cityHostToID;
     private String cityHostToName;
 
     public TrajetDTO() {
     }
 
     public TrajetDTO(String name, String description, Float priceProxim,
-            Long cityHostFromID, String cityHostFromName, Long cityHostToID, String cityHostToName) {
+            int cityHostFromID, String cityHostFromName, int cityHostToID, String cityHostToName) {
 
         this.name = name;
         this.description = description;
@@ -59,11 +59,11 @@ public class TrajetDTO {
         this.priceProxim = priceProxim;
     }
 
-    public Long getCityHostFromID() {
+    public int getCityHostFromID() {
         return cityHostFromID;
     }
 
-    public void setCityHostFromID(Long cityHostFromID) {
+    public void setCityHostFromID(int cityHostFromID) {
         this.cityHostFromID = cityHostFromID;
     }
 
@@ -75,11 +75,11 @@ public class TrajetDTO {
         this.cityHostFromName = cityHostFromName;
     }
 
-    public Long getCityHostToID() {
+    public int getCityHostToID() {
         return cityHostToID;
     }
 
-    public void setCityHostToID(Long cityHostToID) {
+    public void setCityHostToID(int cityHostToID) {
         this.cityHostToID = cityHostToID;
     }
 

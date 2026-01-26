@@ -1,4 +1,5 @@
 package com.example.demo.models;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -7,7 +8,7 @@ public class GroupTeam {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private int wins;
     private int draws;
@@ -16,18 +17,31 @@ public class GroupTeam {
     private int goalsConceded;
 
     @ManyToOne
-    @JoinColumn(name = "groupID", nullable = false)
+    @JoinColumn(name = "groupID")
     private Group group;
 
     @ManyToOne
     @JoinColumn(name = "teamID", nullable = false)
     private Team team;
 
-    public Long getId() {
+    public GroupTeam() {
+    }
+
+    public GroupTeam(int wins, int draws, int loses, int goalsScored, int goalsConceded, Group group, Team team) {
+        this.wins = wins;
+        this.draws = draws;
+        this.loses = loses;
+        this.goalsScored = goalsScored;
+        this.goalsConceded = goalsConceded;
+        this.group = group;
+        this.team = team;
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
