@@ -20,7 +20,7 @@ CREATE TABLE Stades (
   videoUrl VARCHAR(255),
   imageUrl VARCHAR(255),
   address VARCHAR(255),
-  dateOfConstruction DATE
+  dateOfConstruction DATE,
   cityID INT,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
@@ -135,10 +135,14 @@ CREATE TABLE Routes (
   name VARCHAR(100),
   description TEXT,
   priceProxim FLOAT,
+
   cityHostFromID INT,
   cityHostToID INT,
-  FOREIGN KEY (cityHostFromID,cityHostToID) REFERENCES CityHosts(id) ON DELETE CASCADE
+
+  FOREIGN KEY (cityHostFromID) REFERENCES CityHosts(id) ON DELETE CASCADE,
+  FOREIGN KEY (cityHostToID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
+
 
 CREATE TABLE Foods (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -160,7 +164,7 @@ CREATE TABLE Transports (
   imageUrl VARCHAR(255),
   cityID INT,
   routesID INT,
-  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
+  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE,
   FOREIGN KEY (routesID) REFERENCES Routes(id) ON DELETE CASCADE
 );
 
