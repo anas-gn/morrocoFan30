@@ -9,100 +9,58 @@ public class Team {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     private String country;
     private String name;
     private String imageUrl;
     private String coach;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @OneToMany(mappedBy = "teams", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Player> players;
 
-    @OneToMany(mappedBy = "teams", cascade = CascadeType.ALL)
-    private List<CulturelContent> cc;
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Culture> cultures;
 
-    @OneToMany(mappedBy = "teams", cascade = CascadeType.ALL)
-    private List<News> nw;
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<News> news;
 
-    public Team(String name, String imageUrl, String coach, String description, List<Player> players) {
-        this.name = name;
-        this.imageUrl = imageUrl;
+    public Team() {}
 
-        this.players = players;
-        this.coach = coach;
-        this.description = description;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
+    public Team(String country, String name, String imageUrl, String coach, String description) {
         this.country = country;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
         this.name = name;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
-    }
-
-    public String getCoach() {
-        return coach;
-    }
-
-    public void setCoach(String coach) {
         this.coach = coach;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
         this.description = description;
     }
 
-    public List<Player> getPlayers() {
-        return players;
-    }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setPlayers(List<Player> players) {
-        this.players = players;
-    }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
 
-    public List<CulturelContent> getCc() {
-        return cc;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setCc(List<CulturelContent> cc) {
-        this.cc = cc;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public List<News> getNews() {
-        return nw;
-    }
+    public String getCoach() { return coach; }
+    public void setCoach(String coach) { this.coach = coach; }
 
-    public void setNews(List<News> nw) {
-        this.nw = nw;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
+    public List<Player> getPlayers() { return players; }
+    public void setPlayers(List<Player> players) { this.players = players; }
+
+    public List<Culture> getCultures() { return cultures; }
+    public void setCultures(List<Culture> cultures) { this.cultures = cultures; }
+
+    public List<News> getNews() { return news; }
+    public void setNews(List<News> news) { this.news = news; }
 }

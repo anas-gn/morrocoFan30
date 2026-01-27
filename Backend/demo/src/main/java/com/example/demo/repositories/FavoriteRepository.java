@@ -8,7 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
+public interface FavoriteRepository extends JpaRepository<Favorite, Integer> {
     List<Favorite> findBySupporter(Supporter supporter);
+
     List<Favorite> findByType(String type);
 }

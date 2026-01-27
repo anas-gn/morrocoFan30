@@ -8,7 +8,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "player")
+@Table(name = "Players")
 
 public class Player {
 
@@ -17,22 +17,22 @@ public class Player {
     private int id;
 
     private String name;
-    private String team;
     private double height;
     private double weight;
     private int goals;
+    private int age;
 
     @ManyToOne
     @JoinColumn(name = "teamID")
-    private Team t;
+    private Team team;
 
-    public Player(String name, String team, double height, double weight, int goals, Team t) {
+    public Player(String name, double height, double weight, int goals,int age, Team team) {
         this.name = name;
-        this.team = team;
         this.height = height;
         this.weight = weight;
         this.goals = goals;
-        this.t = t;
+        this.team = team;
+        this.age=age;
     }
 
     public String getName() {
@@ -43,11 +43,11 @@ public class Player {
         this.name = name;
     }
 
-    public String getTeam() {
+    public Team getTeam() {
         return team;
     }
 
-    public void setTeam(String team) {
+    public void setTeam(Team team) {
         this.team = team;
     }
 
@@ -75,20 +75,20 @@ public class Player {
         this.goals = goals;
     }
 
-    public Team getT() {
-        return t;
-    }
-
-    public void setT(Team t) {
-        this.t = t;
-    }
-
     public int getId() {
         return id;
     }
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
     }
 
 }

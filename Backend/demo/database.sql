@@ -11,6 +11,14 @@ CREATE TABLE Teams (
   description TEXT
 );
 
+CREATE TABLE CityHosts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100),
+  country VARCHAR(100),
+  description TEXT,
+  region VARCHAR(100)
+);
+
 CREATE TABLE Stades (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100),
@@ -20,7 +28,7 @@ CREATE TABLE Stades (
   videoUrl VARCHAR(255),
   imageUrl VARCHAR(255),
   address VARCHAR(255),
-  dateOfConstruction DATE
+  dateOfConstruction DATE,
   cityID INT,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
@@ -37,14 +45,6 @@ CREATE TABLE Supporters (
   imageUrl VARCHAR(255)
 );
 
-CREATE TABLE CityHosts (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100),
-  country VARCHAR(100),
-  description TEXT,
-  region VARCHAR(100)
-);
-
 CREATE TABLE Groups (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100)
@@ -57,7 +57,7 @@ CREATE TABLE Matches (
   status VARCHAR(50),
   type VARCHAR(50),
   stadeID INT,
-  treeID INT,
+  treeID INT
   FOREIGN KEY (stadeID) REFERENCES Stades(id) ON DELETE CASCADE
 );
 
@@ -66,15 +66,16 @@ CREATE TABLE Players (
   name VARCHAR(100),
   height FLOAT,
   weight FLOAT,
+  age INT,
   teamID INT,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
 );
 
 CREATE TABLE MatchTeam (
+  id INT AUTO_INCREMENT PRIMARY KEY,
   matchID INT,
   teamID INT,
   goals INT,
-  PRIMARY KEY (matchID, teamID),
   FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
 );
@@ -142,8 +143,10 @@ CREATE TABLE Routes (
   name VARCHAR(100),
   description TEXT,
   priceProxim FLOAT,
-  cityID INT,
-  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
+  cityHostFromID INT,
+  cityHostToID INT,
+  FOREIGN KEY (cityHostFromID) REFERENCES CityHosts(id),
+  FOREIGN KEY (cityHostToID) REFERENCES CityHosts(id)
 );
 
 CREATE TABLE Foods (
@@ -165,7 +168,9 @@ CREATE TABLE Transports (
   capacity INT,
   imageUrl VARCHAR(255),
   cityID INT,
-  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
+  routeID INT,
+  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE,
+  FOREIGN KEY (routeID) REFERENCES Routes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Events (
@@ -199,8 +204,14 @@ CREATE TABLE Itineraries (
   description TEXT,
   dateToGo DATE,
   supporterID INT,
+  FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE
+);
+
+CREATE TABLE ItineraryAttraction (
+  itineraryID INT,
   attractionID INT,
-  FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE,
+  PRIMARY KEY (itineraryID, attractionID),
+  FOREIGN KEY (itineraryID) REFERENCES Itineraries(id) ON DELETE CASCADE,
   FOREIGN KEY (attractionID) REFERENCES Attractions(id) ON DELETE CASCADE
 );
 

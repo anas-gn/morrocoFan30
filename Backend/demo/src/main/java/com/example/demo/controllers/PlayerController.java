@@ -85,7 +85,7 @@ public class PlayerController {
             p.setWeight(pp.getWeight());
             p.setName(pp.getName());
             p.setTeam(pp.getTeam());
-            p.setT(pp.getT());
+            p.setTeam(pp.getTeam());
             playerRepository.save(p);
             return true;
 
@@ -110,10 +110,11 @@ public class PlayerController {
         dto.setId(player.getId());
         dto.setGoals(player.getGoals());
         dto.setHeight(player.getHeight());
-        dto.setTeam(player.getTeam());
+        dto.setTeam(player.getTeam().getName());
         dto.setWeight(player.getWeight());
         dto.setName(player.getName());
-        dto.setTeamId(player.getT().getId());
+        dto.setTeamId(player.getTeam().getId());
+        dto.setAge(player.getAge());
 
         return dto;
     }

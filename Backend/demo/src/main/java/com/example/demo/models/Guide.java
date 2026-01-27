@@ -1,4 +1,5 @@
 package com.example.demo.models;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -7,7 +8,7 @@ public class Guide {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private String name;
     private String address;
@@ -24,11 +25,26 @@ public class Guide {
     @JoinColumn(name = "cityID", nullable = false)
     private CityHost city;
 
-    public Long getId() {
+    public Guide() {
+    }
+
+    public Guide(String name, String address, String description, String email, String phone, String imageUrl,
+            String languages, CityHost city) {
+        this.name = name;
+        this.address = address;
+        this.description = description;
+        this.email = email;
+        this.phone = phone;
+        this.imageUrl = imageUrl;
+        this.languages = languages;
+        this.city = city;
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 

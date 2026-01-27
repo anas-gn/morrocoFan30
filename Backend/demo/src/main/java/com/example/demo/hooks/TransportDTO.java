@@ -1,30 +1,52 @@
 package com.example.demo.hooks;
 
 public class TransportDTO {
+
     private Integer id;
     private String name;
     private Float priceProxim;
     private String description;
     private Integer capacity;
     private String imageUrl;
-    private Integer cityId;
+    private Integer cityID;
+    private String cityName;
+    private Integer trajetID;
+    private String trajetName;
 
-    // Constructors
     public TransportDTO() {
     }
 
+    public TransportDTO(String name, Float priceProxim, String description,
+            Integer capacity, String imageUrl, Integer cityID, String cityName,
+            Integer trajetID, String trajetName) {
+
+        this.name = name;
+        this.priceProxim = priceProxim;
+        this.description = description;
+        this.capacity = capacity;
+        this.imageUrl = imageUrl;
+        this.cityID = cityID;
+        this.cityName = cityName;
+        this.trajetID = trajetID;
+        this.trajetName = trajetName;
+    }
+
+    // Constructeur sans trajet
     public TransportDTO(Integer id, String name, Float priceProxim, String description,
-            Integer capacity, String imageUrl, Integer cityId) {
+            Integer capacity, String imageUrl, Integer cityID, String cityName) {
         this.id = id;
         this.name = name;
         this.priceProxim = priceProxim;
         this.description = description;
         this.capacity = capacity;
         this.imageUrl = imageUrl;
-        this.cityId = cityId;
+        this.cityID = cityID;
+        this.cityName = cityName;
+        this.trajetID = null;
+        this.trajetName = null;
     }
 
-    // Getters and Setters
+    // Getters et Setters
     public Integer getId() {
         return id;
     }
@@ -73,11 +95,35 @@ public class TransportDTO {
         this.imageUrl = imageUrl;
     }
 
-    public Integer getCityId() {
-        return cityId;
+    public Integer getCityID() {
+        return cityID;
     }
 
-    public void setCityId(Integer cityId) {
-        this.cityId = cityId;
+    public void setCityID(Integer cityID) {
+        this.cityID = cityID;
+    }
+
+    public String getCityName() {
+        return cityName;
+    }
+
+    public void setCityName(String cityName) {
+        this.cityName = cityName;
+    }
+
+    public Integer getTrajetID() {
+        return trajetID;
+    }
+
+    public void setTrajetID(Integer trajetID) {
+        this.trajetID = trajetID;
+    }
+
+    public String getTrajetName() {
+        return trajetName;
+    }
+
+    public void setTrajetName(String trajetName) {
+        this.trajetName = trajetName;
     }
 }

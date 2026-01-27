@@ -1,8 +1,8 @@
+
 package com.example.demo.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.util.List;
 
 @Entity
 @Table(name = "Itineraries")
@@ -10,7 +10,7 @@ public class Itinerary {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private String title;
 
@@ -19,22 +19,12 @@ public class Itinerary {
 
     private LocalDate dateToGo;
 
- 
     @ManyToOne
-    @JoinColumn(name = "supporterID")
+    @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
-    
-    @ManyToMany
-    @JoinTable(
-        name = "itinerary_attraction",
-        joinColumns = @JoinColumn(name = "itineraryID"),
-        inverseJoinColumns = @JoinColumn(name = "attractionID")
-    )
-    private List<Attraction> attractions;
-
-       
-    public Itinerary() {}
+    public Itinerary() {
+    }
 
     public Itinerary(String title, String description, LocalDate dateToGo, Supporter supporter) {
         this.title = title;
@@ -43,11 +33,11 @@ public class Itinerary {
         this.supporter = supporter;
     }
 
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -82,12 +72,5 @@ public class Itinerary {
     public void setSupporter(Supporter supporter) {
         this.supporter = supporter;
     }
-
-    public List<Attraction> getAttractions() {
-        return attractions;
-    }
-
-    public void setAttractions(List<Attraction> attractions) {
-        this.attractions = attractions;
-    }
 }
+>>>>>>> c5d2794c280511215be6bb16c8e80f6696ca9501

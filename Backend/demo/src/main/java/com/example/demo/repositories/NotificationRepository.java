@@ -8,8 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    
+public interface NotificationRepository extends JpaRepository<Notification, Integer> {
+
     List<Notification> findBySupporterAndIsReadFalse(Supporter supporter);
+
     List<Notification> findBySupporter(Supporter supporter);
 }

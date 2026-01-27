@@ -9,7 +9,7 @@ public class Supporter {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -32,19 +32,51 @@ public class Supporter {
     @Column(name = "totalPoints", columnDefinition = "INT DEFAULT 0")
     private Integer totalPoints;
 
-    @Column(name = "imageUrl", length = 255)
-    private String imageUrl;
+    @ManyToOne
+    @JoinColumn(name = "image_id")
+    private Image image;
 
-    
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Favorite> favorites;
+
     @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Prediction> predictions;
 
-    
-    public Long getId() {
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Review> reviews;
+
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Report> reports;
+
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Message> messages;
+
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Notification> notifications;
+
+    @OneToMany(mappedBy = "supporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Itinerary> itineraries;
+
+    public Supporter() {
+    }
+
+    public Supporter(String name, Integer age, String email, String phone, String password, String country,
+            Integer totalPoints, Image image) {
+        this.name = name;
+        this.age = age;
+        this.email = email;
+        this.phone = phone;
+        this.password = password;
+        this.country = country;
+        this.totalPoints = totalPoints;
+        this.image = image;
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -104,20 +136,67 @@ public class Supporter {
         this.totalPoints = totalPoints;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public Image getImage() {
+        return image;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setImage(Image image) {
+        this.image = image;
     }
 
-    
+    public List<Favorite> getFavorites() {
+        return favorites;
+    }
+
+    public void setFavorites(List<Favorite> favorites) {
+        this.favorites = favorites;
+    }
+
     public List<Prediction> getPredictions() {
         return predictions;
     }
 
     public void setPredictions(List<Prediction> predictions) {
         this.predictions = predictions;
+    }
+
+    public List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<Review> reviews) {
+        this.reviews = reviews;
+    }
+
+    public List<Report> getReports() {
+        return reports;
+    }
+
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
+    }
+
+    public List<Message> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<Message> messages) {
+        this.messages = messages;
+    }
+
+    public List<Notification> getNotifications() {
+        return notifications;
+    }
+
+    public void setNotifications(List<Notification> notifications) {
+        this.notifications = notifications;
+    }
+
+    public List<Itinerary> getItineraries() {
+        return itineraries;
+    }
+
+    public void setItineraries(List<Itinerary> itineraries) {
+        this.itineraries = itineraries;
     }
 }

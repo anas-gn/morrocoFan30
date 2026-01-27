@@ -1,0 +1,75 @@
+Backend/demo/HELP.md
+Backend/demo/target/
+Backend/demo/.mvn/wrapper/maven-wrapper.jar
+Backend/demo/!**/src/main/**/target/
+Backend/demo/!**/src/test/**/target/
+
+### STS ###
+Backend/demo/.apt_generated
+Backend/demo/.classpath
+Backend/demo/.factorypath
+Backend/demo/.project
+Backend/demo/.settings
+Backend/demo/.springBeans
+Backend/demo/.sts4-cache
+
+### IntelliJ IDEA ###
+Backend/demo/.idea
+Backend/demo/*.iws
+Backend/demo/*.iml
+Backend/demo/*.ipr
+
+### NetBeans ###
+Backend/demo/nbproject/private/
+Backend/demo/nbbuild/
+Backend/demo/dist/
+Backend/demo/nbdist/
+Backend/demo/.nb-gradle/
+Backend/demo/build/
+Backend/demo/!**/src/main/**/build/
+Backend/demo/!**/src/test/**/build/
+
+### VS Code ###
+Backend/demo/.vscode/
+
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+Frontend/node_modules
+Frontend/.pnp
+Frontend/.pnp.*
+Frontend/.yarn/*
+Frontend/!.yarn/patches
+Frontend/!.yarn/plugins
+Frontend/!.yarn/releases
+Frontend/!.yarn/versions
+
+# testing
+Frontend/coverage
+
+# next.js
+Frontend/.next/
+Frontend/out/
+
+# production
+Frontend/build
+
+# misc
+Frontend/.DS_Store
+Frontend/*.pem
+
+# debug
+Frontend/npm-debug.log*
+Frontend/yarn-debug.log*
+Frontend/yarn-error.log*
+Frontend/.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+Frontend/.env*
+
+# vercel
+Frontend/.vercel
+
+# typescript
+Frontend/*.tsbuildinfo
+Frontend/next-env.d.ts

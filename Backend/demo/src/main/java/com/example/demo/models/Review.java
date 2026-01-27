@@ -9,7 +9,7 @@ public class Review {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -18,7 +18,7 @@ public class Review {
     private Integer rating;
 
     @Column(name = "dateOfCreation")
-    private LocalDateTime dateOfCreation;
+    private LocalDateTime dateOfCreation = LocalDateTime.now();
 
     @ManyToOne
     @JoinColumn(name = "supporterID", nullable = false)
@@ -28,12 +28,22 @@ public class Review {
     @JoinColumn(name = "matchID", nullable = false)
     private Match match;
 
-    // Getters et Setters
-    public Long getId() {
+    public Review() {
+    }
+
+    public Review(String description, Integer rating, LocalDateTime dateOfCreation, Supporter supporter, Match match) {
+        this.description = description;
+        this.rating = rating;
+        this.dateOfCreation = dateOfCreation;
+        this.supporter = supporter;
+        this.match = match;
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 

@@ -1,7 +1,7 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -15,14 +15,16 @@ public class Stade {
     private String name;
     private double capacity;
     private String country;
+
     @Column(length = 1000)
     private String description;
+
     private String videoUrl;
     private String imageUrl;
     private String adresse;
-    private Date dateOfConstruction;
+    private LocalDate dateOfConstruction;
 
-    @OneToMany(mappedBy = "stades", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "stadeID", cascade = CascadeType.ALL)
     private List<Match> matches;
 
     @ManyToOne
@@ -37,8 +39,8 @@ public class Stade {
     }
 
     public Stade(String name, double capacity, String country, String description,
-            String videoUrl, String imageUrl, String adresse,
-            Date dateOfConstruction, CityHost city, Responsable responsable) {
+                 String videoUrl, String imageUrl, String adresse,
+                 LocalDate dateOfConstruction, CityHost city, Responsable responsable) {
         this.name = name;
         this.capacity = capacity;
         this.country = country;
@@ -111,11 +113,11 @@ public class Stade {
         this.adresse = adresse;
     }
 
-    public Date getDateOfConstruction() {
+    public LocalDate getDateOfConstruction() {
         return dateOfConstruction;
     }
 
-    public void setDateOfConstruction(Date dateOfConstruction) {
+    public void setDateOfConstruction(LocalDate dateOfConstruction) {
         this.dateOfConstruction = dateOfConstruction;
     }
 
@@ -141,10 +143,5 @@ public class Stade {
 
     public void setResponsable(Responsable responsable) {
         this.responsable = responsable;
-    }
-
-    public Stade findById(int id2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findById'");
     }
 }

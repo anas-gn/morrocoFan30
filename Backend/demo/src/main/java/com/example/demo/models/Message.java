@@ -9,7 +9,7 @@ public class Message {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(columnDefinition = "TEXT")
     private String content;
@@ -24,12 +24,21 @@ public class Message {
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
-    // Getters et Setters
-    public Long getId() {
+    public Message() {
+    }
+
+    public Message(String content, String country, LocalDateTime dateOfSend, Supporter supporter) {
+        this.content = content;
+        this.country = country;
+        this.dateOfSend = dateOfSend;
+        this.supporter = supporter;
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 

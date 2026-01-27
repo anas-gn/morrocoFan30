@@ -10,17 +10,22 @@ public class MatchDTO {
     private String statut;
     private String type;
     private int stadeId;
-
+    private int treeId;
     public MatchDTO() {
     }
 
-    public MatchDTO(LocalDateTime dateOfMatch, String referee, String statut, String type, int stadeId) {
+    
+   
+    public MatchDTO(LocalDateTime dateOfMatch, String referee, String statut, String type, int stadeId, int treeId) {
         this.dateOfMatch = dateOfMatch;
         this.referee = referee;
         this.statut = statut;
         this.type = type;
         this.stadeId = stadeId;
+        this.treeId = treeId;
     }
+
+
 
     public int getStadeId() {
         return stadeId;
@@ -68,6 +73,16 @@ public class MatchDTO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+
+    public int getTreeId() {
+        return treeId;
+    }
+
+
+    public void setTreeId(int treeId) {
+        this.treeId = treeId;
     }
 
 }

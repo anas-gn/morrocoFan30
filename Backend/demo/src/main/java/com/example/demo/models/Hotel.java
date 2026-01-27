@@ -8,7 +8,7 @@ public class Hotel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private String name;
     private String address;
@@ -25,7 +25,8 @@ public class Hotel {
     @JoinColumn(name = "cityID")
     private CityHost cityHost;
 
-    public Hotel() {}
+    public Hotel() {
+    }
 
     public Hotel(String name, String address, String description) {
         this.name = name;
@@ -33,30 +34,75 @@ public class Hotel {
         this.description = description;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public int getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
+    public String getName() {
+        return name;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getAddress() {
+        return address;
+    }
 
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getDescription() {
+        return description;
+    }
 
-    public String getUrlReservation() { return urlReservation; }
-    public void setUrlReservation(String urlReservation) { this.urlReservation = urlReservation; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    public CityHost getCityHost() { return cityHost; }
-    public void setCityHost(CityHost cityHost) { this.cityHost = cityHost; }
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getUrlReservation() {
+        return urlReservation;
+    }
+
+    public void setUrlReservation(String urlReservation) {
+        this.urlReservation = urlReservation;
+    }
+
+    public CityHost getCityHost() {
+        return cityHost;
+    }
+
+    public void setCityHost(CityHost cityHost) {
+        this.cityHost = cityHost;
+    }
 }

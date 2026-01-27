@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ItineraryRepository extends JpaRepository<Itinerary, Long> {
+public interface ItineraryRepository extends JpaRepository<Itinerary, Integer> {
 
     List<Itinerary> findByAttraction(Attraction attraction);
 }

@@ -102,13 +102,4 @@ public class Event {
         this.city = city;
     }
 }
-    }
-
-    public CityHost getCity() {
-        return city;
-    }
-
-    public void setCity(CityHost city) {
-        this.city = city;
-    }
-}
+   

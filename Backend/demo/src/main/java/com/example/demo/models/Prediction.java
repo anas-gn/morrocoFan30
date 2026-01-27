@@ -1,4 +1,5 @@
 package com.example.demo.models;
+
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -8,7 +9,7 @@ public class Prediction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     private LocalDateTime dateOfPrediction;
     private int points;
@@ -22,11 +23,11 @@ public class Prediction {
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
-    public Long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 

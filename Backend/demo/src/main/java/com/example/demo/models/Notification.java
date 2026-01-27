@@ -9,7 +9,7 @@ public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(name = "dateOfSend")
     private LocalDateTime dateOfSend;
@@ -17,19 +17,28 @@ public class Notification {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "isRead", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Column(name = "isRead")
     private Boolean isRead;
 
     @ManyToOne
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
-    // Getters et Setters
-    public Long getId() {
+    public Notification() {
+    }
+
+    public Notification(LocalDateTime dateOfSend, String content, Boolean isRead, Supporter supporter) {
+        this.dateOfSend = dateOfSend;
+        this.content = content;
+        this.isRead = isRead;
+        this.supporter = supporter;
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(int id) {
         this.id = id;
     }
 

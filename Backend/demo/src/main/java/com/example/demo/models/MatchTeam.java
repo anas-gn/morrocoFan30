@@ -14,16 +14,16 @@ public class MatchTeam {
 
     @ManyToOne
     @JoinColumn(name = "matchID", nullable = false)
-    private Match m;
+    private Match match;
 
     @ManyToOne
     @JoinColumn(name = "teamID", nullable = false)
-    private Team t;
+    private Team team;
 
     public MatchTeam(int goals, Match m, Team t) {
         this.goals = goals;
-        this.m = m;
-        this.t = t;
+        this.match = m;
+        this.team = t;
     }
 
     public int getGoals() {
@@ -34,20 +34,20 @@ public class MatchTeam {
         this.goals = goals;
     }
 
-    public Match getM() {
-        return m;
+    public Match getMatch() {
+        return match;
     }
 
-    public void setM(Match m) {
-        this.m = m;
+    public void setMatch(Match m) {
+        this.match = m;
     }
 
-    public Team getT() {
-        return t;
+    public Team getTeam() {
+        return team;
     }
 
-    public void setT(Team t) {
-        this.t = t;
+    public void setTeam(Team t) {
+        this.team = t;
     }
 
 }

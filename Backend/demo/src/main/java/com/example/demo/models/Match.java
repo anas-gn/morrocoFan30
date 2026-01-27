@@ -1,41 +1,52 @@
 package com.example.demo.models;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import jakarta.persistence.*;
 
 @Entity
-@Table(name = "matches")
+@Table(name = "Matches")
 public class Match {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(name = "DateOfMatch")
     private LocalDateTime dateOfMatch;
+
     private String referee;
-    private String statut;
+    
+    private int treeID;
+
+    @Column(name = "status")
+    private String status;
+
     private String type;
-
-
-    @OneToMany(mappedBy = "matches", cascade = CascadeType.ALL)
-    private List<Prediction> p;
-
-    @OneToMany(mappedBy = "matches", cascade = CascadeType.ALL)
-    private List<Report> report;
 
     @ManyToOne
     @JoinColumn(name = "stadeID")
-    private Stade st;
+    private Stade stade;
 
-    public Match(LocalDateTime dateOfMatch, Stade st, String referee, String statut, String type) {
+    @OneToMany(mappedBy = "match", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Prediction> predictions;
+
+    @OneToMany(mappedBy = "match", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Report> reports;
+
+    @OneToMany(mappedBy = "match", cascade = CascadeType.ALL)
+    private List<Review> reviews;
+
+    public Match() {
+    }
+
+    public Match(LocalDateTime dateOfMatch, String referee, String status, String type, Stade stade, int treeID) {
         this.dateOfMatch = dateOfMatch;
         this.referee = referee;
-        this.statut = statut;
+        this.status = status;
         this.type = type;
-        this.st = st;
-      
-
+        this.stade = stade;
+        this.treeID = treeID;
     }
 
     public int getId() {
@@ -62,12 +73,12 @@ public class Match {
         this.referee = referee;
     }
 
-    public String getStatut() {
-        return statut;
+    public String getStatus() {
+        return status;
     }
 
-    public void setStatut(String statut) {
-        this.statut = statut;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getType() {
@@ -78,38 +89,38 @@ public class Match {
         this.type = type;
     }
 
-    public List<Prediction> getPrediction() {
-        return p;
-    }
-
-    public void setPrediction(List<Prediction> p) {
-        this.p = p;
-    }
-
-    public List<Report> getReport() {
-        return report;
-    }
-
-    public void setReport(List<Report> report) {
-        this.report = report;
-    }
-
     public Stade getStade() {
-        return st;
+        return stade;
     }
 
-    public void setStade(Stade st) {
-        this.st = st;
+    public void setStade(Stade stade) {
+        this.stade = stade;
     }
 
-    public Object map(Object object) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'map'");
+    public int getTreeID() {
+        return treeID;
     }
 
-    public Match orElse(Object object) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'orElse'");
+    public void setTreeID(int treeID) {
+        this.treeID = treeID;
+    }
+
+    public List<Prediction> getPredictions() {
+        return predictions;
+    }
+
+    public void setPredictions(List<Prediction> predictions) {
+        this.predictions = predictions;
+    }
+
+    public List<Report> getReports() {
+        return reports;
+    }
+
+    public void setReports(List<Report> reports) {
+        this.reports = reports;
     }
 
 }
+
+
