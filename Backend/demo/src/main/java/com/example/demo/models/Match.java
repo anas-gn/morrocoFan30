@@ -40,13 +40,13 @@ public class Match {
     public Match() {
     }
 
-    public Match(LocalDateTime dateOfMatch, String referee, String status, String type, Stade stade, int treeID) {
+    public Match(LocalDateTime dateOfMatch, String referee, String status, String type, Stade stade, Tree tree) {
         this.dateOfMatch = dateOfMatch;
         this.referee = referee;
         this.status = status;
         this.type = type;
         this.stade = stade;
-        this.treeID = treeID;
+        this.tree = tree;
     }
 
     public int getId() {
@@ -97,12 +97,12 @@ public class Match {
         this.stade = stade;
     }
 
-    public int getTreeID() {
-        return treeID;
+    public Tree getTree() {
+        return tree;
     }
 
-    public void setTreeID(int treeID) {
-        this.treeID = treeID;
+    public void setTree(Tree tree) {
+        this.tree = tree;
     }
 
     public List<Prediction> getPredictions() {
