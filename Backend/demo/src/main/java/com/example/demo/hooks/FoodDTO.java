@@ -1,3 +1,5 @@
+package com.example.demo.hooks;
+
 public class FoodDTO {
     private Integer id;
     private String name;
