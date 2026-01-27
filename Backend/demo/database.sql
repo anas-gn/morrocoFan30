@@ -66,6 +66,7 @@ CREATE TABLE Players (
   name VARCHAR(100),
   height FLOAT,
   weight FLOAT,
+  age INT,
   teamID INT,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
 );

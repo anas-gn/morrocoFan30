@@ -114,6 +114,7 @@ public class PlayerController {
         dto.setWeight(player.getWeight());
         dto.setName(player.getName());
         dto.setTeamId(player.getTeam().getId());
+        dto.setAge(player.getAge());
 
         return dto;
     }

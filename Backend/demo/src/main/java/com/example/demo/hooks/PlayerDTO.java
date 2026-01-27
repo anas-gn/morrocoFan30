@@ -9,20 +9,23 @@ public class PlayerDTO {
     private double height;
     private double weight;
     private int goals;
+    private int age;
     private int teamId;
 
     public PlayerDTO() {
     }
 
-    public PlayerDTO(String name, String team, double height, double weight, int goals,int teamm) {
+    public PlayerDTO(String name, String team, double height, double weight,int age, int goals,int teamm) {
         this.name = name;
         this.team = team;
         this.height = height;
         this.weight = weight;
         this.goals = goals;
         this.teamId=teamm;
+        this.age=age;
 
     }
+    
 
     public int getTeamId() {
         return teamId;
@@ -78,6 +81,14 @@ public class PlayerDTO {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
     }
 
 }

@@ -20,17 +20,19 @@ public class Player {
     private double height;
     private double weight;
     private int goals;
+    private int age;
 
     @ManyToOne
     @JoinColumn(name = "teamID")
     private Team team;
 
-    public Player(String name, double height, double weight, int goals, Team team) {
+    public Player(String name, double height, double weight, int goals,int age, Team team) {
         this.name = name;
         this.height = height;
         this.weight = weight;
         this.goals = goals;
         this.team = team;
+        this.age=age;
     }
 
     public String getName() {
@@ -79,6 +81,14 @@ public class Player {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
     }
 
 }
