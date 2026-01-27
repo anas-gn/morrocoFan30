@@ -16,6 +16,8 @@ public class Match {
     private LocalDateTime dateOfMatch;
 
     private String referee;
+    
+    private int treeID;
 
     @Column(name = "status")
     private String status;
@@ -25,10 +27,6 @@ public class Match {
     @ManyToOne
     @JoinColumn(name = "stadeID")
     private Stade stade;
-
-    @ManyToOne
-    @JoinColumn(name = "treeID")
-    private Tree tree;
 
     @OneToMany(mappedBy = "match", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Prediction> predictions;
@@ -122,4 +120,5 @@ public class Match {
     public void setReports(List<Report> reports) {
         this.reports = reports;
     }
+
 }
