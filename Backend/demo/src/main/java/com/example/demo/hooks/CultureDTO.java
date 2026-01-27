@@ -2,7 +2,7 @@ package com.example.demo.hooks;
 
 import java.time.LocalDateTime;
 
-public class CulturelContentDTO {
+public class CultureDTO {
 
     private int id;
     private String title;
@@ -13,10 +13,10 @@ public class CulturelContentDTO {
     private LocalDateTime dateOfCreation;
     private int teamId;
 
-    public CulturelContentDTO() {
+    public CultureDTO() {
     }
 
-    public CulturelContentDTO(String title, String author, String description, String detail, String imageUrl,
+    public CultureDTO(String title, String author, String description, String detail, String imageUrl,
             LocalDateTime dateOfCreation, int teamId) {
         this.title = title;
         this.author = author;
