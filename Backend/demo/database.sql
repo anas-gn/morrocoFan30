@@ -8,6 +8,7 @@ CREATE TABLE Teams (
   country VARCHAR(100),
   imageUrl VARCHAR(255),
   coach VARCHAR(100),
+  participation INT,
   description TEXT
 );
 

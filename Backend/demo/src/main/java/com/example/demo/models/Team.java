@@ -14,6 +14,7 @@ public class Team {
     private String name;
     private String imageUrl;
     private String coach;
+    private int participation;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -27,40 +28,97 @@ public class Team {
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<News> news;
 
-    public Team() {}
+    public Team() {
+    }
 
-    public Team(String country, String name, String imageUrl, String coach, String description) {
+    public Team(String country, String name, String imageUrl, String coach, int participation, String description,
+            List<Player> players) {
         this.country = country;
         this.name = name;
         this.imageUrl = imageUrl;
         this.coach = coach;
+        this.participation = participation;
+        this.description = description;
+        this.players = players;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getCoach() {
+        return coach;
+    }
+
+    public void setCoach(String coach) {
+        this.coach = coach;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
         this.description = description;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public List<Player> getPlayers() {
+        return players;
+    }
 
-    public String getCountry() { return country; }
-    public void setCountry(String country) { this.country = country; }
+    public void setPlayers(List<Player> players) {
+        this.players = players;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public List<Culture> getCultures() {
+        return cultures;
+    }
 
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public void setCultures(List<Culture> cultures) {
+        this.cultures = cultures;
+    }
 
-    public String getCoach() { return coach; }
-    public void setCoach(String coach) { this.coach = coach; }
+    public List<News> getNews() {
+        return news;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public void setNews(List<News> news) {
+        this.news = news;
+    }
 
-    public List<Player> getPlayers() { return players; }
-    public void setPlayers(List<Player> players) { this.players = players; }
+    public int getParticipation() {
+        return participation;
+    }
 
-    public List<Culture> getCultures() { return cultures; }
-    public void setCultures(List<Culture> cultures) { this.cultures = cultures; }
-
-    public List<News> getNews() { return news; }
-    public void setNews(List<News> news) { this.news = news; }
+    public void setParticipation(int participation) {
+        this.participation = participation;
+    }
 }
