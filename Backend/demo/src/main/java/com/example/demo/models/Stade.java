@@ -144,4 +144,8 @@ public class Stade {
     public void setResponsable(Responsable responsable) {
         this.responsable = responsable;
     }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 }
