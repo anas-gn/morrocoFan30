@@ -1,6 +1,5 @@
 package com.example.demo.hooks;
 
-import java.sql.Date;
 import java.time.LocalDate;
 
 public class StadeDTO {
@@ -123,6 +122,5 @@ public class StadeDTO {
     public void setId(int id) {
         this.id = id;
     }
-    
 
 }
