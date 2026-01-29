@@ -303,6 +303,7 @@ public class AcceuilController {
         dto.setDescription(neew.getDescription());
         dto.setImageUrl(neew.getImageUrl());
         dto.setDateOfCreation(neew.getDateOfCreation());
+        dto.setTeamId(neew.getTeam().getId());
 
         return dto;
     }

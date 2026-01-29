@@ -11,11 +11,12 @@ public class PlayerDTO {
     private int goals;
     private int age;
     private int teamId;
+    private String urlImage;
 
     public PlayerDTO() {
     }
 
-    public PlayerDTO(String name, String team, double height, double weight,int age, int goals,int teamm) {
+    public PlayerDTO(String name, String team, double height, double weight,int age, int goals,int teamm,String url) {
         this.name = name;
         this.team = team;
         this.height = height;
@@ -23,8 +24,8 @@ public class PlayerDTO {
         this.goals = goals;
         this.teamId=teamm;
         this.age=age;
-
-    }
+         this.urlImage=url;   }
+    
     
 
     public int getTeamId() {
@@ -89,6 +90,14 @@ public class PlayerDTO {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    public String getUrlImage() {
+        return urlImage;
+    }
+
+    public void setUrlImage(String urlImage) {
+        this.urlImage = urlImage;
     }
 
 }
