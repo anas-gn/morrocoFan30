@@ -24,6 +24,10 @@ public class Report {
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporter supporter;
 
+    @ManyToOne
+     @JoinColumn(name = "matchID", nullable = false)
+    private Match match;
+
     public Report() {
     }
 

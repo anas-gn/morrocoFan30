@@ -1,6 +1,5 @@
 package com.example.demo.controllers;
 
-import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -11,7 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,6 +28,7 @@ import com.example.demo.models.Event;
 import com.example.demo.models.Group;
 import com.example.demo.models.GroupTeam;
 import com.example.demo.models.Match;
+import com.example.demo.models.MatchTeam;
 import com.example.demo.models.News;
 import com.example.demo.models.Stade;
 import com.example.demo.models.Team;
@@ -43,8 +43,6 @@ import com.example.demo.repositories.MatchRepository;
 import com.example.demo.repositories.MatchTeamRepository;
 import com.example.demo.repositories.StadeRepository;
 import com.example.demo.repositories.TeamRepository;
-
-import ch.qos.logback.core.util.Duration;
 
 @RestController
 @RequestMapping("/api/acceuil")
@@ -192,15 +190,51 @@ public class AcceuilController {
         return teams.stream().limit(4).map(this::convertTeamToDTO).collect(Collectors.toList());
     }
 
+    /////////// upcaming matches
     @GetMapping("/matches/upcoming")
-    public List<MatchDTO> getUpcomingMatches() {
+    public List<Map<String, Object>> getUpcomingMatches() {
         LocalDateTime now = LocalDateTime.now();
         List<Match> matches = matchRepo.findAll();
 
         return matches.stream()
                 .filter(match -> match.getDateOfMatch().isAfter(now))
                 .sorted(Comparator.comparing(Match::getDateOfMatch))
-                .limit(4).map(this::convertToDTO).collect(Collectors.toList());
+                .limit(4)
+                .map(match -> {
+                    Map<String, Object> matchMap = new HashMap<>();
+                    matchMap.put("id", match.getId());
+                    matchMap.put("dateOfMatch", match.getDateOfMatch());
+                    matchMap.put("referee", match.getReferee());
+                    matchMap.put("status", match.getStatus());
+                    matchMap.put("type", match.getType());
+                    matchMap.put("treeId", match.getTreeID());
+
+                    // Ajouter  stade
+                    if (match.getStade() != null) {
+                        Stade stade = match.getStade();
+                        Map<String, Object> stadeMap = new HashMap<>();
+                        stadeMap.put("id", stade.getId());
+                        stadeMap.put("name", stade.getName());
+                    }
+                    // Ajouter  équipes
+                    List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
+                    List<Map<String, Object>> teamsList = matchTeams.stream()
+                            .map(mt -> {
+                                Team team = mt.getTeam();
+                                Map<String, Object> teamMap = new HashMap<>();
+                                teamMap.put("teamId", team.getId());
+                                teamMap.put("name", team.getName());
+                                teamMap.put("country", team.getCountry());
+                                teamMap.put("imageUrl", team.getImageUrl());
+                                teamMap.put("coach", team.getCoach());
+                                teamMap.put("goals", mt.getGoals());
+                                return teamMap;
+                            })
+                            .collect(Collectors.toList());
+                    matchMap.put("teams", teamsList);
+                    return matchMap;
+                })
+                .collect(Collectors.toList());
     }
 
     ///////////////////////////////////////////

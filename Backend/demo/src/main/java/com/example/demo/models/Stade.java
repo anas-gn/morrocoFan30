@@ -24,16 +24,16 @@ public class Stade {
     private String adresse;
     private LocalDate dateOfConstruction;
 
-    @OneToMany(mappedBy = "stadeID", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "stade", cascade = CascadeType.ALL)
     private List<Match> matches;
 
     @ManyToOne
     @JoinColumn(name = "cityHostID")
-    private CityHost city;
+    private CityHost cityHost;
 
     @ManyToOne
     @JoinColumn(name = "responsableID")
-    private Responsable responsable;
+    private Responsable responsables;
 
     public Stade() {
     }
@@ -49,8 +49,8 @@ public class Stade {
         this.imageUrl = imageUrl;
         this.adresse = adresse;
         this.dateOfConstruction = dateOfConstruction;
-        this.city = city;
-        this.responsable = responsable;
+        this.cityHost = city;
+        this.responsables = responsable;
     }
 
     public int getId() {
@@ -130,19 +130,19 @@ public class Stade {
     }
 
     public CityHost getCity() {
-        return city;
+        return cityHost;
     }
 
     public void setCity(CityHost city) {
-        this.city = city;
+        this.cityHost = city;
     }
 
     public Responsable getResponsable() {
-        return responsable;
+        return responsables;
     }
 
     public void setResponsable(Responsable responsable) {
-        this.responsable = responsable;
+        this.responsables = responsable;
     }
 
     public void setId(int id) {

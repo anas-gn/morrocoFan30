@@ -257,7 +257,9 @@ CREATE TABLE Reports (
   badOrGood BOOLEAN,
   imageUrl VARCHAR(255),
   supporterID INT,
+  matchID INT,
   FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE
+   FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Favorites (

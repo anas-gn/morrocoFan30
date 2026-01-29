@@ -10,16 +10,18 @@ public class ReportDTO {
     private boolean badOrGood;
     private String imageUrl;
     private int supporterId;
+    private int matchId;
 
     public ReportDTO() {
     }
 
-    public ReportDTO(LocalDateTime dateOfReport, String description, boolean badOrGood, String imageUrl, int supporterId) {
+    public ReportDTO(LocalDateTime dateOfReport, String description, boolean badOrGood, String imageUrl, int supporterId,int match) {
         this.dateOfReport = dateOfReport;
         this.description = description;
         this.badOrGood = badOrGood;
         this.imageUrl = imageUrl;
         this.supporterId = supporterId;
+        this.matchId=match;
     }
 
     public ReportDTO(int id, LocalDateTime dateOfReport, String description, boolean badOrGood, String imageUrl, int supporterId) {
@@ -29,6 +31,7 @@ public class ReportDTO {
         this.badOrGood = badOrGood;
         this.imageUrl = imageUrl;
         this.supporterId = supporterId;
+        
     }
 
     public int getId() {
@@ -77,5 +80,13 @@ public class ReportDTO {
 
     public void setSupporterId(int supporterId) {
         this.supporterId = supporterId;
+    }
+
+    public int getMatchId() {
+        return matchId;
+    }
+
+    public void setMatchId(int matchId) {
+        this.matchId = matchId;
     }
 }
