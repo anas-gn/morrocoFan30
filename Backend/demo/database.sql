@@ -19,20 +19,33 @@ CREATE TABLE CityHosts (
   description TEXT,
   region VARCHAR(100)
 );
+CREATE TABLE Responsables (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    age INT,
+    email VARCHAR(150) UNIQUE,
+    phone VARCHAR(50),
+    password VARCHAR(255),
+    country VARCHAR(100),
+    imageUrl VARCHAR(255)
+);
 
 CREATE TABLE Stades (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100),
-  capacity INT,
+  capacity INT NOT NULL,
   country VARCHAR(100),
   description TEXT,
   videoUrl VARCHAR(255),
   imageUrl VARCHAR(255),
   address VARCHAR(255),
   dateOfConstruction DATE,
-  cityID INT,
-  FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
+  cityHostID INT,
+  responsableID INT,
+  FOREIGN KEY (responsableID) REFERENCES Responsables(id) ON DELETE CASCADE,
+  FOREIGN KEY (cityHostID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
+
 
 CREATE TABLE Supporters (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -58,7 +71,7 @@ CREATE TABLE Matches (
   status VARCHAR(50),
   type VARCHAR(50),
   stadeID INT,
-  treeID INT
+  treeID INT,
   FOREIGN KEY (stadeID) REFERENCES Stades(id) ON DELETE CASCADE
 );
 
@@ -258,7 +271,7 @@ CREATE TABLE Reports (
   imageUrl VARCHAR(255),
   supporterID INT,
   matchID INT,
-  FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE
+  FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE,
    FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE
 );
 

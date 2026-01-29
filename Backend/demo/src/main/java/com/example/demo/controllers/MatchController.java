@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.hooks.MatchDTO;
 import com.example.demo.hooks.TeamDTO;
-import com.example.demo.models.Match;
+import com.example.demo.models.Matches;
 import com.example.demo.models.MatchTeam;
-import com.example.demo.models.Stade;
-import com.example.demo.models.Team;
+import com.example.demo.models.Stades;
+import com.example.demo.models.Teams;
 
 import org.springframework.web.bind.annotation.PutMapping;
 
@@ -47,7 +47,7 @@ public class MatchController {
     // all matches in the competition
     @GetMapping("/matches/all")
     public List<MatchDTO> getAllMatches() {
-        List<Match> m = matchRepo.findAll();
+        List<Matches> m = matchRepo.findAll();
         List<MatchDTO> matches = m.stream().map(this::convertToDTO).collect(Collectors.toList());
         if (matches == null) {
             return null;
@@ -68,7 +68,7 @@ public class MatchController {
     // getMatch By iD
     @GetMapping("/matches/{id}")
     public MatchDTO getMatche(@PathVariable int id) {
-        Match match = matchRepo.findById(id);
+        Matches match = matchRepo.findById(id);
         if (match != null) {
             return convertToDTO(match);
         } else {
@@ -88,7 +88,7 @@ public class MatchController {
     // matches by Date
     @GetMapping("/matches/getdate")
     public List<MatchDTO> getMatcheByDate(@PathVariable Date datee) {
-        List<Match> matchs = matchRepo.findAll();
+        List<Matches> matchs = matchRepo.findAll();
         List<MatchDTO> matches = matchs.stream()
                 .filter(match -> match.getDateOfMatch().toLocalDate().equals(datee))
                 .map(this::convertToDTO)
@@ -103,7 +103,7 @@ public class MatchController {
     // find matches in a stade
     @GetMapping("/matches/stade/{id}")
     public List<MatchDTO> getMatcheByStade(@PathVariable int id) {
-        Stade st = StadeRepository.findById(id);
+        Stades st = StadeRepository.findById(id);
         if (st == null) {
             return null;
         } else {
@@ -117,7 +117,7 @@ public class MatchController {
     // delete match
     @DeleteMapping("/matches/delete/{id}")
     public boolean deleteMatch(@PathVariable int id) {
-        Match m = matchRepo.findById(id);
+        Matches m = matchRepo.findById(id);
         if (m == null) {
             return false;
         } else {
@@ -127,8 +127,8 @@ public class MatchController {
     }
 
     @PutMapping("matches/update/{id}")
-    public void updateMatche(@PathVariable int id, @RequestBody Match m) {
-        Match ma = matchRepo.findById(id);
+    public void updateMatche(@PathVariable int id, @RequestBody Matches m) {
+        Matches ma = matchRepo.findById(id);
         if (ma != null) {
             ma.setDateOfMatch(m.getDateOfMatch());
             ma.setStade(m.getStade());
@@ -140,7 +140,7 @@ public class MatchController {
 
     // add match
     @PostMapping("/matches/add")
-    public boolean addMatch(@RequestBody Match m) {
+    public boolean addMatch(@RequestBody Matches m) {
         if (m == null) {
             return false;
         } else {
@@ -152,12 +152,12 @@ public class MatchController {
     // matche winner
     @GetMapping("/matches/winner/{id}")
     public TeamDTO getMatcheWinner(@PathVariable int id) {
-        Match m = matchRepo.findById(id);
+        Matches m = matchRepo.findById(id);
         if (m == null) {
             return null;
         } else {
             List<MatchTeam> mt = MatchTeamRepository.findByMatchId(id);
-            Team winner = null;
+            Teams winner = null;
             int t1 = mt.get(0).getGoals();
             int t2 = mt.get(1).getGoals();
             if (t1 > t2) {
@@ -171,7 +171,7 @@ public class MatchController {
         }
     }
 
-    private MatchDTO convertToDTO(Match match) {
+    private MatchDTO convertToDTO(Matches match) {
         MatchDTO dto = new MatchDTO();
         dto.setId(match.getId());
         dto.setDateOfMatch(match.getDateOfMatch());
@@ -186,7 +186,7 @@ public class MatchController {
         return dto;
     }
 
-    private TeamDTO convertTeamToDTO(Team team) {
+    private TeamDTO convertTeamToDTO(Teams team) {
         TeamDTO dto = new TeamDTO();
         dto.setId(team.getId());
         dto.setCoach(team.getCoach());

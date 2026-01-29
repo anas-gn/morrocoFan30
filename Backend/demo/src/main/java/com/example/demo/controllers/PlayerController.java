@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.hooks.PlayerDTO;
 
-import com.example.demo.models.Player;
+import com.example.demo.models.Players;
 
 import org.springframework.web.bind.annotation.PutMapping;
 
@@ -34,7 +34,7 @@ public class PlayerController {
 
     @GetMapping("/players/all")
     public List<PlayerDTO> getAllPlayers() {
-        List<Player> p = playerRepository.findAll();
+        List<Players> p = playerRepository.findAll();
         List<PlayerDTO> players = p.stream().map(this::convertPlayerToDTO).collect(Collectors.toList());
         if (players == null) {
             return null;
@@ -45,7 +45,7 @@ public class PlayerController {
 
     @GetMapping("/players/{id}")
     public PlayerDTO getPlayer(@PathVariable int id) {
-        Player p = playerRepository.findById(id);
+        Players p = playerRepository.findById(id);
         if (p == null) {
             return null;
         } else {
@@ -55,7 +55,7 @@ public class PlayerController {
 
     @DeleteMapping("/players/{id}")
     public boolean DeletePlayer(@PathVariable int id) {
-        Player p = playerRepository.findById(id);
+        Players p = playerRepository.findById(id);
         if (p == null) {
             return false;
         } else {
@@ -65,7 +65,7 @@ public class PlayerController {
     }
 
     @PostMapping("players/add/")
-    public boolean addPlayer(@RequestBody Player pp) {
+    public boolean addPlayer(@RequestBody Players pp) {
         if (pp == null) {
             return false;
         } else {
@@ -75,8 +75,8 @@ public class PlayerController {
     }
 
     @PutMapping("/players/update/{id}")
-    public boolean updatePlayer(@PathVariable int id, @RequestBody Player pp) {
-        Player p = playerRepository.findById(id);
+    public boolean updatePlayer(@PathVariable int id, @RequestBody Players pp) {
+        Players p = playerRepository.findById(id);
         if (p == null) {
             return false;
         } else {
@@ -95,7 +95,7 @@ public class PlayerController {
 
     @PutMapping("/players/addgoal/{id}")
     public boolean addGoal(@PathVariable int id) {
-        Player p = playerRepository.findById(id);
+        Players p = playerRepository.findById(id);
         if (p == null) {
             return false;
         } else {
@@ -105,7 +105,7 @@ public class PlayerController {
         }
     }
 
-    private PlayerDTO convertPlayerToDTO(Player player) {
+    private PlayerDTO convertPlayerToDTO(Players player) {
         PlayerDTO dto = new PlayerDTO();
         dto.setId(player.getId());
         dto.setGoals(player.getGoals());

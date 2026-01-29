@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "news")
+@Table(name = "News")
 public class News {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,11 +19,11 @@ public class News {
 
     @ManyToOne
     @JoinColumn(name = "teamID", nullable = false)
-    private Team team;
+    private Teams team;
 
     public News() {}
 
-    public News(String title, String author, String description, String detail, String imageUrl, Team team) {
+    public News(String title, String author, String description, String detail, String imageUrl, Teams team) {
         this.title = title;
         this.author = author;
         this.description = description;
@@ -89,11 +89,11 @@ public class News {
         this.imageUrl = imageUrl;
     }
 
-    public Team getTeam() {
+    public Teams getTeam() {
         return team;
     }
 
-    public void setTeam(Team team) {
+    public void setTeam(Teams team) {
         this.team = team;
     }
 

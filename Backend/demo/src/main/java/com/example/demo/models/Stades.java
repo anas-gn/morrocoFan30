@@ -1,28 +1,46 @@
-package com.example.demo.hooks;
+package com.example.demo.models;
 
+import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.List;
 
-public class StadeDTO {
+@Entity
+@Table(name = "Stades")
+public class Stades {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     private String name;
     private int capacity;
     private String country;
+
+    @Column(length = 1000)
     private String description;
+
     private String videoUrl;
     private String imageUrl;
     private String adresse;
     private LocalDate dateOfConstruction;
-    private int cityId;
-    private int responsableId;
 
-    public StadeDTO() {
+    @OneToMany(mappedBy = "stade", cascade = CascadeType.ALL)
+    private List<Matches> matches;
+
+    @ManyToOne
+    @JoinColumn(name = "cityHostID")
+    private CityHosts cityHost;
+
+    @ManyToOne
+    @JoinColumn(name = "responsableID")
+    private Responsables responsable;
+
+    public Stades() {
     }
 
-    public StadeDTO(String name, int capacity, String country, String description,
-            String videoUrl, String imageUrl, String adresse,
-            LocalDate dateOfConstruction, int cit, int respo) {
+    public Stades(String name, int capacity, String country, String description,
+                 String videoUrl, String imageUrl, String adresse,
+                 LocalDate dateOfConstruction, CityHosts city, Responsables responsable) {
         this.name = name;
         this.capacity = capacity;
         this.country = country;
@@ -31,24 +49,8 @@ public class StadeDTO {
         this.imageUrl = imageUrl;
         this.adresse = adresse;
         this.dateOfConstruction = dateOfConstruction;
-        this.cityId = cit;
-        this.responsableId = respo;
-    }
-
-    public int getCityId() {
-        return cityId;
-    }
-
-    public void setCityId(int cityId) {
-        this.cityId = cityId;
-    }
-
-    public int getResponsableId() {
-        return responsableId;
-    }
-
-    public void setResponsableId(int responsableId) {
-        this.responsableId = responsableId;
+        this.cityHost = city;
+        this.responsable = responsable;
     }
 
     public int getId() {
@@ -119,8 +121,31 @@ public class StadeDTO {
         this.dateOfConstruction = dateOfConstruction;
     }
 
+    public List<Matches> getMatches() {
+        return matches;
+    }
+
+    public void setMatches(List<Matches> matches) {
+        this.matches = matches;
+    }
+
+    public CityHosts getCity() {
+        return cityHost;
+    }
+
+    public void setCity(CityHosts city) {
+        this.cityHost = city;
+    }
+
+    public Responsables getResponsable() {
+        return responsable;
+    }
+
+    public void setResponsable(Responsables responsable) {
+        this.responsable = responsable;
+    }
+
     public void setId(int id) {
         this.id = id;
     }
-
 }

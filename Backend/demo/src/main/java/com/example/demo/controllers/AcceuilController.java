@@ -22,16 +22,16 @@ import com.example.demo.hooks.MatchDTO;
 import com.example.demo.hooks.NewsDTO;
 import com.example.demo.hooks.StadeDTO;
 import com.example.demo.hooks.TeamDTO;
-import com.example.demo.models.CityHost;
-import com.example.demo.models.Culture;
-import com.example.demo.models.Event;
-import com.example.demo.models.Group;
+import com.example.demo.models.CityHosts;
+import com.example.demo.models.Cultures;
+import com.example.demo.models.Events;
+import com.example.demo.models.Groups;
 import com.example.demo.models.GroupTeam;
-import com.example.demo.models.Match;
+import com.example.demo.models.Matches;
 import com.example.demo.models.MatchTeam;
 import com.example.demo.models.News;
-import com.example.demo.models.Stade;
-import com.example.demo.models.Team;
+import com.example.demo.models.Stades;
+import com.example.demo.models.Teams;
 
 import com.example.demo.repositories.NewsRepository;
 
@@ -82,7 +82,7 @@ public class AcceuilController {
 
     @GetMapping("/CityHosts/all")
     public List<CityHostDTO> gatAllCities() {
-        List<CityHost> city = CityHostRepository.findAll();
+        List<CityHosts> city = CityHostRepository.findAll();
         List<CityHostDTO> cities = city.stream().map(this::convertCityToDTO).collect(Collectors.toList());
         if (cities == null) {
             return null;
@@ -93,7 +93,7 @@ public class AcceuilController {
 
     @GetMapping("/stade/all")
     public List<StadeDTO> getAllStades() {
-        List<Stade> st = StadeRepository.findAll();
+        List<Stades> st = StadeRepository.findAll();
         List<StadeDTO> stades = st.stream().map(this::convertStadeToDTO).collect(Collectors.toList());
         if (stades == null) {
             return null;
@@ -105,7 +105,7 @@ public class AcceuilController {
     //////// grp
     @GetMapping("/accueil/groupes")
     public ResponseEntity<List<Map<String, Object>>> getAllStandings() {
-        List<Group> groups = GroupeRepository.findAll();
+        List<Groups> groups = GroupeRepository.findAll();
 
         List<Map<String, Object>> standings = groups.stream()
                 .map(group -> {
@@ -149,10 +149,10 @@ public class AcceuilController {
     //////////// upcaming Events
     @GetMapping("/evants/upcaming")
     public List<EventDTO> getUpcaming() {
-        List<Event> event = EventRepository.findAll();
+        List<Events> event = EventRepository.findAll();
 
         return event.stream()
-                .sorted(Comparator.comparing(Event::getDateOfEvent).reversed())
+                .sorted(Comparator.comparing(Events::getDateOfEvent).reversed())
                 .limit(5)
                 .map(this::convertEventToDTO)
                 .collect(Collectors.toList());
@@ -173,10 +173,10 @@ public class AcceuilController {
     /////// culture
     @GetMapping("/culture/forYou")
     public List<CultureDTO> getLastCulture() {
-        List<Culture> cul = cultureRepository.findAll();
+        List<Cultures> cul = cultureRepository.findAll();
 
         return cul.stream()
-                .sorted(Comparator.comparing(Culture::getDateOfCreation).reversed())
+                .sorted(Comparator.comparing(Cultures::getDateOfCreation).reversed())
                 .limit(7)
                 .map(this::convertCultureToDTO)
                 .collect(Collectors.toList());
@@ -185,7 +185,7 @@ public class AcceuilController {
     //// some teams
     @GetMapping("/teams/some")
     public List<TeamDTO> getSomeTeams() {
-        List<Team> teams = TeamRepository.findAll();
+        List<Teams> teams = TeamRepository.findAll();
 
         return teams.stream().limit(4).map(this::convertTeamToDTO).collect(Collectors.toList());
     }
@@ -194,11 +194,11 @@ public class AcceuilController {
     @GetMapping("/matches/upcoming")
     public List<Map<String, Object>> getUpcomingMatches() {
         LocalDateTime now = LocalDateTime.now();
-        List<Match> matches = matchRepo.findAll();
+        List<Matches> matches = matchRepo.findAll();
 
         return matches.stream()
                 .filter(match -> match.getDateOfMatch().isAfter(now))
-                .sorted(Comparator.comparing(Match::getDateOfMatch))
+                .sorted(Comparator.comparing(Matches::getDateOfMatch))
                 .limit(4)
                 .map(match -> {
                     Map<String, Object> matchMap = new HashMap<>();
@@ -211,7 +211,7 @@ public class AcceuilController {
 
                     // Ajouter  stade
                     if (match.getStade() != null) {
-                        Stade stade = match.getStade();
+                        Stades stade = match.getStade();
                         Map<String, Object> stadeMap = new HashMap<>();
                         stadeMap.put("id", stade.getId());
                         stadeMap.put("name", stade.getName());
@@ -220,7 +220,7 @@ public class AcceuilController {
                     List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
                     List<Map<String, Object>> teamsList = matchTeams.stream()
                             .map(mt -> {
-                                Team team = mt.getTeam();
+                                Teams team = mt.getTeam();
                                 Map<String, Object> teamMap = new HashMap<>();
                                 teamMap.put("teamId", team.getId());
                                 teamMap.put("name", team.getName());
@@ -238,7 +238,7 @@ public class AcceuilController {
     }
 
     ///////////////////////////////////////////
-    public CityHostDTO convertCityToDTO(CityHost city) {
+    public CityHostDTO convertCityToDTO(CityHosts city) {
         if (city == null) {
             return null;
         } else {
@@ -252,7 +252,7 @@ public class AcceuilController {
         }
     }
 
-    private MatchDTO convertToDTO(Match match) {
+    private MatchDTO convertToDTO(Matches match) {
         MatchDTO dto = new MatchDTO();
         dto.setId(match.getId());
         dto.setDateOfMatch(match.getDateOfMatch());
@@ -267,7 +267,7 @@ public class AcceuilController {
         return dto;
     }
 
-    private StadeDTO convertStadeToDTO(Stade st) {
+    private StadeDTO convertStadeToDTO(Stades st) {
         StadeDTO dto = new StadeDTO();
         dto.setId(st.getId());
         dto.setAdresse(st.getAdresse());
@@ -283,7 +283,7 @@ public class AcceuilController {
         return dto;
     }
 
-    private CultureDTO convertCultureToDTO(Culture cc) {
+    private CultureDTO convertCultureToDTO(Cultures cc) {
         CultureDTO dto = new CultureDTO();
         dto.setId(cc.getId());
         dto.setTitle(cc.getTitle());
@@ -307,7 +307,7 @@ public class AcceuilController {
         return dto;
     }
 
-    private EventDTO convertEventToDTO(Event neew) {
+    private EventDTO convertEventToDTO(Events neew) {
         EventDTO dto = new EventDTO();
         dto.setId(neew.getId());
         dto.setCityId(neew.getCity().getId());
@@ -320,7 +320,7 @@ public class AcceuilController {
         return dto;
     }
 
-    private TeamDTO convertTeamToDTO(Team team) {
+    private TeamDTO convertTeamToDTO(Teams team) {
         TeamDTO dto = new TeamDTO();
         dto.setId(team.getId());
         dto.setCoach(team.getCoach());
@@ -333,7 +333,7 @@ public class AcceuilController {
         return dto;
     }
 
-    private GroupDTO convertGroupToDTO(Group neew) {
+    private GroupDTO convertGroupToDTO(Groups neew) {
         GroupDTO dto = new GroupDTO();
         dto.setId(neew.getId());
         dto.setName(neew.getName());

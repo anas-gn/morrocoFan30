@@ -4,24 +4,24 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import com.example.demo.models.Matches;
 
-import com.example.demo.models.Match;
+public interface MatchRepository extends JpaRepository<Matches, Integer> {
 
-public interface MatchRepository extends JpaRepository<Match, Integer> {
+    Matches findById(int id);
 
-    Match findById(int id);
-
-    @Query("""
-                SELECT DISTINCT m FROM Matches m
-                WHERE m.id IN (
-                    SELECT mt.matchID FROM MatchTeam mt
-                    WHERE mt.teamID IN (
-                        SELECT gt.teamID FROM GroupTeam gt
-                        WHERE gt.groupID = :groupeId
-                    )
-                )
-            """)
-    List<Match> findMatchesByGroupeId(int id);
+  @Query("""
+    SELECT DISTINCT m FROM Matches m
+    WHERE m.id IN (
+        SELECT mt.match.id FROM MatchTeam mt
+        WHERE mt.team.id IN (
+            SELECT gt.team.id FROM GroupTeam gt
+            WHERE gt.group.id = :groupId
+        )
+    )
+""")
+List<Matches> findMatchesByGroupeId(@Param("groupId") int groupId);
 
 }

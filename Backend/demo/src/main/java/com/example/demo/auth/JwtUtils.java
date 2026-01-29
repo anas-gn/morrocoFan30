@@ -1,6 +1,6 @@
 package com.example.demo.auth;
 
-import com.example.demo.models.Supporter;
+import com.example.demo.models.Supporters;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -20,7 +20,7 @@ public class JwtUtils {
     @Value("${jwt.expiration:86400000}")
     private int jwtExpiration;
 
-    public String generateToken(Supporter supporter) {
+    public String generateToken(Supporters supporter) {
         return Jwts.builder()
                 .setSubject(String.valueOf(supporter.getId()))
                 .claim("type", "SUPPORTER")

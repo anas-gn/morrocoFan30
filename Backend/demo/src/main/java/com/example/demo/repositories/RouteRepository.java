@@ -1,11 +1,11 @@
 package com.example.demo.repositories;
 
-import com.example.demo.models.Cultures;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.example.demo.models.Routes;
+
 @Repository
-public interface CultureRepository extends JpaRepository<Cultures, Integer> {
+public interface RouteRepository extends JpaRepository<Routes, Integer> {
 
 }
