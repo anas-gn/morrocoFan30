@@ -11,6 +11,7 @@ public class Players {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    private String imgUrl;
     private String name;
     private double height;
     private double weight;
@@ -31,6 +32,14 @@ public class Players {
     }
 
     public Players() {
+    }
+
+    public String getImgUrl() {
+        return imgUrl;
+    }
+
+    public void setImgUrl(String imgUrl) {
+        this.imgUrl = imgUrl;
     }
 
     public String getName() {

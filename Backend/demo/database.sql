@@ -77,6 +77,7 @@ CREATE TABLE Matches (
 
 CREATE TABLE Players (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  imgUrl VARCHAR(255),
   name VARCHAR(100),
   height FLOAT,
   weight FLOAT,
