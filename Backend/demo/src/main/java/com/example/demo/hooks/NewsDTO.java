@@ -12,12 +12,13 @@ public class NewsDTO {
     private String imageUrl;
     private LocalDateTime dateOfCreation;
     private int teamId;
+    private String teamName;
 
     public NewsDTO() {
     }
 
     public NewsDTO(String title, String author, String description, String detail, String imageUrl,
-            LocalDateTime dateOfCreation, int teamId) {
+            LocalDateTime dateOfCreation, int teamId, String teamName) {
 
         this.title = title;
         this.author = author;
@@ -26,6 +27,7 @@ public class NewsDTO {
         this.imageUrl = imageUrl;
         this.dateOfCreation = dateOfCreation;
         this.teamId = teamId;
+        this.teamName = teamName;
     }
 
     public int getId() {
@@ -90,5 +92,13 @@ public class NewsDTO {
 
     public void setTeamId(int teamId) {
         this.teamId = teamId;
+    }
+
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
     }
 }

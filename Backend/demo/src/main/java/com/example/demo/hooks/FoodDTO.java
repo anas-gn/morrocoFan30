@@ -8,13 +8,14 @@ public class FoodDTO {
     private Float priceProxim;
     private String imageUrl;
     private Integer cityId;
+    private String cityName;
 
     // Constructors
     public FoodDTO() {
     }
 
     public FoodDTO(Integer id, String name, String category, String description,
-            Float priceProxim, String imageUrl, Integer cityId) {
+            Float priceProxim, String imageUrl, Integer cityId,String namee) {
         this.id = id;
         this.name = name;
         this.category = category;
@@ -22,6 +23,7 @@ public class FoodDTO {
         this.priceProxim = priceProxim;
         this.imageUrl = imageUrl;
         this.cityId = cityId;
+        this.cityName=namee;
     }
 
     // Getters and Setters
@@ -79,5 +81,13 @@ public class FoodDTO {
 
     public void setCityId(Integer cityId) {
         this.cityId = cityId;
+    }
+
+    public String getCityName() {
+        return cityName;
+    }
+
+    public void setCityName(String cityName) {
+        this.cityName = cityName;
     }
 }

@@ -9,23 +9,26 @@ public class ItineraryDTO {
     private String description;
     private LocalDate dateToGo;
     private int supporterId;
+    private String supportName;
 
     public ItineraryDTO() {
     }
 
-    public ItineraryDTO(String title, String description, LocalDate dateToGo, int supporterId) {
+    public ItineraryDTO(String title, String description, LocalDate dateToGo, int supporterId,String sup) {
         this.title = title;
         this.description = description;
         this.dateToGo = dateToGo;
         this.supporterId = supporterId;
+        this.supportName=sup;
     }
 
-    public ItineraryDTO(int id, String title, String description, LocalDate dateToGo, int supporterId) {
+    public ItineraryDTO(int id, String title, String description, LocalDate dateToGo, int supporterId,String sup) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.dateToGo = dateToGo;
         this.supporterId = supporterId;
+        this.supportName=sup;
     }
 
     public int getId() {
@@ -66,5 +69,13 @@ public class ItineraryDTO {
 
     public void setSupporterId(int supporterId) {
         this.supporterId = supporterId;
+    }
+
+    public String getSupportName() {
+        return supportName;
+    }
+
+    public void setSupportName(String supportName) {
+        this.supportName = supportName;
     }
 }

@@ -9,6 +9,7 @@ public class ReviewDTO {
     private Integer rating;
     private LocalDateTime dateOfCreation;
     private int supporterId; 
+    private String supporterName;
     private int matchId;     
 
     
@@ -16,10 +17,11 @@ public class ReviewDTO {
 
     
     public ReviewDTO(int id, String description, Integer rating,
-                     LocalDateTime dateOfCreation, int supporterId, int matchId) {
+                     LocalDateTime dateOfCreation, int supporterId, int matchId,String name) {
         this.id = id;
         this.description = description;
         this.rating = rating;
+        this.supporterName=name;
         this.dateOfCreation = dateOfCreation;
         this.supporterId = supporterId;
         this.matchId = matchId;
@@ -43,4 +45,14 @@ public class ReviewDTO {
 
     public int getMatchId() { return matchId; }
     public void setMatchId(int matchId) { this.matchId = matchId; }
+
+
+    public String getSupporterName() {
+        return supporterName;
+    }
+
+
+    public void setSupporterName(String supporterName) {
+        this.supporterName = supporterName;
+    }
 }

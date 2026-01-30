@@ -6,14 +6,17 @@ public class MatchTeamDTO {
     private int matchId;
     private int goals;
     private int teamId;
+    private String teamName;
 
     public MatchTeamDTO() {
     }
 
-    public MatchTeamDTO(int goals,int teamId,int matchId) {
+    public MatchTeamDTO(int goals,int teamId,int matchId,String n) {
         this.goals = goals;
         this.teamId=teamId;
-        this.matchId=matchId;   }
+        this.matchId=matchId;
+        this.teamName=n;
+       }
 
     public int getMatchId() {
         return matchId;
@@ -45,6 +48,14 @@ public class MatchTeamDTO {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
     }
 
 }

@@ -18,6 +18,7 @@ import com.example.demo.hooks.CityHostDTO;
 import com.example.demo.hooks.CultureDTO;
 import com.example.demo.hooks.EventDTO;
 import com.example.demo.hooks.GroupDTO;
+import com.example.demo.hooks.GroupTeamDTO;
 import com.example.demo.hooks.MatchDTO;
 import com.example.demo.hooks.NewsDTO;
 import com.example.demo.hooks.StadeDTO;
@@ -104,46 +105,10 @@ public class AcceuilController {
 
     //////// grp
     @GetMapping("/accueil/groupes")
-    public ResponseEntity<List<Map<String, Object>>> getAllStandings() {
-        List<Groups> groups = GroupeRepository.findAll();
-
-        List<Map<String, Object>> standings = groups.stream()
-                .map(group -> {
-                    List<Map<String, Object>> teamStandings = group.getGroupTeams().stream()
-                            .sorted(Comparator
-                                    .comparingInt((GroupTeam gt) -> (gt.getWins() * 3 + gt.getDraws()))
-                                    .reversed()
-                                    .thenComparingInt((GroupTeam gt) -> gt.getGoalsScored() - gt.getGoalsConceded())
-                                    .reversed()
-                                    .thenComparingInt(GroupTeam::getGoalsScored)
-                                    .reversed())
-                            .map(gt -> {
-                                Map<String, Object> team = new HashMap<>();
-                                team.put("teamId", gt.getTeam().getId());
-                                team.put("country", gt.getTeam().getCountry());
-                                team.put("name", gt.getTeam().getName());
-                                team.put("imageUrl", gt.getTeam().getImageUrl());
-                                team.put("played", gt.getWins() + gt.getDraws() + gt.getLoses());
-                                team.put("wins", gt.getWins());
-                                team.put("draws", gt.getDraws());
-                                team.put("loses", gt.getLoses());
-                                team.put("goalsScored", gt.getGoalsScored());
-                                team.put("goalsConceded", gt.getGoalsConceded());
-                                team.put("goalDifference", gt.getGoalsScored() - gt.getGoalsConceded());
-                                team.put("points", gt.getWins() * 3 + gt.getDraws());
-                                return team;
-                            })
-                            .collect(Collectors.toList());
-
-                    Map<String, Object> groupData = new HashMap<>();
-                    groupData.put("groupId", group.getId());
-                    groupData.put("groupName", group.getName());
-                    groupData.put("standings", teamStandings);
-                    return groupData;
-                })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(standings);
+    public  List<GroupDTO> getAllStandings() {
+         List<Groups>grp=GroupeRepository.findAll();
+         List<GroupDTO> groupes=grp.stream().map(this::convertGroupToDTO).collect(Collectors.toList());
+         return groupes;
     }
 
     //////////// upcaming Events
@@ -209,14 +174,14 @@ public class AcceuilController {
                     matchMap.put("type", match.getType());
                     matchMap.put("treeId", match.getTreeID());
 
-                    // Ajouter  stade
+                    // Ajouter stade
                     if (match.getStade() != null) {
                         Stades stade = match.getStade();
                         Map<String, Object> stadeMap = new HashMap<>();
                         stadeMap.put("id", stade.getId());
                         stadeMap.put("name", stade.getName());
                     }
-                    // Ajouter  équipes
+                    // Ajouter équipes
                     List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
                     List<Map<String, Object>> teamsList = matchTeams.stream()
                             .map(mt -> {
@@ -304,6 +269,7 @@ public class AcceuilController {
         dto.setImageUrl(neew.getImageUrl());
         dto.setDateOfCreation(neew.getDateOfCreation());
         dto.setTeamId(neew.getTeam().getId());
+        dto.setTeamName(neew.getTeam().getName());
 
         return dto;
     }
@@ -317,6 +283,7 @@ public class AcceuilController {
         dto.setImageUrl(neew.getImageUrl());
         dto.setPriceProxim(neew.getPriceProxim());
         dto.setName(neew.getName());
+        dto.setCityName(neew.getCity().getName());
 
         return dto;
     }
@@ -334,12 +301,32 @@ public class AcceuilController {
         return dto;
     }
 
+    private GroupTeamDTO convertGroupTeamToDTO(GroupTeam neew) {
+        GroupTeamDTO dto = new GroupTeamDTO();
+        dto.setId(neew.getId());
+        dto.setDraws(neew.getDraws());
+        dto.setGoalsScored(neew.getGoalsScored());
+        dto.setLoses(neew.getLoses());
+        dto.setGoalsConceded(neew.getGoalsConceded());
+        dto.setTeamCountry(neew.getTeam().getCountry());
+        dto.setWins(neew.getWins());
+        dto.setTeamImageUrl(neew.getTeam().getImageUrl());
+        dto.setTeamName(neew.getTeam().getName());
+        return dto;
+    }
+
     private GroupDTO convertGroupToDTO(Groups neew) {
         GroupDTO dto = new GroupDTO();
         dto.setId(neew.getId());
         dto.setName(neew.getName());
-
+        dto.setGroupTeams(convertGroupTeamToDTO(neew.getGroupTeams()));
         return dto;
+    }
+
+    private List<GroupTeamDTO> convertGroupTeamToDTO(List<GroupTeam> groupTeams) {
+        return groupTeams.stream()
+                .map(this::convertGroupTeamToDTO)
+                .collect(Collectors.toList());
     }
 
 }

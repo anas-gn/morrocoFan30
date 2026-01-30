@@ -1,6 +1,5 @@
 package com.example.demo.hooks;
 
-
 public class PlayerDTO {
 
     private int id;
@@ -11,22 +10,24 @@ public class PlayerDTO {
     private int goals;
     private int age;
     private int teamId;
+    private String teamName;
     private String urlImage;
 
     public PlayerDTO() {
     }
 
-    public PlayerDTO(String name, String team, double height, double weight,int age, int goals,int teamm,String url) {
+    public PlayerDTO(String name, String team, double height, double weight, int age, int goals, int teamm, String url,
+            String n) {
         this.name = name;
         this.team = team;
         this.height = height;
         this.weight = weight;
         this.goals = goals;
-        this.teamId=teamm;
-        this.age=age;
-         this.urlImage=url;   }
-    
-    
+        this.teamId = teamm;
+        this.age = age;
+        this.teamName = n;
+        this.urlImage = url;
+    }
 
     public int getTeamId() {
         return teamId;
@@ -98,6 +99,14 @@ public class PlayerDTO {
 
     public void setUrlImage(String urlImage) {
         this.urlImage = urlImage;
+    }
+
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
     }
 
 }

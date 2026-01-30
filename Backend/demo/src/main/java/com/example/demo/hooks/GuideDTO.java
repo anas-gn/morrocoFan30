@@ -11,11 +11,16 @@ public class GuideDTO {
     private String imageUrl;
     private String languages;
     private int cityId;
+    private String cityName;
 
     public GuideDTO() {
     }
 
-    public GuideDTO(String name, String address, String description, String email, String phone, String imageUrl, String languages, int cityId) {
+
+  
+
+    public GuideDTO(String name, String address, String description, String email, String phone, String imageUrl,
+            String languages, int cityId, String cityName) {
         this.name = name;
         this.address = address;
         this.description = description;
@@ -24,19 +29,11 @@ public class GuideDTO {
         this.imageUrl = imageUrl;
         this.languages = languages;
         this.cityId = cityId;
+        this.cityName = cityName;
     }
 
-    public GuideDTO(int id, String name, String address, String description, String email, String phone, String imageUrl, String languages, int cityId) {
-        this.id = id;
-        this.name = name;
-        this.address = address;
-        this.description = description;
-        this.email = email;
-        this.phone = phone;
-        this.imageUrl = imageUrl;
-        this.languages = languages;
-        this.cityId = cityId;
-    }
+
+
 
     public int getId() {
         return id;
@@ -108,5 +105,19 @@ public class GuideDTO {
 
     public void setCityId(int cityId) {
         this.cityId = cityId;
+    }
+
+
+
+
+    public String getCityName() {
+        return cityName;
+    }
+
+
+
+
+    public void setCityName(String cityName) {
+        this.cityName = cityName;
     }
 }

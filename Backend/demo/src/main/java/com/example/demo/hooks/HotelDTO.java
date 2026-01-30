@@ -11,11 +11,13 @@ public class HotelDTO {
     private String imageUrl;
     private String urlReservation;
     private int cityHostId;
+    private String cityName;
 
     public HotelDTO() {
     }
 
-    public HotelDTO(String name, String address, String description, String email, String phone, String imageUrl, String urlReservation, int cityHostId) {
+    public HotelDTO(String name, String address, String description, String email, String phone, String imageUrl,
+            String urlReservation, int cityHostId, String cityName) {
         this.name = name;
         this.address = address;
         this.description = description;
@@ -24,18 +26,7 @@ public class HotelDTO {
         this.imageUrl = imageUrl;
         this.urlReservation = urlReservation;
         this.cityHostId = cityHostId;
-    }
-
-    public HotelDTO(int id, String name, String address, String description, String email, String phone, String imageUrl, String urlReservation, int cityHostId) {
-        this.id = id;
-        this.name = name;
-        this.address = address;
-        this.description = description;
-        this.email = email;
-        this.phone = phone;
-        this.imageUrl = imageUrl;
-        this.urlReservation = urlReservation;
-        this.cityHostId = cityHostId;
+        this.cityName = cityName;
     }
 
     public int getId() {
@@ -108,5 +99,13 @@ public class HotelDTO {
 
     public void setCityHostId(int cityHostId) {
         this.cityHostId = cityHostId;
+    }
+
+    public String getCityName() {
+        return cityName;
+    }
+
+    public void setCityName(String cityName) {
+        this.cityName = cityName;
     }
 }

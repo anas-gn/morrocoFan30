@@ -12,12 +12,13 @@ public class CultureDTO {
     private String imageUrl;
     private LocalDateTime dateOfCreation;
     private int teamId;
+    private String teamName;
 
     public CultureDTO() {
     }
 
     public CultureDTO(String title, String author, String description, String detail, String imageUrl,
-            LocalDateTime dateOfCreation, int teamId) {
+            LocalDateTime dateOfCreation, int teamId,String teamName) {
         this.title = title;
         this.author = author;
         this.description = description;
@@ -25,6 +26,7 @@ public class CultureDTO {
         this.imageUrl = imageUrl;
         this.dateOfCreation = dateOfCreation;
         this.teamId = teamId;
+        this.teamName=teamName;
     }
 
     public int getId() {
@@ -89,5 +91,13 @@ public class CultureDTO {
 
     public void setTeamId(int teamId) {
         this.teamId = teamId;
+    }
+
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
     }
 }

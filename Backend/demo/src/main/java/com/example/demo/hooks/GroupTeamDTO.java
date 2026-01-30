@@ -2,38 +2,82 @@ package com.example.demo.hooks;
 
 public class GroupTeamDTO {
 
-    private int id;
-    private int wins;
-    private int draws;
-    private int loses;
-    private int goalsScored;
-    private int goalsConceded;
-    private int groupId;
-    private int teamId;
+        private int id;
+        private int wins;
+        private int draws;
+        private int loses;
+        private int goalsScored;
+        private int goalsConceded;
+        private int teamID;
+        private String teamName;
+        private String teamCountry;
+        private String teamImageUrl;
 
-    public GroupTeamDTO() {
-    }
+        public GroupTeamDTO() {
+        }
 
-    public GroupTeamDTO(int wins, int draws, int loses, int goalsScored, int goalsConceded, int groupId, int teamId) {
-        this.wins = wins;
-        this.draws = draws;
-        this.loses = loses;
-        this.goalsScored = goalsScored;
-        this.goalsConceded = goalsConceded;
-        this.groupId = groupId;
-        this.teamId = teamId;
-    }
+    public GroupTeamDTO(int wins, int draws, int loses, int goalsScored, int goalsConceded, int teamID,
+                String teamName, String teamCountry, String teamImageUrl) {
+            this.wins = wins;
+            this.draws = draws;
+            this.loses = loses;
+            this.goalsScored = goalsScored;
+            this.goalsConceded = goalsConceded;
+            this.teamID = teamID;
+            this.teamName = teamName;
+            this.teamCountry = teamCountry;
+            this.teamImageUrl = teamImageUrl;
+        }
 
-    public GroupTeamDTO(int id, int wins, int draws, int loses, int goalsScored, int goalsConceded, int groupId, int teamId) {
-        this.id = id;
-        this.wins = wins;
-        this.draws = draws;
-        this.loses = loses;
-        this.goalsScored = goalsScored;
-        this.goalsConceded = goalsConceded;
-        this.groupId = groupId;
-        this.teamId = teamId;
-    }
+
+
+    public int getTeamID() {
+            return teamID;
+        }
+
+
+
+        public void setTeamID(int teamID) {
+            this.teamID = teamID;
+        }
+
+
+
+        public String getTeamName() {
+            return teamName;
+        }
+
+
+
+        public void setTeamName(String teamName) {
+            this.teamName = teamName;
+        }
+
+
+
+        public String getTeamCountry() {
+            return teamCountry;
+        }
+
+
+
+        public void setTeamCountry(String teamCountry) {
+            this.teamCountry = teamCountry;
+        }
+
+
+
+        public String getTeamImageUrl() {
+            return teamImageUrl;
+        }
+
+
+
+        public void setTeamImageUrl(String teamImageUrl) {
+            this.teamImageUrl = teamImageUrl;
+        }
+
+
 
     public int getId() {
         return id;
@@ -83,19 +127,5 @@ public class GroupTeamDTO {
         this.goalsConceded = goalsConceded;
     }
 
-    public int getGroupId() {
-        return groupId;
-    }
-
-    public void setGroupId(int groupId) {
-        this.groupId = groupId;
-    }
-
-    public int getTeamId() {
-        return teamId;
-    }
-
-    public void setTeamId(int teamId) {
-        this.teamId = teamId;
-    }
+   
 }

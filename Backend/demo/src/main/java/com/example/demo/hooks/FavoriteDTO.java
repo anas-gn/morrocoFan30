@@ -9,19 +9,20 @@ public class FavoriteDTO {
     private String type;
     private int ownerId;     
     private int supporterId; 
+    private String supporterName;
 
     
     public FavoriteDTO() {}
 
     
     public FavoriteDTO(int id, LocalDateTime dateOfAdd, String type,
-                       int ownerId, int supporterId) {
+                       int ownerId, int supporterId,String sup) {
         this.id = id;
         this.dateOfAdd = dateOfAdd;
         this.type = type;
         this.ownerId = ownerId;
         this.supporterId = supporterId;
-    }
+        this.supporterName =sup;   }
 
     
     public int getId() { return id; }
@@ -38,4 +39,14 @@ public class FavoriteDTO {
 
     public int getSupporterId() { return supporterId; }
     public void setSupporterId(int supporterId) { this.supporterId = supporterId; }
+
+
+    public String getSupporterName() {
+        return supporterName;
+    }
+
+
+    public void setSupporterName(String supporterName) {
+        this.supporterName = supporterName;
+    }
 }

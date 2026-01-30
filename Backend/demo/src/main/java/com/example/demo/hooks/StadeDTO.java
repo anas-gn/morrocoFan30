@@ -15,24 +15,28 @@ public class StadeDTO {
     private String adresse;
     private LocalDate dateOfConstruction;
     private int cityId;
+    private String cityName;
     private int responsableId;
+    private String responsable;
 
     public StadeDTO() {
     }
 
     public StadeDTO(String name, int capacity, String country, String description,
             String videoUrl, String imageUrl, String adresse,
-            LocalDate dateOfConstruction, int cit, int respo) {
+            LocalDate dateOfConstruction, int cit, int respo,String city,String res) {
         this.name = name;
         this.capacity = capacity;
         this.country = country;
         this.description = description;
         this.videoUrl = videoUrl;
+        this.cityName=city;
         this.imageUrl = imageUrl;
         this.adresse = adresse;
         this.dateOfConstruction = dateOfConstruction;
         this.cityId = cit;
         this.responsableId = respo;
+        this.responsable=res;
     }
 
     public int getCityId() {
@@ -121,6 +125,22 @@ public class StadeDTO {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getCityName() {
+        return cityName;
+    }
+
+    public void setCityName(String cityName) {
+        this.cityName = cityName;
+    }
+
+    public String getResponsable() {
+        return responsable;
+    }
+
+    public void setResponsable(String responsable) {
+        this.responsable = responsable;
     }
 
 }

@@ -10,14 +10,18 @@ public class PredictionDTO {
     private String status;
     private int matchId;
     private int supporterId;
+    private String supportName;
+    private String teamName;
 
     public PredictionDTO() {
     }
 
-    public PredictionDTO(LocalDateTime dateOfPrediction, int points, String status, int matchId, int supporterId) {
+    public PredictionDTO(String t,String n,LocalDateTime dateOfPrediction, int points, String status, int matchId, int supporterId) {
         this.dateOfPrediction = dateOfPrediction;
         this.points = points;
         this.status = status;
+        this.supportName=n;
+        this.teamName=t;
         this.matchId = matchId;
         this.supporterId = supporterId;
     }
@@ -29,6 +33,22 @@ public class PredictionDTO {
         this.status = status;
         this.matchId = matchId;
         this.supporterId = supporterId;
+    }
+
+    public String getSupportName() {
+        return supportName;
+    }
+
+    public void setSupportName(String supportName) {
+        this.supportName = supportName;
+    }
+
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
     }
 
     public int getId() {

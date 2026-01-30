@@ -14,13 +14,14 @@ public class AttractionDTO {
     private LocalTime houreOfOpening;
     private LocalTime houreOfClosing;
     private int cityHostId;
+    private String cityName;
 
     // Constructors
     public AttractionDTO() {}
 
     public AttractionDTO(String name, String country, String type, double priceProxim, 
                         String description, String address, LocalTime houreOfOpening, 
-                        LocalTime houreOfClosing, int cityHostId) {
+                        LocalTime houreOfClosing, int cityHostId,String cityName) {
         this.name = name;
         this.country = country;
         this.type = type;
@@ -30,6 +31,7 @@ public class AttractionDTO {
         this.houreOfOpening = houreOfOpening;
         this.houreOfClosing = houreOfClosing;
         this.cityHostId = cityHostId;
+        this.cityName=cityName;
     }
 
     public AttractionDTO(int id, String name, String country, String type, double priceProxim,
@@ -126,5 +128,13 @@ public class AttractionDTO {
 
     public void setCityHostId(int cityHostId) {
         this.cityHostId = cityHostId;
+    }
+
+    public String getCityName() {
+        return cityName;
+    }
+
+    public void setCityName(String cityName) {
+        this.cityName = cityName;
     }
 }
