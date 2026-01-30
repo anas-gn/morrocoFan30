@@ -23,5 +23,11 @@ public interface MatchRepository extends JpaRepository<Matches, Integer> {
     )
 """)
 List<Matches> findMatchesByGroupeId(@Param("groupId") int groupId);
+  @Query("""
+        SELECT DISTINCT mt.match
+        FROM MatchTeam mt
+        WHERE LOWER(mt.team.name) LIKE LOWER(CONCAT('%', :teamName, '%'))
+    """)
+    List<Matches> findMatchesByTeamName(@Param("teamName") String teamName);
 
 }

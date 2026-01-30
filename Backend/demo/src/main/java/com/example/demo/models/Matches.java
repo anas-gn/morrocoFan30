@@ -17,7 +17,7 @@ public class Matches {
 
     private String referee;
     
-    private int treeID;
+    private Integer treeID;
 
     @Column(name = "status")
     private String status;
@@ -40,7 +40,7 @@ public class Matches {
     public Matches() {
     }
 
-    public Matches(LocalDateTime dateOfMatch, String referee, String status, String type, Stades stade, int treeID) {
+    public Matches(LocalDateTime dateOfMatch, String referee, String status, String type, Stades stade, Integer treeID) {
         this.dateOfMatch = dateOfMatch;
         this.referee = referee;
         this.status = status;
@@ -97,11 +97,11 @@ public class Matches {
         this.stade = stade;
     }
 
-    public int getTreeID() {
+    public  Integer getTreeID() {
         return treeID;
     }
 
-    public void setTreeID(int treeID) {
+    public void setTreeID(Integer treeID) {
         this.treeID = treeID;
     }
 

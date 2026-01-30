@@ -1,14 +1,15 @@
 package com.example.demo.controllers;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+
 import java.util.Comparator;
-import java.util.HashMap;
+
 import java.util.List;
-import java.util.Map;
+
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.hooks.CityHostDTO;
 import com.example.demo.hooks.CultureDTO;
+import com.example.demo.hooks.MatchTeamDTO;
 import com.example.demo.hooks.EventDTO;
 import com.example.demo.hooks.GroupDTO;
 import com.example.demo.hooks.GroupTeamDTO;
@@ -105,10 +107,10 @@ public class AcceuilController {
 
     //////// grp
     @GetMapping("/accueil/groupes")
-    public  List<GroupDTO> getAllStandings() {
-         List<Groups>grp=GroupeRepository.findAll();
-         List<GroupDTO> groupes=grp.stream().map(this::convertGroupToDTO).collect(Collectors.toList());
-         return groupes;
+    public List<GroupDTO> getAllStandings() {
+        List<Groups> grp = GroupeRepository.findAll();
+        List<GroupDTO> groupes = grp.stream().map(this::convertGroupToDTO).collect(Collectors.toList());
+        return groupes;
     }
 
     //////////// upcaming Events
@@ -157,48 +159,18 @@ public class AcceuilController {
 
     /////////// upcaming matches
     @GetMapping("/matches/upcoming")
-    public List<Map<String, Object>> getUpcomingMatches() {
+    public List<MatchDTO> getUpcomingMatches() {
         LocalDateTime now = LocalDateTime.now();
-        List<Matches> matches = matchRepo.findAll();
 
-        return matches.stream()
-                .filter(match -> match.getDateOfMatch().isAfter(now))
+        return matchRepo.findAll().stream()
+
+                .sorted(Comparator.comparing(
+                        m -> Math.abs(Duration.between(now, m.getDateOfMatch()).toMinutes())))
+               
+                .limit(6)
+
                 .sorted(Comparator.comparing(Matches::getDateOfMatch))
-                .limit(4)
-                .map(match -> {
-                    Map<String, Object> matchMap = new HashMap<>();
-                    matchMap.put("id", match.getId());
-                    matchMap.put("dateOfMatch", match.getDateOfMatch());
-                    matchMap.put("referee", match.getReferee());
-                    matchMap.put("status", match.getStatus());
-                    matchMap.put("type", match.getType());
-                    matchMap.put("treeId", match.getTreeID());
-
-                    // Ajouter stade
-                    if (match.getStade() != null) {
-                        Stades stade = match.getStade();
-                        Map<String, Object> stadeMap = new HashMap<>();
-                        stadeMap.put("id", stade.getId());
-                        stadeMap.put("name", stade.getName());
-                    }
-                    // Ajouter équipes
-                    List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
-                    List<Map<String, Object>> teamsList = matchTeams.stream()
-                            .map(mt -> {
-                                Teams team = mt.getTeam();
-                                Map<String, Object> teamMap = new HashMap<>();
-                                teamMap.put("teamId", team.getId());
-                                teamMap.put("name", team.getName());
-                                teamMap.put("country", team.getCountry());
-                                teamMap.put("imageUrl", team.getImageUrl());
-                                teamMap.put("coach", team.getCoach());
-                                teamMap.put("goals", mt.getGoals());
-                                return teamMap;
-                            })
-                            .collect(Collectors.toList());
-                    matchMap.put("teams", teamsList);
-                    return matchMap;
-                })
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -219,22 +191,45 @@ public class AcceuilController {
 
     private MatchDTO convertToDTO(Matches match) {
         MatchDTO dto = new MatchDTO();
+        List<MatchTeam> mt = MatchTeamRepository.findByMatchId(match.getId());
         dto.setId(match.getId());
         dto.setDateOfMatch(match.getDateOfMatch());
         dto.setReferee(match.getReferee());
         dto.setStatut(match.getStatus());
         dto.setType(match.getType());
-
+        dto.setTreeId(match.getTreeID());
+        dto.setMatchTeams(convertMatchTeamToDTO(mt));
         if (match.getStade() != null) {
             dto.setStadeId(match.getStade().getId());
         }
+        dto.setStadeName(match.getStade().getName());
 
         return dto;
+    }
+
+    private MatchTeamDTO convertMatchTeamToDTO(MatchTeam cc) {
+        MatchTeamDTO mt = new MatchTeamDTO();
+        mt.setId(cc.getId());
+        mt.setMatchId(cc.getMatch().getId());
+        mt.setTeamId(cc.getTeam().getId());
+        mt.setGoals(cc.getGoals());
+        mt.setTeamName(cc.getTeam().getName());
+        return mt;
+
+    }
+
+    private List<MatchTeamDTO> convertMatchTeamToDTO(List<MatchTeam> cc) {
+
+        return cc.stream()
+                .map(this::convertMatchTeamToDTO)
+                .collect(Collectors.toList());
+
     }
 
     private StadeDTO convertStadeToDTO(Stades st) {
         StadeDTO dto = new StadeDTO();
         dto.setId(st.getId());
+        dto.setDescription(st.getDescription());
         dto.setAdresse(st.getAdresse());
         dto.setCapacity(st.getCapacity());
         dto.setCityId(st.getCity().getId());
@@ -243,6 +238,8 @@ public class AcceuilController {
         dto.setResponsableId(st.getResponsable().getId());
         dto.setDateOfConstruction(st.getDateOfConstruction());
         dto.setName(st.getName());
+        dto.setCityName(st.getCity().getName());
+        dto.setResponsable(st.getResponsable().getName());
         dto.setVideoUrl(st.getVideoUrl());
 
         return dto;
@@ -307,6 +304,7 @@ public class AcceuilController {
         dto.setDraws(neew.getDraws());
         dto.setGoalsScored(neew.getGoalsScored());
         dto.setLoses(neew.getLoses());
+        dto.setTeamID(neew.getTeam().getId());
         dto.setGoalsConceded(neew.getGoalsConceded());
         dto.setTeamCountry(neew.getTeam().getCountry());
         dto.setWins(neew.getWins());

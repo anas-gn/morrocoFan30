@@ -4,11 +4,10 @@ import com.example.demo.repositories.MatchRepository;
 import com.example.demo.repositories.StadeRepository;
 import com.example.demo.repositories.MatchTeamRepository;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.hooks.MatchDTO;
+import com.example.demo.hooks.MatchTeamDTO;
 import com.example.demo.hooks.TeamDTO;
 import com.example.demo.models.Matches;
 import com.example.demo.models.MatchTeam;
@@ -51,136 +51,47 @@ public class MatchesController {
 
     // all matches in the competition
     @GetMapping("/matches/all")
-    public List<Map<String, Object>> getAllMatchesWithTeamsAndStade() {
-        List<Matches> matches = matchRepo.findAll();
+    public List<MatchDTO> getUpcomingMatches() {
 
-        return matches.stream().map(match -> {
-            Map<String, Object> matchMap = new HashMap<>();
+        return matchRepo.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
 
-            // Informations du match
-            matchMap.put("id", match.getId());
-            matchMap.put("dateOfMatch", match.getDateOfMatch());
-            matchMap.put("referee", match.getReferee());
-            matchMap.put("status", match.getStatus());
-            matchMap.put("type", match.getType());
-
-            // Nom du stade
-            if (match.getStade() != null) {
-                matchMap.put("stadeName", match.getStade().getName());
-                matchMap.put("stadeId", match.getStade().getId());
-            }
-
-            // Récupérer les équipes via MatchTeam
-            List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
-
-            List<Map<String, Object>> teams = matchTeams.stream().map(mt -> {
-                Map<String, Object> teamMap = new HashMap<>();
-                Teams team = mt.getTeam();
-
-                teamMap.put("id", team.getId());
-
-                teamMap.put("country", team.getCountry());
-                teamMap.put("imageUrl", team.getImageUrl());
-
-                teamMap.put("goals", mt.getGoals());
-
-                return teamMap;
-            }).collect(Collectors.toList());
-
-            matchMap.put("teams", teams);
-
-            return matchMap;
-        }).collect(Collectors.toList());
+    /////// matches par date
+    @GetMapping("/matches/allTriee")
+    public List<MatchDTO> matchesTrieeParDate() {
+        return matchRepo.findAll().stream()
+                .map(this::convertToDTO)
+                .sorted(Comparator.comparing(MatchDTO::getDateOfMatch).reversed())
+                .collect(Collectors.toList());
     }
 
     // matches by groupe
     @GetMapping("/matches/groupe/{id}")
-    public List<Map<String, Object>> getMatchesOfGroup(@PathVariable int id) {
+    public List<MatchDTO> getMatchesOfGroup(@PathVariable int id) {
         List<Matches> matches = matchRepo.findMatchesByGroupeId(id);
+        return matches.stream().map(this::convertToDTO).collect(Collectors.toList());
 
-        return matches.stream().map(match -> {
-            Map<String, Object> matchMap = new HashMap<>();
+    }
 
-            // Informations du match
-            matchMap.put("id", match.getId());
-            matchMap.put("dateOfMatch", match.getDateOfMatch());
-            matchMap.put("referee", match.getReferee());
-            matchMap.put("status", match.getStatus());
-            matchMap.put("type", match.getType());
-            matchMap.put("treeID", match.getTreeID());
-
-            // Nom du stade
-            if (match.getStade() != null) {
-                matchMap.put("stadeName", match.getStade().getName());
-                matchMap.put("stadeId", match.getStade().getId());
-            }
-
-            // Récupérer les équipes via MatchTeam
-            List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
-
-            List<Map<String, Object>> teams = matchTeams.stream().map(mt -> {
-                Map<String, Object> teamMap = new HashMap<>();
-                Teams team = mt.getTeam();
-
-                teamMap.put("id", team.getId());
-                teamMap.put("name", team.getName());
-                teamMap.put("country", team.getCountry());
-                teamMap.put("imageUrl", team.getImageUrl());
-                teamMap.put("goals", mt.getGoals());
-
-                return teamMap;
-            }).collect(Collectors.toList());
-
-            matchMap.put("teams", teams);
-
-            return matchMap;
-        }).collect(Collectors.toList());
+    ////// matches by name of team
+    @GetMapping("/matches/byTeam/{name}")
+    public List<MatchDTO> getMatchesByTeamName(@PathVariable String name) {
+        return matchRepo.findMatchesByTeamName(name).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     // getMatch By iD
     @GetMapping("/matches/{id}")
-    public Map<String, Object> getMatche(@PathVariable int id) {
+    public MatchDTO getMatche(@PathVariable int id) {
         Matches match = matchRepo.findById(id);
 
         if (match == null) {
             return null;
+        } else {
+            return convertToDTO(match);
         }
 
-        Map<String, Object> matchMap = new HashMap<>();
-
-        // Informations du match
-        matchMap.put("id", match.getId());
-        matchMap.put("dateOfMatch", match.getDateOfMatch());
-        matchMap.put("referee", match.getReferee());
-        matchMap.put("status", match.getStatus());
-        matchMap.put("type", match.getType());
-        matchMap.put("treeID", match.getTreeID());
-
-        // Nom du stade
-        if (match.getStade() != null) {
-            matchMap.put("stadeName", match.getStade().getName());
-            matchMap.put("stadeId", match.getStade().getId());
-        }
-
-        // Récupérer les équipes via MatchTeam
-        List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
-
-        List<Map<String, Object>> teams = matchTeams.stream().map(mt -> {
-            Map<String, Object> teamMap = new HashMap<>();
-            Teams team = mt.getTeam();
-
-            teamMap.put("id", team.getId());
-            teamMap.put("name", team.getName());
-            teamMap.put("country", team.getCountry());
-            teamMap.put("imageUrl", team.getImageUrl());
-            teamMap.put("goals", mt.getGoals());
-
-            return teamMap;
-        }).collect(Collectors.toList());
-
-        matchMap.put("teams", teams);
-
-        return matchMap;
     }
 
     @PutMapping("/matches/{id}/team/{idT}/player/{idP}")
@@ -193,103 +104,36 @@ public class MatchesController {
     }
 
     // matches by Date
-   @GetMapping("/matches/getdate")
-public List<Map<String, Object>> getMatcheByDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datee) {
-    List<Matches> matchs = matchRepo.findAll();
-    
-    List<Matches> filteredMatches = matchs.stream()
-            .filter(match -> match.getDateOfMatch().toLocalDate().equals(datee))
-            .collect(Collectors.toList());
+    @GetMapping("/matches/getdate")
+    public List<MatchDTO> getMatcheByDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datee) {
+        List<Matches> matchs = matchRepo.findAll();
 
-    if (filteredMatches.isEmpty()) {
-        return null;
-    }
+        List<Matches> filteredMatches = matchs.stream()
+                .filter(match -> match.getDateOfMatch().toLocalDate().equals(datee))
+                .collect(Collectors.toList());
 
-    return filteredMatches.stream().map(match -> {
-        Map<String, Object> matchMap = new HashMap<>();
-
-        // Informations du match
-        matchMap.put("id", match.getId());
-        matchMap.put("dateOfMatch", match.getDateOfMatch());
-        matchMap.put("referee", match.getReferee());
-        matchMap.put("status", match.getStatus());
-        matchMap.put("type", match.getType());
-        matchMap.put("treeID", match.getTreeID());
-
-        // Nom du stade
-        if (match.getStade() != null) {
-            matchMap.put("stadeName", match.getStade().getName());
-            matchMap.put("stadeId", match.getStade().getId());
+        if (filteredMatches.isEmpty()) {
+            return null;
+        } else {
+            return filteredMatches.stream().map(this::convertToDTO).collect(Collectors.toList());
         }
 
-        // Récupérer les équipes via MatchTeam
-        List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
-
-        List<Map<String, Object>> teams = matchTeams.stream().map(mt -> {
-            Map<String, Object> teamMap = new HashMap<>();
-            Teams team = mt.getTeam();
-
-            teamMap.put("id", team.getId());
-            teamMap.put("name", team.getName());
-            teamMap.put("country", team.getCountry());
-            teamMap.put("imageUrl", team.getImageUrl());
-            teamMap.put("goals", mt.getGoals());
-
-            return teamMap;
-        }).collect(Collectors.toList());
-
-        matchMap.put("teams", teams);
-
-        return matchMap;
-    }).collect(Collectors.toList());
-}
+    }
 
     // find matches in a stade
     @GetMapping("/matches/stade/{id}")
-    public List<Map<String, Object>> getMatcheByStade(@PathVariable int id) {
+    public List<MatchDTO> getMatcheByStade(@PathVariable int id) {
         Stades st = StadeRepository.findById(id);
 
         if (st == null) {
             return null;
+        } else {
+            List<Matches> matches = st.getMatches();
+            return matches.stream().map(this::convertToDTO).collect(Collectors.toList());
+
         }
 
-        List<Matches> matches = st.getMatches();
-
-        return matches.stream().map(match -> {
-            Map<String, Object> matchMap = new HashMap<>();
-
-            // Informations du match
-            matchMap.put("id", match.getId());
-            matchMap.put("dateOfMatch", match.getDateOfMatch());
-            matchMap.put("referee", match.getReferee());
-            matchMap.put("status", match.getStatus());
-            matchMap.put("type", match.getType());
-            matchMap.put("treeID", match.getTreeID());
-
-            // Nom du stade
-            matchMap.put("stadeName", st.getName());
-            matchMap.put("stadeId", st.getId());
-
-            // Récupérer les équipes via MatchTeam
-            List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(match.getId());
-
-            List<Map<String, Object>> teams = matchTeams.stream().map(mt -> {
-                Map<String, Object> teamMap = new HashMap<>();
-                Teams team = mt.getTeam();
-
-                teamMap.put("id", team.getId());
-                teamMap.put("name", team.getName());
-                teamMap.put("country", team.getCountry());
-                teamMap.put("imageUrl", team.getImageUrl());
-                teamMap.put("goals", mt.getGoals());
-
-                return teamMap;
-            }).collect(Collectors.toList());
-
-            matchMap.put("teams", teams);
-
-            return matchMap;
-        }).collect(Collectors.toList());
     }
 
     // delete match
@@ -351,17 +195,39 @@ public List<Map<String, Object>> getMatcheByDate(@RequestParam @DateTimeFormat(i
 
     private MatchDTO convertToDTO(Matches match) {
         MatchDTO dto = new MatchDTO();
+        List<MatchTeam> mt = MatchTeamRepository.findByMatchId(match.getId());
         dto.setId(match.getId());
         dto.setDateOfMatch(match.getDateOfMatch());
         dto.setReferee(match.getReferee());
         dto.setStatut(match.getStatus());
         dto.setType(match.getType());
         dto.setTreeId(match.getTreeID());
+        dto.setMatchTeams(convertMatchTeamToDTO(mt));
         if (match.getStade() != null) {
             dto.setStadeId(match.getStade().getId());
         }
+        dto.setStadeName(match.getStade().getName());
 
         return dto;
+    }
+
+    private MatchTeamDTO convertMatchTeamToDTO(MatchTeam cc) {
+        MatchTeamDTO mt = new MatchTeamDTO();
+        mt.setId(cc.getId());
+        mt.setMatchId(cc.getMatch().getId());
+        mt.setTeamId(cc.getTeam().getId());
+        mt.setGoals(cc.getGoals());
+        mt.setTeamName(cc.getTeam().getName());
+        return mt;
+
+    }
+
+    private List<MatchTeamDTO> convertMatchTeamToDTO(List<MatchTeam> cc) {
+
+        return cc.stream()
+                .map(this::convertMatchTeamToDTO)
+                .collect(Collectors.toList());
+
     }
 
     private TeamDTO convertTeamToDTO(Teams team) {

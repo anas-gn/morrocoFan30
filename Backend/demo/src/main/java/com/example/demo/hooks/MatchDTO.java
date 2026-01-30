@@ -10,7 +10,7 @@ public class MatchDTO {
     private String statut;
     private String type;
     private int stadeId;
-    private int treeId;
+    private Integer treeId;
     private List<MatchTeamDTO> mt;
     private String stadeName;
 
@@ -93,11 +93,11 @@ public class MatchDTO {
         this.type = type;
     }
 
-    public int getTreeId() {
+    public Integer getTreeId() {
         return treeId;
     }
 
-    public void setTreeId(int treeId) {
+    public void setTreeId(Integer treeId) {
         this.treeId = treeId;
     }
 
