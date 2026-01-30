@@ -1,4 +1,3 @@
-
 package com.example.demo.models;
 
 import jakarta.persistence.*;
@@ -6,7 +5,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "Itineraries")
-public class Itinerary {
+public class Itineraries {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,12 +20,12 @@ public class Itinerary {
 
     @ManyToOne
     @JoinColumn(name = "supporterID", nullable = false)
-    private Supporter supporter;
+    private Supporters supporter;
 
-    public Itinerary() {
+    public Itineraries() {
     }
 
-    public Itinerary(String title, String description, LocalDate dateToGo, Supporter supporter) {
+    public Itineraries(String title, String description, LocalDate dateToGo, Supporters supporter) {
         this.title = title;
         this.description = description;
         this.dateToGo = dateToGo;
@@ -65,12 +64,14 @@ public class Itinerary {
         this.dateToGo = dateToGo;
     }
 
-    public Supporter getSupporter() {
+
+
+
+    public Supporters getSupporter() {
         return supporter;
     }
 
-    public void setSupporter(Supporter supporter) {
+    public void setSupporter(Supporters supporter) {
         this.supporter = supporter;
     }
 }
->>>>>>> c5d2794c280511215be6bb16c8e80f6696ca9501

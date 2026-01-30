@@ -1,4 +1,3 @@
-
 package com.example.demo.models;
 
 import jakarta.persistence.*;
@@ -6,7 +5,7 @@ import java.time.LocalTime;
 
 @Entity
 @Table(name = "Attractions")
-public class Attraction {
+public class Attractions {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,11 +25,11 @@ public class Attraction {
 
     @ManyToOne
     @JoinColumn(name = "cityID")
-    private CityHost cityHost;
+    private CityHosts cityHost;
 
-    public Attraction() {}
+    public Attractions() {}
 
-    public Attraction(String name, String type, double priceProxim) {
+    public Attractions(String name, String type, double priceProxim) {
         this.name = name;
         this.type = type;
         this.priceProxim = priceProxim;
@@ -63,7 +62,6 @@ public class Attraction {
     public LocalTime getHoureOfClosing() { return houreOfClosing; }
     public void setHoureOfClosing(LocalTime houreOfClosing) { this.houreOfClosing = houreOfClosing; }
 
-    public CityHost getCityHost() { return cityHost; }
-    public void setCityHost(CityHost cityHost) { this.cityHost = cityHost; }
+    public CityHosts getCityHost() { return cityHost; }
+    public void setCityHost(CityHosts cityHost) { this.cityHost = cityHost; }
 }
-

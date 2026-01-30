@@ -1,28 +1,28 @@
 package com.example.demo.hooks;
 
-import java.sql.Date;
+import java.time.LocalDate;
 
 public class StadeDTO {
 
     private int id;
 
     private String name;
-    private double capacity;
+    private int capacity;
     private String country;
     private String description;
     private String videoUrl;
     private String imageUrl;
     private String adresse;
-    private Date dateOfConstruction;
+    private LocalDate dateOfConstruction;
     private int cityId;
     private int responsableId;
 
     public StadeDTO() {
     }
 
-    public StadeDTO(String name, double capacity, String country, String description,
+    public StadeDTO(String name, int capacity, String country, String description,
             String videoUrl, String imageUrl, String adresse,
-            Date dateOfConstruction, int cit, int respo) {
+            LocalDate dateOfConstruction, int cit, int respo) {
         this.name = name;
         this.capacity = capacity;
         this.country = country;
@@ -63,11 +63,11 @@ public class StadeDTO {
         this.name = name;
     }
 
-    public double getCapacity() {
+    public int getCapacity() {
         return capacity;
     }
 
-    public void setCapacity(double capacity) {
+    public void setCapacity(int capacity) {
         this.capacity = capacity;
     }
 
@@ -111,12 +111,16 @@ public class StadeDTO {
         this.adresse = adresse;
     }
 
-    public Date getDateOfConstruction() {
+    public LocalDate getDateOfConstruction() {
         return dateOfConstruction;
     }
 
-    public void setDateOfConstruction(Date dateOfConstruction) {
+    public void setDateOfConstruction(LocalDate dateOfConstruction) {
         this.dateOfConstruction = dateOfConstruction;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
 }

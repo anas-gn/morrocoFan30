@@ -1,7 +1,7 @@
 package com.example.demo.auth;
 
-import com.example.demo.models.Supporter;
-import com.example.demo.models.Responsable;
+import com.example.demo.models.Supporters;
+import com.example.demo.models.Responsables;
 
 public class SessionManager {
     private static SessionManager instance;
@@ -18,8 +18,8 @@ public class SessionManager {
     private Integer totalPoints; // Pour Supporter
     
     // Objets utilisateur
-    private Supporter currentSupporter;
-    private Responsable currentResponsable;
+    private Supporters currentSupporter;
+    private Responsables currentResponsable;
 
     private SessionManager() {
         this.userId = -1;
@@ -52,7 +52,7 @@ public class SessionManager {
         System.out.println("Session SUPPORTER etablie : ID=" + supporterId + ", Nom=" + name);
     }
 
-    public void setCurrentSupporter(Supporter supporter) {
+    public void setCurrentSupporter(Supporters supporter) {
         this.currentSupporter = supporter;
         if (supporter != null) {
             this.userType = "SUPPORTER";
@@ -89,7 +89,7 @@ public class SessionManager {
         System.out.println("Session RESPONSABLE etablie : ID=" + responsableId + ", Nom=" + name);
     }
 
-    public void setCurrentResponsable(Responsable responsable) {
+    public void setCurrentResponsable(Responsables responsable) {
         this.currentResponsable = responsable;
         if (responsable != null) {
             this.userType = "RESPONSABLE";
@@ -150,13 +150,13 @@ public class SessionManager {
         return totalPoints != null ? totalPoints : 0;
     }
 
-    public Supporter getCurrentSupporter() {
+    public Supporters getCurrentSupporter() {
         return currentSupporter;
     }
 
     // ========== GETTERS SPECIFIQUES RESPONSABLE ==========
     
-    public Responsable getCurrentResponsable() {
+    public Responsables getCurrentResponsable() {
         return currentResponsable;
     }
 

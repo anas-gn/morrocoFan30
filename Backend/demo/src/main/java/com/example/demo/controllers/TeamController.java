@@ -22,13 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.hooks.PlayerDTO;
 import com.example.demo.hooks.TeamDTO;
-import com.example.demo.models.Match;
+import com.example.demo.models.Matches;
 import com.example.demo.models.News;
-import com.example.demo.models.Culture;
+import com.example.demo.models.Cultures;
 
-import com.example.demo.models.Player;
+import com.example.demo.models.Players;
 
-import com.example.demo.models.Team;
+import com.example.demo.models.Teams;
 
 @RestController
 @RequestMapping("/api/teams")
@@ -52,7 +52,7 @@ public class TeamController {
     // all teams in the competition
     @GetMapping("/teams/all")
     public List<TeamDTO> gatAllTeam() {
-        List<Team> t = TeamRepository.findAll();
+        List<Teams> t = TeamRepository.findAll();
         List<TeamDTO> teams = t.stream().map(this::convertTeamToDTO).collect(Collectors.toList());
         if (teams == null) {
             return null;
@@ -63,7 +63,7 @@ public class TeamController {
 
     @DeleteMapping("/teams/delete/{id}")
     public boolean deleteTeam(@PathVariable int id) {
-        Team mm = TeamRepository.findById(id).orElse(null);
+        Teams mm = TeamRepository.findById(id).orElse(null);
         if (mm == null) {
             return false;
         } else {
@@ -75,7 +75,7 @@ public class TeamController {
     @GetMapping("/teams/plyers/{id}")
     public List<PlayerDTO> getAllPlayersTeam(@PathVariable int id) {
 
-        Team t = TeamRepository.findById(id).orElse(null);
+        Teams t = TeamRepository.findById(id).orElse(null);
         if (t == null) {
             return null;
         } else {
@@ -88,7 +88,7 @@ public class TeamController {
     @GetMapping("/teams/news/{id}")
     public List<NewsDTO> getAllNewsTeam(@PathVariable int id) {
 
-        Team t = TeamRepository.findById(id).orElse(null);
+        Teams t = TeamRepository.findById(id).orElse(null);
         if (t == null) {
             return null;
         } else {
@@ -101,7 +101,7 @@ public class TeamController {
     @GetMapping("/teams/contenuCultirel/{id}")
     public List<CultureDTO> getAllCulturelTeam(@PathVariable int id) {
 
-        Team t = TeamRepository.findById(id).orElse(null);
+        Teams t = TeamRepository.findById(id).orElse(null);
         if (t == null) {
             return null;
         } else {
@@ -113,7 +113,7 @@ public class TeamController {
 
     // add team
     @PostMapping("/team/add")
-    public boolean addMatch(@RequestBody Team m) {
+    public boolean addMatch(@RequestBody Teams m) {
         if (m == null) {
             return false;
         } else {
@@ -122,7 +122,7 @@ public class TeamController {
         }
     }
 
-    private CultureDTO convertCultureToDTO(Culture cc) {
+    private CultureDTO convertCultureToDTO(Cultures cc) {
         CultureDTO dto = new CultureDTO();
         dto.setId(cc.getId());
         dto.setTitle(cc.getTitle());
@@ -146,7 +146,7 @@ public class TeamController {
         return dto;
     }
 
-    private PlayerDTO convertPlayerToDTO(Player player) {
+    private PlayerDTO convertPlayerToDTO(Players player) {
         PlayerDTO dto = new PlayerDTO();
         dto.setId(player.getId());
         dto.setGoals(player.getGoals());
@@ -159,7 +159,7 @@ public class TeamController {
         return dto;
     }
 
-    private TeamDTO convertTeamToDTO(Team team) {
+    private TeamDTO convertTeamToDTO(Teams team) {
         TeamDTO dto = new TeamDTO();
         dto.setId(team.getId());
         dto.setCoach(team.getCoach());

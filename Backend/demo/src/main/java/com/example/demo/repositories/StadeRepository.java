@@ -2,11 +2,11 @@ package com.example.demo.repositories;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.example.demo.models.Stade;
+import com.example.demo.models.Stades;
 
 
 
-public interface StadeRepository extends JpaRepository<Stade, Integer> {
+public interface StadeRepository extends JpaRepository<Stades, Integer> {
 
-    Stade findById(int id);
+    Stades findById(int id);
 }

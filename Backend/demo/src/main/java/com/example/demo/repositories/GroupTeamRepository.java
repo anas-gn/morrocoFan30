@@ -6,7 +6,5 @@ import java.util.List;
 
 public interface GroupTeamRepository extends JpaRepository<GroupTeam, Integer> {
 
-    List<GroupTeam> findByGroupId(int groupId);
-
-    List<GroupTeam> findByTeamId(int teamId);
+   
 }

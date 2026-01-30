@@ -10,16 +10,24 @@ public class TeamDTO {
     private String imageUrl;
     private String coach;
     private String description;
+    private int participation;
 
     public TeamDTO() {
     }
 
-    public TeamDTO(String name, String imageUrl, String coach, String description,int gr) {
+ 
+
+
+    public TeamDTO(String country, String name, String imageUrl, String coach, String description, int participation) {
+        this.country = country;
         this.name = name;
         this.imageUrl = imageUrl;
         this.coach = coach;
         this.description = description;
+        this.participation = participation;
     }
+
+
 
 
     public int getId() {
@@ -68,6 +76,20 @@ public class TeamDTO {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+
+
+
+    public int getParticipation() {
+        return participation;
+    }
+
+
+
+
+    public void setParticipation(int participation) {
+        this.participation = participation;
     }
 
 }

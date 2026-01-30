@@ -3,7 +3,7 @@ package com.example.demo.models;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "matchTeam")
+@Table(name = "MatchTeam")
 public class MatchTeam {
 
     @Id
@@ -14,13 +14,15 @@ public class MatchTeam {
 
     @ManyToOne
     @JoinColumn(name = "matchID", nullable = false)
-    private Match match;
+    private Matches match;
 
     @ManyToOne
     @JoinColumn(name = "teamID", nullable = false)
-    private Team team;
+    private Teams team;
 
-    public MatchTeam(int goals, Match m, Team t) {
+    public MatchTeam() {
+}
+    public MatchTeam(int goals, Matches m, Teams t) {
         this.goals = goals;
         this.match = m;
         this.team = t;
@@ -34,20 +36,26 @@ public class MatchTeam {
         this.goals = goals;
     }
 
-    public Match getMatch() {
+    public Matches getMatch() {
         return match;
     }
 
-    public void setMatch(Match m) {
+    public void setMatch(Matches m) {
         this.match = m;
     }
 
-    public Team getTeam() {
+    public Teams getTeam() {
         return team;
     }
 
-    public void setTeam(Team t) {
+    public void setTeam(Teams t) {
         this.team = t;
+    }
+    public int getId() {
+        return id;
+    }
+    public void setId(int id) {
+        this.id = id;
     }
 
 }

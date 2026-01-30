@@ -18,16 +18,16 @@ public class GroupTeam {
 
     @ManyToOne
     @JoinColumn(name = "groupID")
-    private Group group;
+    private Groups group;
 
     @ManyToOne
     @JoinColumn(name = "teamID", nullable = false)
-    private Team team;
+    private Teams team;
 
     public GroupTeam() {
     }
 
-    public GroupTeam(int wins, int draws, int loses, int goalsScored, int goalsConceded, Group group, Team team) {
+    public GroupTeam(int wins, int draws, int loses, int goalsScored, int goalsConceded, Groups group, Teams team) {
         this.wins = wins;
         this.draws = draws;
         this.loses = loses;
@@ -85,19 +85,19 @@ public class GroupTeam {
         this.goalsConceded = goalsConceded;
     }
 
-    public Group getGroup() {
+    public Groups getGroup() {
         return group;
     }
 
-    public void setGroup(Group group) {
+    public void setGroup(Groups group) {
         this.group = group;
     }
 
-    public Team getTeam() {
+    public Teams getTeam() {
         return team;
     }
 
-    public void setTeam(Team team) {
+    public void setTeam(Teams team) {
         this.team = team;
     }
 }

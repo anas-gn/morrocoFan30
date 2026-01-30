@@ -1,4 +1,3 @@
-
 package com.example.demo.models;
 
 import jakarta.persistence.*;
@@ -6,7 +5,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "CityHosts")
-public class CityHost {
+public class CityHosts {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,18 +20,18 @@ public class CityHost {
     private String region;
 
     @OneToMany(mappedBy = "cityHost")
-    private List<Hotel> hotels;
+    private List<Hotels> hotels;
 
     @OneToMany(mappedBy = "cityHost")
-    private List<Attraction> attractions;
+    private List<Attractions> attractions;
 
     @OneToMany(mappedBy = "cityHost")
-    private List<Stade> stades;
+    private List<Stades> stades;
 
-    public CityHost() {
+    public CityHosts() {
     }
 
-    public CityHost(String name, String country, String description, String region) {
+    public CityHosts(String name, String country, String description, String region) {
         this.name = name;
         this.country = country;
         this.description = description;
@@ -79,19 +78,19 @@ public class CityHost {
         this.region = region;
     }
 
-    public List<Hotel> getHotels() {
+    public List<Hotels> getHotels() {
         return hotels;
     }
 
-    public void setHotels(List<Hotel> hotels) {
+    public void setHotels(List<Hotels> hotels) {
         this.hotels = hotels;
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attractions> getAttractions() {
         return attractions;
     }
 
-    public void setAttractions(List<Attraction> attractions) {
+    public void setAttractions(List<Attractions> attractions) {
         this.attractions = attractions;
     }
 }
