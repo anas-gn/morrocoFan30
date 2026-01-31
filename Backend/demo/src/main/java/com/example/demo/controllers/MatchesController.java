@@ -6,8 +6,11 @@ import com.example.demo.repositories.StadeRepository;
 import com.example.demo.repositories.MatchTeamRepository;
 import com.example.demo.repositories.PredictionRepository;
 import com.example.demo.repositories.SupporterRepository;
+import com.example.demo.repositories.NotificationRepository;
+import com.example.demo.repositories.FavoriteRepository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -30,8 +33,10 @@ import com.example.demo.hooks.MatchTeamDTO;
 import com.example.demo.hooks.TeamDTO;
 import com.example.demo.hooks.PlayerDTO;
 import com.example.demo.models.Matches;
+import com.example.demo.models.Notifications;
 import com.example.demo.models.Players;
 import com.example.demo.models.Predictions;
+import com.example.demo.models.Favorites;
 import com.example.demo.models.GroupTeam;
 import com.example.demo.models.MatchTeam;
 import com.example.demo.models.Stades;
@@ -57,6 +62,10 @@ public class MatchesController {
     private PredictionRepository predictionRepository;
     @Autowired
     private SupporterRepository supporterRepository;
+    @Autowired
+    private NotificationRepository notificationsRepo;
+    @Autowired
+    private FavoriteRepository favoritesRepo;
 
     public MatchesController(MatchRepository m, StadeRepository st, MatchTeamRepository mm) {
         this.matchRepo = m;
@@ -137,6 +146,25 @@ public class MatchesController {
         MatchTeam mt = MatchTeamRepository.findByMatchIdAndTeamId(id, idT);
         mt.setGoals(mt.getGoals() + 1);
         MatchTeamRepository.save(mt);
+        Teams team = mt.getTeam();
+        List<Favorites> teamFavorites = favoritesRepo.findByTypeAndOwnerID("team", team.getId());
+
+        for (Favorites favorite : teamFavorites) {
+            Notifications notification = new Notifications();
+            notification.setSupporter(favorite.getSupporter());
+            notification.setContent(String.format("⚽ GOAL! %s a marqué un but! Score: %d",
+                    team.getName(), mt.getGoals()));
+            notification.setDateOfSend(LocalDateTime.now());
+            notification.setIsRead(false);
+            notificationsRepo.save(notification);
+        }
+    }
+
+    /////////////////// matches par etat
+    @GetMapping("/matches/etat/{name}")
+    public List<MatchDTO> getMatchesByStatut(@PathVariable("name") String name) {
+        List<Matches> m = matchRepo.findByStatus(name);
+        return m.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     // matches by Date
@@ -184,25 +212,103 @@ public class MatchesController {
         String oldStatus = match.getStatus();
         match.setStatus(etat);
         matchRepo.save(match);
-        if (("termine".equalsIgnoreCase(etat) || "finished".equalsIgnoreCase(etat))
-                && !"termine".equalsIgnoreCase(oldStatus) &&
-                !"finished".equalsIgnoreCase(oldStatus) &&
-                "Groupe stage".equalsIgnoreCase(match.getType())) {
-            List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(id);
+        List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(id);
+        if (("DIRECT".equalsIgnoreCase(etat) || "started".equalsIgnoreCase(etat) || "commence".equalsIgnoreCase(etat))
+                && !"DIRECT".equalsIgnoreCase(oldStatus)
+                && !"STARTED".equalsIgnoreCase(oldStatus)
+                && !"commence".equalsIgnoreCase(oldStatus)) {
+            List<Favorites> matchFavorites = favoritesRepo.findByTypeAndOwnerID("match", match.getId());
+            String matchDescription = "Match";
             if (matchTeams != null && matchTeams.size() >= 2) {
-                updateGroupStatistics(match, matchTeams);
+                matchDescription = String.format("%s vs %s",
+                        matchTeams.get(0).getTeam().getName(),
+                        matchTeams.get(1).getTeam().getName());
+            }
+            for (Favorites favorite : matchFavorites) {
+                Notifications notification = new Notifications();
+                notification.setSupporter(favorite.getSupporter());
+                notification.setContent(String.format("🏁 Le match commence ! Match Entre  %s", matchDescription));
+                notification.setDateOfSend(LocalDateTime.now());
+                notification.setIsRead(false);
+                notificationsRepo.save(notification);
+            }
+            if (matchTeams != null && matchTeams.size() >= 2) {
+                for (MatchTeam matchTeam : matchTeams) {
+                    Teams team = matchTeam.getTeam();
+                    List<Favorites> teamFavorites = favoritesRepo.findByTypeAndOwnerID("team", team.getId());
+
+                    for (Favorites favorite : teamFavorites) {
+                        Notifications notification = new Notifications();
+                        notification.setSupporter(favorite.getSupporter());
+                        notification
+                                .setContent(String.format("🏁 Le match de %s commence maintenant!", team.getName()));
+                        notification.setDateOfSend(LocalDateTime.now());
+                        notification.setIsRead(false);
+                        notificationsRepo.save(notification);
+                    }
+                }
+            }
+        }
+        if (("termine".equalsIgnoreCase(etat) || "finished".equalsIgnoreCase(etat))
+                && !"termine".equalsIgnoreCase(oldStatus)
+                && !"finished".equalsIgnoreCase(oldStatus)) {
+            List<Favorites> matchFavorites = favoritesRepo.findByTypeAndOwnerID("match", match.getId());
+            String matchDescription = "Match";
+            if (matchTeams != null && matchTeams.size() >= 2) {
+                matchDescription = String.format("%s vs %s",
+                        matchTeams.get(0).getTeam().getName(),
+                        matchTeams.get(1).getTeam().getName());
+            }
+            for (Favorites favorite : matchFavorites) {
+                Notifications notification = new Notifications();
+                notification.setSupporter(favorite.getSupporter());
+                notification.setContent(String.format("🏁 Le match Terminé ! Match Entre  %s", matchDescription));
+                notification.setDateOfSend(LocalDateTime.now());
+                notification.setIsRead(false);
+                notificationsRepo.save(notification);
+            }
+            if (matchTeams != null && matchTeams.size() >= 2) {
+                for (MatchTeam matchTeam : matchTeams) {
+                    Teams team = matchTeam.getTeam();
+                    List<Favorites> teamFavorites = favoritesRepo.findByTypeAndOwnerID("team", team.getId());
+                    for (Favorites favorite : teamFavorites) {
+                        Notifications notification = new Notifications();
+                        notification.setSupporter(favorite.getSupporter());
+                        notification
+                                .setContent(
+                                        String.format("🏁 Le match de %s est Terminé!", team.getName()));
+                        notification.setDateOfSend(LocalDateTime.now());
+                        notification.setIsRead(false);
+                        notificationsRepo.save(notification);
+                    }
+                }
+            }
+            if ("Groupe stage".equalsIgnoreCase(match.getType())) {
+                if (matchTeams != null && matchTeams.size() >= 2) {
+                    updateGroupStatistics(match, matchTeams);
+                }
             }
         }
         evaluatePredictions(match);
     }
 
-    ////////////////// methdode interieur
+    ////////////////// methode interieur
     private void evaluatePredictions(Matches match) {
         List<Predictions> predictions = predictionRepository.findByMatchId(match.getId());
         if (predictions == null || predictions.isEmpty()) {
             return;
         }
-        TeamDTO actualWinner = getMatcheWinner(match.getId());
+        List<MatchTeam> mt = MatchTeamRepository.findByMatchId(match.getId());
+        Teams actualWinner = null;
+        int t1 = mt.get(0).getGoals();
+        int t2 = mt.get(1).getGoals();
+        if (t1 > t2) {
+            actualWinner = mt.get(0).getTeam();
+        } else if (t1 < t2) {
+            actualWinner = mt.get(1).getTeam();
+        } else {
+            actualWinner = null;
+        }
         for (Predictions prediction : predictions) {
             if (!"pending".equalsIgnoreCase(prediction.getStatus())) {
                 continue;
@@ -251,7 +357,17 @@ public class MatchesController {
         groupTeam1.setGoalsConceded(groupTeam1.getGoalsConceded() + team2Goals);
         groupTeam2.setGoalsScored(groupTeam2.getGoalsScored() + team2Goals);
         groupTeam2.setGoalsConceded(groupTeam2.getGoalsConceded() + team1Goals);
-        TeamDTO winner = getMatcheWinner(match.getId());
+        List<MatchTeam> mt = MatchTeamRepository.findByMatchId(match.getId());
+        Teams winner = null;
+        int t1 = mt.get(0).getGoals();
+        int t2 = mt.get(1).getGoals();
+        if (t1 > t2) {
+            winner = mt.get(0).getTeam();
+        } else if (t1 < t2) {
+            winner = mt.get(1).getTeam();
+        } else {
+            winner = null;
+        }
         if (winner != null) {
 
             if (winner.getId() == team1Match.getTeam().getId()) {
@@ -301,28 +417,6 @@ public class MatchesController {
         } else {
             matchRepo.save(m);
             return true;
-        }
-    }
-
-    /// matche winner
-    @GetMapping("/matches/winner/{id}")
-    public TeamDTO getMatcheWinner(@PathVariable int id) {
-        Matches m = matchRepo.findById(id);
-        if (m == null) {
-            return null;
-        } else {
-            List<MatchTeam> mt = MatchTeamRepository.findByMatchId(id);
-            Teams winner = null;
-            int t1 = mt.get(0).getGoals();
-            int t2 = mt.get(1).getGoals();
-            if (t1 > t2) {
-                winner = mt.get(0).getTeam();
-            } else if (t1 < t2) {
-                winner = mt.get(1).getTeam();
-            } else {
-                winner = null;
-            }
-            return convertTeamToDTO(winner);
         }
     }
 
