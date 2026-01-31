@@ -252,6 +252,7 @@ public class AcceuilController {
         dto.setId(cc.getId());
         dto.setTitle(cc.getTitle());
         dto.setAuthor(cc.getAuthor());
+        dto.setDetail(cc.getDetail());
         dto.setDescription(cc.getDescription());
         dto.setImageUrl(cc.getImageUrl());
         dto.setDateOfCreation(cc.getDateOfCreation());
@@ -266,6 +267,7 @@ public class AcceuilController {
         dto.setAuthor(neew.getAuthor());
         dto.setDescription(neew.getDescription());
         dto.setImageUrl(neew.getImageUrl());
+        dto.setDetail(neew.getDetail());
         dto.setDateOfCreation(neew.getDateOfCreation());
         dto.setTeamId(neew.getTeam().getId());
         dto.setTeamName(neew.getTeam().getName());
@@ -279,6 +281,7 @@ public class AcceuilController {
         dto.setCityId(neew.getCity().getId());
         dto.setDateOfEvent(neew.getDateOfEvent());
         dto.setDescription(neew.getDescription());
+
         dto.setImageUrl(neew.getImageUrl());
         dto.setPriceProxim(neew.getPriceProxim());
         dto.setName(neew.getName());

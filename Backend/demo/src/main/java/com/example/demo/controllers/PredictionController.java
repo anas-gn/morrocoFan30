@@ -59,15 +59,29 @@ public class PredictionController {
         Predictions prediction = new Predictions(match, supporter, predictedWinner.getId());
         predictionRepository.save(prediction);
 
-        return convertToDTO(prediction);
+        return convertPredToDTO(prediction);
     }
 
+
+     @GetMapping("/all")
+    public List<PredictionDTO> getAllPrediction() {
+        List<Predictions> predictions = predictionRepository.findAll();
+        if (predictions == null || predictions.isEmpty()) {
+            return List.of();
+        }
+        return predictions.stream()
+                .map(this::convertPredToDTO)
+                .collect(Collectors.toList());
+    }
     ///// prediction d'un supporter
     @GetMapping("/supporter/{supporterId}")
     public List<PredictionDTO> getSupporterPredictions(@PathVariable int supporterId) {
         List<Predictions> predictions = predictionRepository.findBySupporterId(supporterId);
+        if (predictions == null || predictions.isEmpty()) {
+            return List.of();
+        }
         return predictions.stream()
-                .map(this::convertToDTO)
+                .map(this::convertPredToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -75,8 +89,11 @@ public class PredictionController {
     @GetMapping("/match/{matchId}")
     public List<PredictionDTO> getMatchPredictions(@PathVariable int matchId) {
         List<Predictions> predictions = predictionRepository.findByMatchId(matchId);
+        if (predictions == null || predictions.isEmpty()) {
+            return List.of();
+        }
         return predictions.stream()
-                .map(this::convertToDTO)
+                .map(this::convertPredToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -87,7 +104,7 @@ public class PredictionController {
             @PathVariable int matchId) {
         Predictions prediction = predictionRepository
                 .findByMatchIdAndSupporterId(matchId, supporterId);
-        return prediction != null ? convertToDTO(prediction) : null;
+        return prediction != null ? convertPredToDTO(prediction) : null;
     }
 
     //////////////////// la liste des supporteur
@@ -116,6 +133,7 @@ public class PredictionController {
         if (supporter == null) {
             return null;
         }
+
         List<Predictions> predictions = predictionRepository.findBySupporterId(id);
         long totalPredictions = predictions.size();
         long correctPredictions = predictions.stream()
@@ -127,10 +145,11 @@ public class PredictionController {
         long pendingPredictions = predictions.stream()
                 .filter(p -> "pending".equalsIgnoreCase(p.getStatus()))
                 .count();
-
-        double accuracy = totalPredictions > 0
-                ? (correctPredictions * 100.0) / (totalPredictions - pendingPredictions)
+        long finishedPredictions = totalPredictions - pendingPredictions;
+        double accuracy = finishedPredictions > 0
+                ? (correctPredictions * 100.0) / finishedPredictions
                 : 0.0;
+
         SupporterStatsDTO stats = new SupporterStatsDTO();
         stats.setSupporterId(id);
         stats.setSupporterName(supporter.getName());
@@ -140,20 +159,21 @@ public class PredictionController {
         stats.setIncorrectPredictions(incorrectPredictions);
         stats.setPendingPredictions(pendingPredictions);
         stats.setAccuracy(accuracy);
+
         return stats;
     }
 
     ///////////// supprimer
     @DeleteMapping("/delete/{id}")
     public boolean deletePrediction(@PathVariable int id) {
-        Predictions prediction = predictionRepository.findById(id);
+        Predictions prediction = predictionRepository.findById(id).orElse(null);
 
         if (prediction == null) {
             return false;
         }
         Matches match = prediction.getMatch();
-        if ("en_cours".equalsIgnoreCase(match.getStatus()) ||
-                "termine".equalsIgnoreCase(match.getStatus())) {
+        if ("DIRECT".equalsIgnoreCase(match.getStatus()) ||
+                "FINISHED".equalsIgnoreCase(match.getStatus())) {
             return false;
         }
 
@@ -162,7 +182,7 @@ public class PredictionController {
     }
 
     ////////////////////////////// convert
-    private PredictionDTO convertToDTO(Predictions prediction) {
+    private PredictionDTO convertPredToDTO(Predictions prediction) {
         PredictionDTO dto = new PredictionDTO();
         dto.setId(prediction.getId());
         dto.setMatchId(prediction.getMatch().getId());
@@ -171,13 +191,23 @@ public class PredictionController {
         dto.setPoints(prediction.getPoints());
         dto.setStatus(prediction.getStatus());
         dto.setPredictedWinnerId(prediction.getPredictedWinner());
+
         Teams t = teamRepository.findById(prediction.getPredictedWinner()).orElse(null);
-        dto.setPredictedWinnerName(t.getName());
+        if (t != null) {
+            dto.setPredictedWinnerName(t.getName());
+        } else {
+            dto.setPredictedWinnerName("Unknown Team");
+        }
 
         List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(prediction.getMatch().getId());
         if (matchTeams != null && matchTeams.size() >= 2) {
-            dto.setTeam1Name(matchTeams.get(0).getTeam().getName());
-            dto.setTeam2Name(matchTeams.get(1).getTeam().getName());
+
+            if (matchTeams.get(0).getTeam() != null) {
+                dto.setTeam1Name(matchTeams.get(0).getTeam().getName());
+            }
+            if (matchTeams.get(1).getTeam() != null) {
+                dto.setTeam2Name(matchTeams.get(1).getTeam().getName());
+            }
         }
 
         dto.setMatchStatus(prediction.getMatch().getStatus());

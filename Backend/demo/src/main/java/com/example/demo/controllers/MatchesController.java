@@ -203,7 +203,7 @@ public class MatchesController {
     //////////////////////////////////////// admin
 
     ///////////// changer match etat
-    @PutMapping("/matches/etat/{id}/{etat}")
+    @GetMapping("/etat/{id}/{etat}")
     public void MatchChangeEtat(@PathVariable("id") int id, @PathVariable String etat) {
         Matches match = matchRepo.findById(id);
         if (match == null) {
@@ -249,9 +249,9 @@ public class MatchesController {
                 }
             }
         }
-        if (("termine".equalsIgnoreCase(etat) || "finished".equalsIgnoreCase(etat))
+        if (("termine".equalsIgnoreCase(etat) || "FINISHED".equalsIgnoreCase(etat))
                 && !"termine".equalsIgnoreCase(oldStatus)
-                && !"finished".equalsIgnoreCase(oldStatus)) {
+                && !"FINISHED".equalsIgnoreCase(oldStatus)) {
             List<Favorites> matchFavorites = favoritesRepo.findByTypeAndOwnerID("match", match.getId());
             String matchDescription = "Match";
             if (matchTeams != null && matchTeams.size() >= 2) {
@@ -283,7 +283,7 @@ public class MatchesController {
                     }
                 }
             }
-            if ("Groupe stage".equalsIgnoreCase(match.getType())) {
+            if ("Group stage".equalsIgnoreCase(match.getType())) {
                 if (matchTeams != null && matchTeams.size() >= 2) {
                     updateGroupStatistics(match, matchTeams);
                 }

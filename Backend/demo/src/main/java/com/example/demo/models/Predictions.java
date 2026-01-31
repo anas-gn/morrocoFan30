@@ -24,11 +24,11 @@ public class Predictions {
     private Supporters supporter;
 
     @Column(name = "predictedWinnerID")  
-    private int predictedWinnerID;
+    private Integer  predictedWinnerID;
 
     public Predictions() {}
 
-    public Predictions(Matches match, Supporters supporter, int predictedWinner) {
+    public Predictions(Matches match, Supporters supporter, Integer  predictedWinner) {
         this.match = match;
         this.supporter = supporter;
         this.predictedWinnerID = predictedWinner;
@@ -85,11 +85,11 @@ public class Predictions {
         this.supporter = supporter;
     }
 
-    public int getPredictedWinner() {
+    public Integer  getPredictedWinner() {
         return predictedWinnerID;
     }
 
-    public void setPredictedWinner(int predictedWinner) {
+    public void setPredictedWinner(Integer  predictedWinner) {
         this.predictedWinnerID = predictedWinner;
     }
 }
