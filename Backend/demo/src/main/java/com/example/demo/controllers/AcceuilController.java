@@ -83,6 +83,7 @@ public class AcceuilController {
         this.cultureRepository = cultureRepository;
     }
 
+    /////////// les cartes des villes
     @GetMapping("/CityHosts/all")
     public List<CityHostDTO> gatAllCities() {
         List<CityHosts> city = CityHostRepository.findAll();
@@ -94,6 +95,7 @@ public class AcceuilController {
         }
     }
 
+    /////////////// les stades
     @GetMapping("/stade/all")
     public List<StadeDTO> getAllStades() {
         List<Stades> st = StadeRepository.findAll();
@@ -105,7 +107,7 @@ public class AcceuilController {
         }
     }
 
-    //////// grp
+    //////// les groupes
     @GetMapping("/accueil/groupes")
     public List<GroupDTO> getAllStandings() {
         List<Groups> grp = GroupeRepository.findAll();
@@ -166,7 +168,7 @@ public class AcceuilController {
 
                 .sorted(Comparator.comparing(
                         m -> Math.abs(Duration.between(now, m.getDateOfMatch()).toMinutes())))
-               
+
                 .limit(6)
 
                 .sorted(Comparator.comparing(Matches::getDateOfMatch))
@@ -174,7 +176,7 @@ public class AcceuilController {
                 .collect(Collectors.toList());
     }
 
-    ///////////////////////////////////////////
+    /////////////////////////////////////////// Converts
     public CityHostDTO convertCityToDTO(CityHosts city) {
         if (city == null) {
             return null;

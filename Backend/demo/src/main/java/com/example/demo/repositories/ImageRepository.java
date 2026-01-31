@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ImageRepository extends JpaRepository<Images, Integer> {
-
+    List<Images> findByTypeAndOwnerID(String type, int ownerID);
 }

@@ -17,7 +17,7 @@ public class MatchDTO {
     public MatchDTO() {
     }
 
-    public MatchDTO(LocalDateTime dateOfMatch, String referee, String statut, String type, int stadeId, int treeId,
+    public MatchDTO(LocalDateTime dateOfMatch, String referee, String statut, String type, int stadeId, Integer treeId,
             String name,List<MatchTeamDTO>mt) {
         this.dateOfMatch = dateOfMatch;
         this.referee = referee;

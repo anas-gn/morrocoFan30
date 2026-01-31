@@ -3,52 +3,20 @@ package com.example.demo.hooks;
 import java.time.LocalDateTime;
 
 public class PredictionDTO {
-
     private int id;
+    private int matchId;
+    private int supporterId;
+    private int predictedWinnerId;
+    private String predictedWinnerName;
     private LocalDateTime dateOfPrediction;
     private int points;
     private String status;
-    private int matchId;
-    private int supporterId;
-    private String supportName;
-    private String teamName;
+
+    private String team1Name;
+    private String team2Name;
+    private String matchStatus;
 
     public PredictionDTO() {
-    }
-
-    public PredictionDTO(String t,String n,LocalDateTime dateOfPrediction, int points, String status, int matchId, int supporterId) {
-        this.dateOfPrediction = dateOfPrediction;
-        this.points = points;
-        this.status = status;
-        this.supportName=n;
-        this.teamName=t;
-        this.matchId = matchId;
-        this.supporterId = supporterId;
-    }
-
-    public PredictionDTO(int id, LocalDateTime dateOfPrediction, int points, String status, int matchId, int supporterId) {
-        this.id = id;
-        this.dateOfPrediction = dateOfPrediction;
-        this.points = points;
-        this.status = status;
-        this.matchId = matchId;
-        this.supporterId = supporterId;
-    }
-
-    public String getSupportName() {
-        return supportName;
-    }
-
-    public void setSupportName(String supportName) {
-        this.supportName = supportName;
-    }
-
-    public String getTeamName() {
-        return teamName;
-    }
-
-    public void setTeamName(String teamName) {
-        this.teamName = teamName;
     }
 
     public int getId() {
@@ -57,6 +25,38 @@ public class PredictionDTO {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getMatchId() {
+        return matchId;
+    }
+
+    public void setMatchId(int matchId) {
+        this.matchId = matchId;
+    }
+
+    public int getSupporterId() {
+        return supporterId;
+    }
+
+    public void setSupporterId(int supporterId) {
+        this.supporterId = supporterId;
+    }
+
+    public int getPredictedWinnerId() {
+        return predictedWinnerId;
+    }
+
+    public void setPredictedWinnerId(int predictedWinnerId) {
+        this.predictedWinnerId = predictedWinnerId;
+    }
+
+    public String getPredictedWinnerName() {
+        return predictedWinnerName;
+    }
+
+    public void setPredictedWinnerName(String predictedWinnerName) {
+        this.predictedWinnerName = predictedWinnerName;
     }
 
     public LocalDateTime getDateOfPrediction() {
@@ -83,19 +83,27 @@ public class PredictionDTO {
         this.status = status;
     }
 
-    public int getMatchId() {
-        return matchId;
+    public String getTeam1Name() {
+        return team1Name;
     }
 
-    public void setMatchId(int matchId) {
-        this.matchId = matchId;
+    public void setTeam1Name(String team1Name) {
+        this.team1Name = team1Name;
     }
 
-    public int getSupporterId() {
-        return supporterId;
+    public String getTeam2Name() {
+        return team2Name;
     }
 
-    public void setSupporterId(int supporterId) {
-        this.supporterId = supporterId;
+    public void setTeam2Name(String team2Name) {
+        this.team2Name = team2Name;
+    }
+
+    public String getMatchStatus() {
+        return matchStatus;
+    }
+
+    public void setMatchStatus(String matchStatus) {
+        this.matchStatus = matchStatus;
     }
 }

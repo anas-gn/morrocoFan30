@@ -1,10 +1,14 @@
 package com.example.demo.controllers;
 
+import com.example.demo.repositories.GroupTeamRepository;
 import com.example.demo.repositories.MatchRepository;
 import com.example.demo.repositories.StadeRepository;
 import com.example.demo.repositories.MatchTeamRepository;
+import com.example.demo.repositories.PredictionRepository;
+import com.example.demo.repositories.SupporterRepository;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -24,9 +28,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.hooks.MatchDTO;
 import com.example.demo.hooks.MatchTeamDTO;
 import com.example.demo.hooks.TeamDTO;
+import com.example.demo.hooks.PlayerDTO;
 import com.example.demo.models.Matches;
+import com.example.demo.models.Players;
+import com.example.demo.models.Predictions;
+import com.example.demo.models.GroupTeam;
 import com.example.demo.models.MatchTeam;
 import com.example.demo.models.Stades;
+import com.example.demo.models.Supporters;
 import com.example.demo.models.Teams;
 
 import org.springframework.web.bind.annotation.PutMapping;
@@ -42,6 +51,12 @@ public class MatchesController {
     private MatchTeamRepository MatchTeamRepository;
     @Autowired
     private PlayerController PlayerController;
+    @Autowired
+    private GroupTeamRepository groupTeamRepository;
+    @Autowired
+    private PredictionRepository predictionRepository;
+    @Autowired
+    private SupporterRepository supporterRepository;
 
     public MatchesController(MatchRepository m, StadeRepository st, MatchTeamRepository mm) {
         this.matchRepo = m;
@@ -81,7 +96,7 @@ public class MatchesController {
                 .collect(Collectors.toList());
     }
 
-    // getMatch By iD
+    //// getMatch By iD
     @GetMapping("/matches/{id}")
     public MatchDTO getMatche(@PathVariable int id) {
         Matches match = matchRepo.findById(id);
@@ -94,6 +109,27 @@ public class MatchesController {
 
     }
 
+    //// getPlayers By iD match
+    @GetMapping("/matches/players/{id}")
+    public List<PlayerDTO> getMatchPlayers(@PathVariable int id) {
+        Matches match = matchRepo.findById(id);
+
+        if (match == null) {
+            return null;
+        } else {
+            List<MatchTeam> mt = MatchTeamRepository.findByMatchId(id);
+
+            Teams teamA = mt.get(0).getTeam();
+            Teams teamB = mt.get(1).getTeam();
+            List<PlayerDTO> players = new ArrayList<>();
+            players.addAll(convertPlayerToDTO(teamA.getPlayers()));
+            players.addAll(convertPlayerToDTO(teamB.getPlayers()));
+
+            return players;
+        }
+    }
+
+    ///////////// player marque but dans un match d'un team
     @PutMapping("/matches/{id}/team/{idT}/player/{idP}")
     public void PlayerScoredInMatch(@PathVariable("id") int id, @PathVariable("idT") int idT,
             @PathVariable("idP") int idP) {
@@ -104,7 +140,7 @@ public class MatchesController {
     }
 
     // matches by Date
-    @GetMapping("/matches/getdate")
+    @GetMapping("/matches/getdate/{datee}")
     public List<MatchDTO> getMatcheByDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate datee) {
         List<Matches> matchs = matchRepo.findAll();
@@ -121,7 +157,7 @@ public class MatchesController {
 
     }
 
-    // find matches in a stade
+    // find matches by stade
     @GetMapping("/matches/stade/{id}")
     public List<MatchDTO> getMatcheByStade(@PathVariable int id) {
         Stades st = StadeRepository.findById(id);
@@ -134,6 +170,103 @@ public class MatchesController {
 
         }
 
+    }
+
+    //////////////////////////////////////// admin
+
+    ///////////// changer match etat
+    @PutMapping("/matches/etat/{id}/{etat}")
+    public void MatchChangeEtat(@PathVariable("id") int id, @PathVariable String etat) {
+        Matches match = matchRepo.findById(id);
+        if (match == null) {
+            return;
+        }
+        String oldStatus = match.getStatus();
+        match.setStatus(etat);
+        matchRepo.save(match);
+        if (("termine".equalsIgnoreCase(etat) || "finished".equalsIgnoreCase(etat))
+                && !"termine".equalsIgnoreCase(oldStatus) &&
+                !"finished".equalsIgnoreCase(oldStatus) &&
+                "Groupe stage".equalsIgnoreCase(match.getType())) {
+            List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(id);
+            if (matchTeams != null && matchTeams.size() >= 2) {
+                updateGroupStatistics(match, matchTeams);
+            }
+        }
+        evaluatePredictions(match);
+    }
+
+    ////////////////// methdode interieur
+    private void evaluatePredictions(Matches match) {
+        List<Predictions> predictions = predictionRepository.findByMatchId(match.getId());
+        if (predictions == null || predictions.isEmpty()) {
+            return;
+        }
+        TeamDTO actualWinner = getMatcheWinner(match.getId());
+        for (Predictions prediction : predictions) {
+            if (!"pending".equalsIgnoreCase(prediction.getStatus())) {
+                continue;
+            }
+            Supporters supporter = prediction.getSupporter();
+            int currentPoints = supporter.getTotalPoints();
+            if (actualWinner == null) {
+                prediction.setStatus("incorrect");
+                prediction.setPoints(0);
+                supporter.setTotalPoints(currentPoints);
+
+            } else if (prediction.getPredictedWinner() != null &&
+                    prediction.getPredictedWinner().getId() == actualWinner.getId()) {
+                prediction.setStatus("correct");
+                prediction.setPoints(12);
+                supporter.setTotalPoints(currentPoints + 12);
+
+            } else {
+                prediction.setStatus("incorrect");
+                prediction.setPoints(-5);
+                supporter.setTotalPoints(currentPoints);
+            }
+            predictionRepository.save(prediction);
+            supporterRepository.save(supporter);
+        }
+    }
+
+    //////////////// methode interieur
+
+    private void updateGroupStatistics(Matches match, List<MatchTeam> matchTeams) {
+        MatchTeam team1Match = matchTeams.get(0);
+        MatchTeam team2Match = matchTeams.get(1);
+        int team1Goals = team1Match.getGoals();
+        int team2Goals = team2Match.getGoals();
+        List<GroupTeam> groupTeams1 = groupTeamRepository.findByTeamId(team1Match.getTeam().getId());
+        if (groupTeams1 == null || groupTeams1.isEmpty()) {
+            return;
+        }
+        GroupTeam groupTeam1 = groupTeams1.get(0);
+        int groupId = groupTeam1.getGroup().getId();
+        GroupTeam groupTeam2 = groupTeamRepository.findByGroupIdAndTeamId(groupId, team2Match.getTeam().getId());
+        if (groupTeam2 == null) {
+            return;
+        }
+        groupTeam1.setGoalsScored(groupTeam1.getGoalsScored() + team1Goals);
+        groupTeam1.setGoalsConceded(groupTeam1.getGoalsConceded() + team2Goals);
+        groupTeam2.setGoalsScored(groupTeam2.getGoalsScored() + team2Goals);
+        groupTeam2.setGoalsConceded(groupTeam2.getGoalsConceded() + team1Goals);
+        TeamDTO winner = getMatcheWinner(match.getId());
+        if (winner != null) {
+
+            if (winner.getId() == team1Match.getTeam().getId()) {
+                groupTeam1.setWins(groupTeam1.getWins() + 1);
+                groupTeam2.setLoses(groupTeam2.getLoses() + 1);
+            } else {
+                groupTeam2.setWins(groupTeam2.getWins() + 1);
+                groupTeam1.setLoses(groupTeam1.getLoses() + 1);
+            }
+        } else {
+            groupTeam1.setDraws(groupTeam1.getDraws() + 1);
+            groupTeam2.setDraws(groupTeam2.getDraws() + 1);
+        }
+        groupTeamRepository.save(groupTeam1);
+        groupTeamRepository.save(groupTeam2);
     }
 
     // delete match
@@ -171,7 +304,7 @@ public class MatchesController {
         }
     }
 
-    // matche winner
+    /// matche winner
     @GetMapping("/matches/winner/{id}")
     public TeamDTO getMatcheWinner(@PathVariable int id) {
         Matches m = matchRepo.findById(id);
@@ -192,6 +325,8 @@ public class MatchesController {
             return convertTeamToDTO(winner);
         }
     }
+
+    ////////////////////////////////// convert
 
     private MatchDTO convertToDTO(Matches match) {
         MatchDTO dto = new MatchDTO();
@@ -241,4 +376,25 @@ public class MatchesController {
 
         return dto;
     }
+
+    private PlayerDTO convertPlayerToDTO(Players player) {
+        PlayerDTO dto = new PlayerDTO();
+        dto.setId(player.getId());
+        dto.setGoals(player.getGoals());
+        dto.setHeight(player.getHeight());
+        dto.setTeam(player.getTeam().getName());
+        dto.setWeight(player.getWeight());
+        dto.setName(player.getName());
+        dto.setTeamId(player.getTeam().getId());
+        dto.setAge(player.getAge());
+
+        return dto;
+    }
+
+    private List<PlayerDTO> convertPlayerToDTO(List<Players> player) {
+        return player.stream()
+                .map(this::convertPlayerToDTO)
+                .collect(Collectors.toList());
+    }
+
 }

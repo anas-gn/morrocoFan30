@@ -13,7 +13,7 @@ public class Predictions {
 
     private LocalDateTime dateOfPrediction;
     private int points;
-    private String status;
+    private String status; 
 
     @ManyToOne
     @JoinColumn(name = "matchID", nullable = false)
@@ -22,6 +22,21 @@ public class Predictions {
     @ManyToOne
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporters supporter;
+
+    @ManyToOne
+    @JoinColumn(name = "predictedWinnerID") 
+    private Teams predictedWinner;
+
+    public Predictions() {}
+
+    public Predictions(Matches match, Supporters supporter, Teams predictedWinner) {
+        this.match = match;
+        this.supporter = supporter;
+        this.predictedWinner = predictedWinner;
+        this.dateOfPrediction = LocalDateTime.now();
+        this.status = "pending";
+        this.points = 0;
+    }
 
     public int getId() {
         return id;
@@ -69,5 +84,13 @@ public class Predictions {
 
     public void setSupporter(Supporters supporter) {
         this.supporter = supporter;
+    }
+
+    public Teams getPredictedWinner() {
+        return predictedWinner;
+    }
+
+    public void setPredictedWinner(Teams predictedWinner) {
+        this.predictedWinner = predictedWinner;
     }
 }
