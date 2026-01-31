@@ -7,10 +7,11 @@ import com.example.demo.repositories.SupporterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -27,11 +28,11 @@ public class NotificationController {
     public ResponseEntity<Notifications> createNotification(
             @RequestParam int supporterId,
             @RequestBody Notifications notification) {
-        Optional<Supporters> supporterOptional = supporterRepository.findById(supporterId);
-        if (supporterOptional.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+        Supporters supporter = supporterRepository.findById(supporterId);
+        if (supporter == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Supporter introuvable");
         }
-        notification.setSupporter(supporterOptional.get());
+        notification.setSupporter(supporter);
         notification.setDateOfSend(LocalDateTime.now());
         notification.setIsRead(false);
         Notifications savedNotification = notificationRepository.save(notification);
@@ -41,33 +42,30 @@ public class NotificationController {
     // Récupérer toutes les notifications pour un supporter
     @GetMapping("/supporter/{supporterId}")
     public ResponseEntity<List<Notifications>> getNotificationsBySupporter(@PathVariable int supporterId) {
-        Optional<Supporters> supporterOptional = supporterRepository.findById(supporterId);
-        if (supporterOptional.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+        Supporters supporter = supporterRepository.findById(supporterId);
+        if (supporter == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Supporter introuvable");
         }
-        List<Notifications> notifications = notificationRepository.findBySupporterOrderByDateOfSendDesc(supporterOptional.get());
+        List<Notifications> notifications = notificationRepository.findBySupporterOrderByDateOfSendDesc(supporter);
         return ResponseEntity.ok(notifications);
     }
 
     // Récupérer les notifications non lues pour un supporter
     @GetMapping("/supporter/{supporterId}/unread")
     public ResponseEntity<List<Notifications>> getUnreadNotifications(@PathVariable int supporterId) {
-        Optional<Supporters> supporterOptional = supporterRepository.findById(supporterId);
-        if (supporterOptional.isEmpty()) {
-            return ResponseEntity.badRequest().build();
+        Supporters supporter = supporterRepository.findById(supporterId);
+        if (supporter == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Supporter introuvable");
         }
-        List<Notifications> unreadNotifications = notificationRepository.findBySupporterAndIsReadFalse(supporterOptional.get());
+        List<Notifications> unreadNotifications = notificationRepository.findBySupporterAndIsReadFalse(supporter);
         return ResponseEntity.ok(unreadNotifications);
     }
 
     // Marquer une notification comme lue
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<Notifications> markAsRead(@PathVariable int notificationId) {
-        Optional<Notifications> notificationOptional = notificationRepository.findById(notificationId);
-        if (notificationOptional.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        Notifications notification = notificationOptional.get();
+        Notifications notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Notification introuvable"));
         notification.setIsRead(true);
         Notifications updatedNotification = notificationRepository.save(notification);
         return ResponseEntity.ok(updatedNotification);
@@ -76,11 +74,10 @@ public class NotificationController {
     // Supprimer une notification
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<Void> deleteNotification(@PathVariable int notificationId) {
-        if (notificationRepository.existsById(notificationId)) {
-            notificationRepository.deleteById(notificationId);
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
+        if (!notificationRepository.existsById(notificationId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification introuvable");
         }
+        notificationRepository.deleteById(notificationId);
+        return ResponseEntity.ok().build();
     }
 }
