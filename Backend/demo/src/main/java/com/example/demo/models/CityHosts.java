@@ -86,6 +86,15 @@ public class CityHosts {
         this.hotels = hotels;
     }
 
+     public List<Stades> getStades() {
+        return stades;
+    }
+
+    public void setStades(List<Stades> stades) {
+        this.stades = stades;
+    }
+
+
     public List<Attractions> getAttractions() {
         return attractions;
     }

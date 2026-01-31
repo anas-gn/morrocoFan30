@@ -210,6 +210,8 @@ CREATE TABLE Attractions (
   houreOfOpening TIME,
   houreOfClosing TIME,
   cityID INT,
+  latitude NUMBER,
+longitude NUMBER,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
 
