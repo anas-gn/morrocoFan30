@@ -5,8 +5,10 @@ import com.example.demo.models.Supporters;
 import com.example.demo.repositories.MessageRepository;
 import com.example.demo.repositories.SupporterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,8 +30,11 @@ public class MessageController {
             @RequestParam String country,
             @RequestParam int supporterId) {
 
-        Supporters supporter = supporterRepository.findById(supporterId)
-                .orElseThrow(() -> new RuntimeException("Supporter introuvable"));
+        Supporters supporter = supporterRepository.findById(supporterId);
+
+        if (supporter == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Supporter introuvable");
+        }
 
         Messages message = new Messages(content, country, LocalDateTime.now(), supporter);
         Messages savedMessage = messageRepository.save(message);
@@ -37,14 +42,14 @@ public class MessageController {
         return ResponseEntity.ok(savedMessage);
     }
 
-    // Lire tous les messages pour une communaute
+    // Lire tous les messages pour une communauté
     @GetMapping("/community/{country}")
     public ResponseEntity<List<Messages>> getMessagesByCommunity(@PathVariable String country) {
         List<Messages> messages = messageRepository.findByCountryOrderByDateOfSendAsc(country);
         return ResponseEntity.ok(messages);
     }
 
-    // Lire tous les messages envoyes par un supporter
+    // Lire tous les messages envoyés par un supporter
     @GetMapping("/supporter/{supporterId}")
     public ResponseEntity<List<Messages>> getMessagesBySupporter(@PathVariable int supporterId) {
         List<Messages> messages = messageRepository.findBySupporterIdOrderByDateOfSendAsc(supporterId);
