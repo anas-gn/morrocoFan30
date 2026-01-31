@@ -56,7 +56,7 @@ public class PredictionController {
         if (existingPrediction != null) {
             return null;
         }
-        Predictions prediction = new Predictions(match, supporter, predictedWinner);
+        Predictions prediction = new Predictions(match, supporter, predictedWinner.getId());
         predictionRepository.save(prediction);
 
         return convertToDTO(prediction);
@@ -170,10 +170,10 @@ public class PredictionController {
         dto.setDateOfPrediction(prediction.getDateOfPrediction());
         dto.setPoints(prediction.getPoints());
         dto.setStatus(prediction.getStatus());
-        if (prediction.getPredictedWinner() != null) {
-            dto.setPredictedWinnerId(prediction.getPredictedWinner().getId());
-            dto.setPredictedWinnerName(prediction.getPredictedWinner().getName());
-        }
+        dto.setPredictedWinnerId(prediction.getPredictedWinner());
+        Teams t = teamRepository.findById(prediction.getPredictedWinner()).orElse(null);
+        dto.setPredictedWinnerName(t.getName());
+
         List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(prediction.getMatch().getId());
         if (matchTeams != null && matchTeams.size() >= 2) {
             dto.setTeam1Name(matchTeams.get(0).getTeam().getName());

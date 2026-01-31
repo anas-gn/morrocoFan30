@@ -288,8 +288,9 @@ public class MatchesController {
                     updateGroupStatistics(match, matchTeams);
                 }
             }
+            evaluatePredictions(match);
         }
-        evaluatePredictions(match);
+
     }
 
     ////////////////// methode interieur
@@ -320,8 +321,7 @@ public class MatchesController {
                 prediction.setPoints(0);
                 supporter.setTotalPoints(currentPoints);
 
-            } else if (prediction.getPredictedWinner() != null &&
-                    prediction.getPredictedWinner().getId() == actualWinner.getId()) {
+            } else if (prediction.getPredictedWinner() == actualWinner.getId()) {
                 prediction.setStatus("correct");
                 prediction.setPoints(12);
                 supporter.setTotalPoints(currentPoints + 12);

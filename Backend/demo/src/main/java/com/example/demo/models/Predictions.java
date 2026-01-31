@@ -23,16 +23,15 @@ public class Predictions {
     @JoinColumn(name = "supporterID", nullable = false)
     private Supporters supporter;
 
-    @ManyToOne
-    @JoinColumn(name = "predictedWinnerID") 
-    private Teams predictedWinner;
+    @Column(name = "predictedWinnerID")  
+    private int predictedWinnerID;
 
     public Predictions() {}
 
-    public Predictions(Matches match, Supporters supporter, Teams predictedWinner) {
+    public Predictions(Matches match, Supporters supporter, int predictedWinner) {
         this.match = match;
         this.supporter = supporter;
-        this.predictedWinner = predictedWinner;
+        this.predictedWinnerID = predictedWinner;
         this.dateOfPrediction = LocalDateTime.now();
         this.status = "pending";
         this.points = 0;
@@ -86,11 +85,11 @@ public class Predictions {
         this.supporter = supporter;
     }
 
-    public Teams getPredictedWinner() {
-        return predictedWinner;
+    public int getPredictedWinner() {
+        return predictedWinnerID;
     }
 
-    public void setPredictedWinner(Teams predictedWinner) {
-        this.predictedWinner = predictedWinner;
+    public void setPredictedWinner(int predictedWinner) {
+        this.predictedWinnerID = predictedWinner;
     }
 }
