@@ -115,6 +115,7 @@ CREATE TABLE Predictions (
   status VARCHAR(50),
   matchID INT,
   supporterID INT,
+  predictedWinnerID INT,
   FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
   FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE
 );
