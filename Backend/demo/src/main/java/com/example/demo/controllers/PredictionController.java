@@ -43,7 +43,7 @@ public class PredictionController {
 
         Matches match = matchRepository.findById(matchId);
         Supporters supporter = supporterRepository.findById(supporterId);
-        Teams predictedWinner = teamRepository.findById(predictedWinnerId);
+        Teams predictedWinner = teamRepository.findById(predictedWinnerId).orElse(null);
         if (match == null || supporter == null || predictedWinner == null) {
             return null;
         }

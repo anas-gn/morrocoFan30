@@ -63,7 +63,7 @@ public class TeamController {
 
     @DeleteMapping("/teams/delete/{id}")
     public boolean deleteTeam(@PathVariable int id) {
-        Teams mm = TeamRepository.findById(id);
+        Teams mm = TeamRepository.findById(id).orElse(null);
         if (mm == null) {
             return false;
         } else {
@@ -75,7 +75,7 @@ public class TeamController {
     @GetMapping("/teams/plyers/{id}")
     public List<PlayerDTO> getAllPlayersTeam(@PathVariable int id) {
 
-        Teams t = TeamRepository.findById(id);
+        Teams t = TeamRepository.findById(id).orElse(null);
         if (t == null) {
             return null;
         } else {
@@ -88,7 +88,7 @@ public class TeamController {
     @GetMapping("/teams/news/{id}")
     public List<NewsDTO> getAllNewsTeam(@PathVariable int id) {
 
-        Teams t = TeamRepository.findById(id);
+        Teams t = TeamRepository.findById(id).orElse(null);
         if (t == null) {
             return null;
         } else {
@@ -101,7 +101,7 @@ public class TeamController {
     @GetMapping("/teams/contenuCultirel/{id}")
     public List<CultureDTO> getAllCulturelTeam(@PathVariable int id) {
 
-        Teams t = TeamRepository.findById(id);
+        Teams t = TeamRepository.findById(id).orElse(null);
         if (t == null) {
             return null;
         } else {

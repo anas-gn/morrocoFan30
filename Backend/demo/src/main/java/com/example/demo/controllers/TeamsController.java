@@ -384,7 +384,7 @@ public class TeamsController {
     @GetMapping("/getOne/{id}")
     public ResponseEntity<TeamDetailDTO> getOneTeam(@PathVariable int id) {
         try {
-            Teams team = teamsRepository.findById(id);
+            Teams team = teamsRepository.findById(id).orElse(null);
             
             if (team == null) {
                 return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
@@ -500,7 +500,7 @@ public class TeamsController {
     @PutMapping("/update/{id}")
     public ResponseEntity<Teams> updateTeam(@PathVariable int id, @RequestBody UpdateTeamDTO updateTeamDTO) {
         try {
-            Teams team = teamsRepository.findById(id);
+            Teams team = teamsRepository.findById(id).orElse(null);
             
             if (team == null) {
                 return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
@@ -525,7 +525,7 @@ public class TeamsController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<HttpStatus> deleteTeam(@PathVariable int id) {
         try {
-            Teams team = teamsRepository.findById(id);
+            Teams team = teamsRepository.findById(id).orElse(null);
             
             if (team == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
