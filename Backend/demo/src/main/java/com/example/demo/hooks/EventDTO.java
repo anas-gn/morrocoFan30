@@ -17,7 +17,7 @@ public class EventDTO {
     }
 
     public EventDTO(Integer id, String name, String description, LocalDateTime dateOfEvent,
-            Float priceProxim, String imageUrl, Integer cityId,String namee) {
+            Float priceProxim, String imageUrl, Integer cityId) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -25,9 +25,20 @@ public class EventDTO {
         this.priceProxim = priceProxim;
         this.imageUrl = imageUrl;
         this.cityId = cityId;
-        this.cityName=namee;
     }
-    
+
+    // Constructeur complet
+    public EventDTO(Integer id, String name, String description, LocalDateTime dateOfEvent,
+                    Float priceProxim, String imageUrl, Integer cityId, String cityName) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.dateOfEvent = dateOfEvent;
+        this.priceProxim = priceProxim;
+        this.imageUrl = imageUrl;
+        this.cityId = cityId;
+        this.cityName = cityName;
+    }
 
     // Getters and Setters
     public Integer getId() {
