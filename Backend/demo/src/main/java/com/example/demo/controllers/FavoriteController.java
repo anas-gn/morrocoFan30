@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
 
+import com.example.demo.hooks.FavoriteDTO;
 import com.example.demo.models.Favorites;
 import com.example.demo.models.Supporters;
 import com.example.demo.models.Teams;
@@ -17,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/favorites")
@@ -37,9 +39,9 @@ public class FavoriteController {
     @Autowired
     private MatchTeamRepository matchTeamRepository;
 
-    // Ajouter un favori
+    // Ajouter un favori (retourne un DTO)
     @PostMapping("/add")
-    public Favorites addFavorite(
+    public FavoriteDTO addFavorite(
             @RequestParam int supporterId,
             @RequestParam int ownerId,
             @RequestParam String type) {
@@ -58,32 +60,34 @@ public class FavoriteController {
             addTeamMatchesToFavorites(supporter, ownerId);
         }
 
-        return favorite;
+        return convertToDTO(favorite);
     }
 
-    // Récupérer tous les favoris d'un supporter
+    // Récupérer tous les favoris d'un supporter (retourne une liste de DTO)
     @GetMapping("/{supporterId}")
-    public List<Favorites> getFavoritesBySupporter(@PathVariable int supporterId) {
+    public List<FavoriteDTO> getFavoritesBySupporter(@PathVariable int supporterId) {
         Supporters supporter = supportersRepository.findById(supporterId);
         if (supporter == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Supporter introuvable");
         }
-        return favoriteRepository.findBySupporter(supporter);
+        List<Favorites> favorites = favoriteRepository.findBySupporter(supporter);
+        return favorites.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    // Récupérer les favoris d'un supporter par type
+    // Récupérer les favoris d'un supporter par type (retourne une liste de DTO)
     @GetMapping("/{supporterId}/type/{type}")
-    public List<Favorites> getFavoritesBySupporterAndType(
+    public List<FavoriteDTO> getFavoritesBySupporterAndType(
             @PathVariable int supporterId,
             @PathVariable String type) {
         Supporters supporter = supportersRepository.findById(supporterId);
         if (supporter == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Supporter introuvable");
         }
-        return favoriteRepository.findBySupporterAndType(supporter, type);
+        List<Favorites> favorites = favoriteRepository.findBySupporterAndType(supporter, type);
+        return favorites.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    // Supprimer un favori
+    // Supprimer un favori (inchangé)
     @DeleteMapping("/{favoriteId}")
     public void deleteFavorite(@PathVariable int favoriteId) {
         if (!favoriteRepository.existsById(favoriteId)) {
@@ -111,5 +115,17 @@ public class FavoriteController {
                 favoriteRepository.save(matchFavorite);
             }
         }
+    }
+
+    // Méthode utilitaire pour convertir une entité Favorites en DTO
+    private FavoriteDTO convertToDTO(Favorites favorite) {
+        FavoriteDTO dto = new FavoriteDTO();
+        dto.setId(favorite.getId());
+        dto.setDateOfAdd(favorite.getDateOfAdd());
+        dto.setType(favorite.getType());
+        dto.setOwnerId(favorite.getOwnerID());
+        dto.setSupporterId(favorite.getSupporter().getId());
+        dto.setSupporterName(favorite.getSupporter().getName());
+        return dto;
     }
 }
