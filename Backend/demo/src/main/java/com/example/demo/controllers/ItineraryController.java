@@ -35,7 +35,7 @@ private AttractionRepository attractionRepository;
     public boolean addItinerary(@PathVariable int supporterId,
                                 @RequestBody Itineraries itinerary) {
 
-        Supporters supporter = supporterRepository.findById(supporterId).orElse(null);
+        Supporters supporter = supporterRepository.findById(supporterId);
         if (supporter == null || itinerary == null) return false;
 
         itinerary.setSupporter(supporter);
