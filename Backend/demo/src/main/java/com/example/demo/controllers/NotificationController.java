@@ -26,7 +26,7 @@ public class NotificationController {
     private SupporterRepository supporterRepository;
 
     // Créer une nouvelle notification (retourne un DTO)
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<NotificationDTO> createNotification(
             @RequestParam int supporterId,
             @RequestBody NotificationDTO notificationDTO) {
