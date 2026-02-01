@@ -183,15 +183,14 @@ public class StadeController {
     // Stades les plus grands (top 5 par capacité)
     @GetMapping("/stade/top/capacity")
     public List<StadeDTO> getTopStadesByCapacity(
-        @RequestParam(defaultValue = "5") int limit) {
+            @RequestParam(defaultValue = "5") int limit) {
 
-    List<Stades> stades =
-        StadeRepository.findAllByOrderByCapacityDesc(PageRequest.of(0, limit));
+        List<Stades> stades = StadeRepository.findTopByOrderByCapacityDesc(limit);
 
-    return stades.stream()
-            .map(this::convertStadeToDTO)
-            .collect(Collectors.toList());
-}
+        return stades.stream()
+                .map(this::convertStadeToDTO)
+                .collect(Collectors.toList());
+    }
 
     ///////////// ///////////////////////////////////////////convertion
     private StadeDTO convertStadeToDTO(Stades st) {
