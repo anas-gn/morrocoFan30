@@ -6,6 +6,7 @@ import com.example.demo.repositories.StadeRepository;
 import com.example.demo.repositories.MatchTeamRepository;
 import com.example.demo.repositories.PredictionRepository;
 import com.example.demo.repositories.SupporterRepository;
+import com.example.demo.repositories.PlayerRepository;
 import com.example.demo.repositories.NotificationRepository;
 import com.example.demo.repositories.FavoriteRepository;
 
@@ -66,6 +67,8 @@ public class MatchesController {
     private NotificationRepository notificationsRepo;
     @Autowired
     private FavoriteRepository favoritesRepo;
+    @Autowired
+    private PlayerRepository playerRepository;
 
     public MatchesController(MatchRepository m, StadeRepository st, MatchTeamRepository mm) {
         this.matchRepo = m;
@@ -139,10 +142,11 @@ public class MatchesController {
     }
 
     ///////////// player marque but dans un match d'un team
-    @PutMapping("/matches/{id}/team/{idT}/player/{idP}")
-    public void PlayerScoredInMatch(@PathVariable("id") int id, @PathVariable("idT") int idT,
+    @GetMapping("/matches/{id}/team/{idT}/player/{idP}")
+    public PlayerDTO PlayerScoredInMatch(@PathVariable("id") int id, @PathVariable("idT") int idT,
             @PathVariable("idP") int idP) {
         PlayerController.addGoal(idP);
+        Players player = playerRepository.findById(idP);
         MatchTeam mt = MatchTeamRepository.findByMatchIdAndTeamId(id, idT);
         mt.setGoals(mt.getGoals() + 1);
         MatchTeamRepository.save(mt);
@@ -152,12 +156,13 @@ public class MatchesController {
         for (Favorites favorite : teamFavorites) {
             Notifications notification = new Notifications();
             notification.setSupporter(favorite.getSupporter());
-            notification.setContent(String.format("⚽ GOAL! %s a marqué un but! Score: %d",
-                    team.getName(), mt.getGoals()));
+            notification.setContent(String.format("GOALLLLLLLL! %s a marqué un but! par : %s , Score: %d",
+                    team.getName(), player.getName(), mt.getGoals()));
             notification.setDateOfSend(LocalDateTime.now());
             notification.setIsRead(false);
             notificationsRepo.save(notification);
         }
+        return convertPlayerToDTO(player);
     }
 
     /////////////////// matches par etat
@@ -276,7 +281,7 @@ public class MatchesController {
                         notification.setSupporter(favorite.getSupporter());
                         notification
                                 .setContent(
-                                        String.format("🏁 Le match de %s est Terminé!", team.getName()));
+                                        String.format(" Le match de %s est Terminé!   🏁", team.getName()));
                         notification.setDateOfSend(LocalDateTime.now());
                         notification.setIsRead(false);
                         notificationsRepo.save(notification);
