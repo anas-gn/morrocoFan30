@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.example.demo.models.Stades;
+import org.springframework.data.domain.Pageable;
 
 public interface StadeRepository extends JpaRepository<Stades, Integer> {
 
@@ -15,6 +16,5 @@ public interface StadeRepository extends JpaRepository<Stades, Integer> {
 
     List<Stades> findByCityHostId(int cityHostId);
 
-    @Query(value = "SELECT * FROM Stades ORDER BY Capacity DESC LIMIT nombre", nativeQuery = true)
-    List<Stades> findTopByOrderByCapacityDesc(@Param("nombre") int nombre);
+    List<Stades> findTopByOrderByCapacityDesc(int nombre);
 }
