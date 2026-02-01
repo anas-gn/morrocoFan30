@@ -23,7 +23,7 @@ public class SupporterController {
     private SupporterRepository supporterRepository;
 
     // Récupérer tous les supporters avec pagination
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<Page<SupporterDTO>> getAllSupporters(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

@@ -16,5 +16,5 @@ public interface StadeRepository extends JpaRepository<Stades, Integer> {
 
     List<Stades> findByCityHostId(int cityHostId);
 
-    List<Stades> findTopByOrderByCapacityDesc(int nombre);
+    List<Stades> findByOrderByCapacityDesc(Pageable pageable);
 }

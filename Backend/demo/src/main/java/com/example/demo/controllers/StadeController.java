@@ -1,5 +1,6 @@
 package com.example.demo.controllers;
-
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import com.example.demo.repositories.ImageRepository;
 import com.example.demo.repositories.StadeRepository;
 import com.example.demo.repositories.MatchTeamRepository;
@@ -185,7 +186,8 @@ public class StadeController {
     public List<StadeDTO> getTopStadesByCapacity(
             @RequestParam(defaultValue = "5") int limit) {
 
-        List<Stades> stades = StadeRepository.findTopByOrderByCapacityDesc(limit);
+        Pageable topFive = PageRequest.of(0, 5);
+        List<Stades> stades = StadeRepository.findByOrderByCapacityDesc(topFive);
 
         return stades.stream()
                 .map(this::convertStadeToDTO)
