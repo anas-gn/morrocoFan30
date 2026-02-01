@@ -94,6 +94,14 @@ CREATE TABLE MatchTeam (
   FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
 );
+CREATE TABLE ItineraryAttraction (
+  itinerary_id INT,
+  attraction_id INT,
+  PRIMARY KEY (itinerary_id, attraction_id),
+  FOREIGN KEY (itinerary_id) REFERENCES Itineraries(id),
+  FOREIGN KEY (attraction_id) REFERENCES Attractions(id)
+);
+
 
 CREATE TABLE GroupTeam (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -202,6 +210,8 @@ CREATE TABLE Attractions (
   houreOfOpening TIME,
   houreOfClosing TIME,
   cityID INT,
+  latitude NUMBER,
+longitude NUMBER,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
 

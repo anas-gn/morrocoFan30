@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface ItineraryRepository extends JpaRepository<Itineraries, Integer> {
-
+List<Itineraries> findBySupporterId(int supporterId);
 }
