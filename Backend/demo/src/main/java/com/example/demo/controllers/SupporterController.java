@@ -118,7 +118,7 @@ public class SupporterController {
     }
 
     // Rechercher des supporters par nom
-    @GetMapping("/search")
+    @GetMapping("/search/{name}")
     public ResponseEntity<List<SupporterDTO>> searchSupportersByName(
             @RequestParam String name) {
         List<Supporters> supporters = supporterRepository.findByNameContainingIgnoreCase(name);
@@ -170,7 +170,7 @@ public class SupporterController {
     }
 
     // Vérifier si un email existe déjà
-    @GetMapping("/checkEmail")
+    @GetMapping("/checkEmail/{email}")
     public ResponseEntity<Boolean> checkEmailExists(@RequestParam String email) {
         boolean exists = supporterRepository.existsByEmail(email);
         return ResponseEntity.ok(exists);
