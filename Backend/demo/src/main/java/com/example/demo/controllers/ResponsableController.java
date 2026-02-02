@@ -1,14 +1,19 @@
 package com.example.demo.controllers;
 
 import com.example.demo.hooks.ResponsableDTO;
+import com.example.demo.hooks.StadeDTO;
 import com.example.demo.models.Responsables;
+import com.example.demo.models.Stades;
 import com.example.demo.repositories.ResponsableRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -32,24 +37,71 @@ public class ResponsableController {
 
     // GET - Récupérer un responsable par ID
     @GetMapping("/{id}")
-    public ResponseEntity<ResponsableDTO> getResponsableById(@PathVariable Integer id) {
+    public ResponseEntity<ResponsableDTO> getResponsableById(@PathVariable int id) {
         Optional<Responsables> responsable = responsableRepository.findById(id);
 
         return responsable.map(r -> ResponseEntity.ok(convertToDTO(r)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // GET - Nombre de stades gérés par chaque responsable
+    @GetMapping("/stades/count")
+    public ResponseEntity<Map<String, Object>> getStadesCountByResponsable() {
+        List<Responsables> responsables = responsableRepository.findAll();
+
+        Map<String, Object> stadesCountMap = responsables.stream()
+                .collect(Collectors.toMap(
+                        Responsables::getName,
+                        responsable -> {
+                            Map<String, Object> info = new HashMap<>();
+                            info.put("responsableId", responsable.getId());
+                            info.put("nombreStades",
+                                    responsable.getStade() != null ? responsable.getStade().size() : 0);
+                            info.put("email", responsable.getEmail());
+                            info.put("country", responsable.getCountry());
+                            return info;
+                        }));
+
+        return ResponseEntity.ok(stadesCountMap);
+    }
+
+    @GetMapping("/email/{email}")
+    public ResponseEntity<ResponsableDTO> getResponsableByEmail(@PathVariable String email) {
+        Responsables responsable = responsableRepository.findByEmail(email);
+
+        if (responsable != null) {
+            return ResponseEntity.ok(convertToDTO(responsable));
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    // GET - Chercher des responsables par nom (recherche partielle)
+    @GetMapping("/search/{name}")
+    public ResponseEntity<List<ResponsableDTO>> searchResponsablesByName(@PathVariable String name) {
+        List<Responsables> responsables = responsableRepository.findByNameContainingIgnoreCase(name);
+
+        if (responsables != null && !responsables.isEmpty()) {
+            List<ResponsableDTO> responsableDTOs = responsables.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(responsableDTOs);
+        }
+
+        return ResponseEntity.ok(new ArrayList<>());
+    }
+
     // POST - Ajouter un nouveau responsable
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<ResponsableDTO> addResponsable(@RequestBody Responsables responsable) {
         Responsables savedResponsable = responsableRepository.save(responsable);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedResponsable));
     }
 
     // PUT - Mettre à jour un responsable existant
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<ResponsableDTO> updateResponsable(
-            @PathVariable Integer id,
+            @PathVariable int id,
             @RequestBody Responsables responsable) {
 
         Optional<Responsables> existingResponsable = responsableRepository.findById(id);
@@ -71,9 +123,9 @@ public class ResponsableController {
     }
 
     // PATCH - Mise à jour
-    @PatchMapping("/{id}")
+    @PatchMapping("/miseaj/{id}")
     public ResponseEntity<ResponsableDTO> patchResponsable(
-            @PathVariable Integer id,
+            @PathVariable int id,
             @RequestBody Responsables responsable) {
 
         Optional<Responsables> existingResponsable = responsableRepository.findById(id);
@@ -108,8 +160,8 @@ public class ResponsableController {
     }
 
     // DELETE - Supprimer un responsable par ID
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteResponsable(@PathVariable Integer id) {
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteResponsable(@PathVariable int id) {
         if (responsableRepository.existsById(id)) {
             responsableRepository.deleteById(id);
             return ResponseEntity.noContent().build();
@@ -118,16 +170,62 @@ public class ResponsableController {
     }
 
     // DELETE - Supprimer tous les responsables
-    @DeleteMapping
+    @DeleteMapping("/deleteAll/{id}")
     public ResponseEntity<Void> deleteAllResponsables() {
         responsableRepository.deleteAll();
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Long> countResponsables() {
-        long count = responsableRepository.count();
+    public ResponseEntity<Integer> countResponsables() {
+        Integer count = (int) responsableRepository.count();
         return ResponseEntity.ok(count);
+    }
+
+    // GET - Récupérer les stades d'un responsable par ID
+    @GetMapping("/{id}/stades")
+    public ResponseEntity<List<StadeDTO>> getStadesByResponsableId(@PathVariable int id) {
+        Optional<Responsables> responsable = responsableRepository.findById(id);
+
+        if (responsable.isPresent()) {
+            List<Stades> stades = responsable.get().getStade();
+
+            if (stades != null && !stades.isEmpty()) {
+                List<StadeDTO> stadeDTOs = stades.stream()
+                        .map(this::convertStadeToDTO)
+                        .collect(Collectors.toList());
+                return ResponseEntity.ok(stadeDTOs);
+            }
+
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    private StadeDTO convertStadeToDTO(Stades stade) {
+        StadeDTO dto = new StadeDTO();
+        dto.setId(stade.getId());
+        dto.setName(stade.getName());
+        dto.setCapacity(stade.getCapacity());
+        dto.setCountry(stade.getCountry());
+        dto.setAdresse(stade.getAdresse());
+        dto.setImageUrl(stade.getImageUrl());
+        dto.setVideoUrl(stade.getVideoUrl());
+        dto.setDescription(stade.getDescription());
+        dto.setDateOfConstruction(stade.getDateOfConstruction());
+
+        if (stade.getCity() != null) {
+            dto.setCityId(stade.getCity().getId());
+            dto.setCityName(stade.getCity().getName());
+        }
+
+        if (stade.getResponsable() != null) {
+            dto.setResponsableId(stade.getResponsable().getId());
+            dto.setResponsable(stade.getResponsable().getName());
+        }
+
+        return dto;
     }
 
     // Méthode helper pour convertir Entity vers DTO
