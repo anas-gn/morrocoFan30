@@ -1,5 +1,7 @@
 package com.example.demo.hooks;
 
+import java.util.List;
+
 public class TransportDTO {
 
     private Integer id;
@@ -12,6 +14,25 @@ public class TransportDTO {
     private String cityName;
     private Integer trajetID;
     private String trajetName;
+    private List<String> images;
+    
+
+
+    public TransportDTO(Integer id, String name, Float priceProxim, String description, Integer capacity,
+            String imageUrl, Integer cityID, String cityName, Integer trajetID, String trajetName,
+            List<String> images) {
+        this.id = id;
+        this.name = name;
+        this.priceProxim = priceProxim;
+        this.description = description;
+        this.capacity = capacity;
+        this.imageUrl = imageUrl;
+        this.cityID = cityID;
+        this.cityName = cityName;
+        this.trajetID = trajetID;
+        this.trajetName = trajetName;
+        this.images = images;
+    }
 
     public TransportDTO() {
     }
@@ -125,5 +146,11 @@ public class TransportDTO {
 
     public void setTrajetName(String trajetName) {
         this.trajetName = trajetName;
+    }
+    public List<String> getImages() {
+        return images;
+    }       
+    public void setImages(List<String> images) {
+        this.images = images;
     }
 }

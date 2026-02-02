@@ -1,8 +1,10 @@
-package com.example.demo.hooks;
+ package com.example.demo.hooks;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class EventDTO {
+
     private Integer id;
     private String name;
     private String description;
@@ -11,25 +13,24 @@ public class EventDTO {
     private String imageUrl;
     private Integer cityId;
     private String cityName;
+    private List<String> images;
 
-    // Constructors
+    // 🔹 Constructeur vide (obligatoire pour Jackson)
     public EventDTO() {
     }
 
-    public EventDTO(Integer id, String name, String description, LocalDateTime dateOfEvent,
-            Float priceProxim, String imageUrl, Integer cityId) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.dateOfEvent = dateOfEvent;
-        this.priceProxim = priceProxim;
-        this.imageUrl = imageUrl;
-        this.cityId = cityId;
-    }
+    // 🔹 Constructeur COMPLET (utilisé par le Controller)
+    public EventDTO(
+            Integer id,
+            String name,
+            String description,
+            LocalDateTime dateOfEvent,
+            Float priceProxim,
+            String imageUrl,
+            Integer cityId,
+            String cityName,
+            List<String> images) {
 
-    // Constructeur complet
-    public EventDTO(Integer id, String name, String description, LocalDateTime dateOfEvent,
-                    Float priceProxim, String imageUrl, Integer cityId, String cityName) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -38,9 +39,13 @@ public class EventDTO {
         this.imageUrl = imageUrl;
         this.cityId = cityId;
         this.cityName = cityName;
+        this.images = images;
     }
 
-    // Getters and Setters
+    // =====================
+    // Getters & Setters
+    // =====================
+
     public Integer getId() {
         return id;
     }
@@ -103,5 +108,13 @@ public class EventDTO {
 
     public void setCityName(String cityName) {
         this.cityName = cityName;
+    }
+
+    public List<String> getImages() {
+        return images;
+    }
+
+    public void setImages(List<String> images) {
+        this.images = images;
     }
 }

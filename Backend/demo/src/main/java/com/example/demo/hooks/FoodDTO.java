@@ -1,5 +1,7 @@
 package com.example.demo.hooks;
 
+import java.util.List;
+
 public class FoodDTO {
     private Integer id;
     private String name;
@@ -9,6 +11,21 @@ public class FoodDTO {
     private String imageUrl;
     private Integer cityId;
     private String cityName;
+    private List<String> images;
+
+
+    public FoodDTO(Integer id, String name, String category, String description, Float priceProxim, String imageUrl,
+            Integer cityId, String cityName, List<String> images) {
+        this.id = id;
+        this.name = name;
+        this.category = category;
+        this.description = description;
+        this.priceProxim = priceProxim;
+        this.imageUrl = imageUrl;
+        this.cityId = cityId;
+        this.cityName = cityName;
+        this.images = images;
+    }
 
     // Constructors
     public FoodDTO() {
@@ -90,4 +107,10 @@ public class FoodDTO {
     public void setCityName(String cityName) {
         this.cityName = cityName;
     }
+    public List<String> getImages() {
+        return images;
+    }
+    public void setImages(List<String> images) {
+        this.images = images;
+    }               
 }
