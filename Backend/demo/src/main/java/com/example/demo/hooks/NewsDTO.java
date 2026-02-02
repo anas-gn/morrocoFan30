@@ -1,6 +1,7 @@
 package com.example.demo.hooks;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class NewsDTO {
 
@@ -13,6 +14,23 @@ public class NewsDTO {
     private LocalDateTime dateOfCreation;
     private int teamId;
     private String teamName;
+    private List<String> images;
+    // Constructors
+    
+
+    public NewsDTO(int id, String title, String author, String description, String detail, String imageUrl,
+            LocalDateTime dateOfCreation, int teamId, String teamName, List<String> images) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.description = description;
+        this.detail = detail;
+        this.imageUrl = imageUrl;
+        this.dateOfCreation = dateOfCreation;
+        this.teamId = teamId;
+        this.teamName = teamName;
+        this.images = images;
+    }
 
     public NewsDTO() {
     }
@@ -100,5 +118,11 @@ public class NewsDTO {
 
     public void setTeamName(String teamName) {
         this.teamName = teamName;
+    }
+    public List<String> getImages() {
+        return images;
+    }
+    public void setImages(List<String> images) {
+        this.images = images;
     }
 }

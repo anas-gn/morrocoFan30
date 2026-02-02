@@ -5,6 +5,9 @@ import com.example.demo.models.Foods;
 import com.example.demo.models.CityHosts;
 import com.example.demo.repositories.FoodRepository;
 import com.example.demo.repositories.CityHostRepository;
+import com.example.demo.models.Images;
+import com.example.demo.repositories.ImageRepository;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -25,6 +29,10 @@ public class FoodController {
 
     @Autowired
     private CityHostRepository cityHostRepository;
+
+    @Autowired
+    private ImageRepository imagesRepository;
+
 
     // GET - Tous les plats
     @GetMapping
@@ -126,21 +134,96 @@ public class FoodController {
         return ResponseEntity.noContent().build();
     }
 
+    // POST - Ajouter des images à un plat existant
+@PostMapping("/{foodId}/images")
+public ResponseEntity<?> addImagesToFood(
+        @PathVariable Integer foodId,
+        @RequestBody List<String> imageUrls) {
+
+    if (!foodRepository.existsById(foodId)) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Plat introuvable"));
+    }
+
+    for (String url : imageUrls) {
+        Images image = new Images();
+        image.setImageUrl(url);
+        image.setType("food");
+        image.setOwnerID(foodId);
+        imagesRepository.save(image);
+    }
+
+    return ResponseEntity.ok(
+            Map.of("message", imageUrls.size() + " image(s) ajoutée(s)")
+    );
+}
+
+// GET - Récupérer toutes les images d'un plat
+@GetMapping("/{foodId}/images")
+public ResponseEntity<List<String>> getFoodImages(@PathVariable Integer foodId) {
+    List<String> images = imagesRepository
+            .findByTypeAndOwnerID("food", foodId)
+            .stream()
+            .map(Images::getImageUrl)
+            .collect(Collectors.toList());
+
+    return ResponseEntity.ok(images);
+}
+
+
+// DELETE - Supprimer une ou plusieurs images d'un plat
+@DeleteMapping("/{foodId}/images")
+public ResponseEntity<?> deleteFoodImages(
+        @PathVariable Integer foodId,
+        @RequestBody List<String> imageUrls) {
+
+    if (!foodRepository.existsById(foodId)) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Plat introuvable"));
+    }
+
+    List<Images> foodImages = imagesRepository.findByTypeAndOwnerID("food", foodId);
+
+    List<Images> imagesToDelete = foodImages.stream()
+            .filter(img -> imageUrls.contains(img.getImageUrl()))
+            .toList();
+
+    if (imagesToDelete.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Aucune des images fournies n'a été trouvée"));
+    }
+
+    imagesToDelete.forEach(imagesRepository::delete);
+
+    return ResponseEntity.ok(
+            Map.of("message", imagesToDelete.size() + " image(s) supprimée(s)",
+                   "deletedImages", imagesToDelete.stream().map(Images::getImageUrl).toList())
+    );
+}
  
     // Entity -> DTO
   
-    private FoodDTO convertToDTO(Foods food) {
-        return new FoodDTO(
-                food.getId(),
-                food.getName(),
-                food.getCategory(),
-                food.getDescription(),
-                food.getPriceProxim(),
-                food.getImageUrl(),
-                food.getCity() != null ? food.getCity().getId() : null,
-                food.getCity() != null ? food.getCity().getName() : null
-        );
-    }
+private FoodDTO convertToDTO(Foods food) {
+
+    // Récupérer toutes les images supplémentaires du plat
+    List<String> images = imagesRepository
+            .findByTypeAndOwnerID("food", food.getId())
+            .stream()
+            .map(Images::getImageUrl)
+            .collect(Collectors.toList());
+
+    return new FoodDTO(
+            food.getId(),
+            food.getName(),
+            food.getCategory(),
+            food.getDescription(),
+            food.getPriceProxim(),
+            food.getImageUrl(), // image principale
+            food.getCity() != null ? food.getCity().getId() : null,
+            food.getCity() != null ? food.getCity().getName() : null,
+            images //  images supplémentaires
+    );
+}
 
    
     // DTO -> Entity
