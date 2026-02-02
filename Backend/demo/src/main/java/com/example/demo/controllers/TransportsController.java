@@ -4,9 +4,12 @@ import com.example.demo.hooks.TransportDTO;
 import com.example.demo.models.CityHosts;
 import com.example.demo.models.Routes;
 import com.example.demo.models.Transports;
+import com.example.demo.models.Images;
 import com.example.demo.repositories.CityHostRepository;
 import com.example.demo.repositories.RouteRepository;
 import com.example.demo.repositories.TransportsRepository;
+import com.example.demo.repositories.ImageRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @RestController
@@ -31,12 +33,17 @@ public class TransportsController {
     @Autowired
     private RouteRepository routesRepository;
 
+    @Autowired
+    private ImageRepository imagesRepository;
+
 
     // GET - Récupérer tous les transports
     @GetMapping
     public ResponseEntity<List<TransportDTO>> getAllTransports() {
         List<Transports> transports = transportsRepository.findAll();
-        List<TransportDTO> dtos = transports.stream().map(this::convertToDTO).collect(Collectors.toList());
+        List<TransportDTO> dtos = transports.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
 
@@ -51,7 +58,6 @@ public class TransportsController {
     // POST - Créer un transport
     @PostMapping
     public ResponseEntity<TransportDTO> createTransport(@RequestBody TransportDTO dto) {
-        // Vérifier la ville
         CityHosts city = cityHostsRepository.findById(dto.getCityID()).orElse(null);
         if (city == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
@@ -107,15 +113,13 @@ public class TransportsController {
         return ResponseEntity.noContent().build();
     }
 
-
     @GetMapping("/search")
     public ResponseEntity<List<TransportDTO>> searchByName(@RequestParam(required = false) String name) {
-        List<Transports> transports;
-        if (name != null && !name.isEmpty()) {
-            transports = transportsRepository.findByNameContainingIgnoreCase(name);
-        } else {
-            transports = transportsRepository.findAll();
-        }
+        List<Transports> transports =
+                (name != null && !name.isEmpty())
+                        ? transportsRepository.findByNameContainingIgnoreCase(name)
+                        : transportsRepository.findAll();
+
         return ResponseEntity.ok(transports.stream().map(this::convertToDTO).collect(Collectors.toList()));
     }
 
@@ -143,15 +147,100 @@ public class TransportsController {
         return ResponseEntity.ok(transports.stream().map(this::convertToDTO).collect(Collectors.toList()));
     }
 
+// Ajouter des images à un transport existant
+@PostMapping("/{transportId}/images")
+public ResponseEntity<?> addImagesToTransport(
+        @PathVariable Integer transportId,
+        @RequestBody Map<String, Object> request) {
+
+    if (!transportsRepository.existsById(transportId)) {
+        return ResponseEntity.notFound().build();
+    }
+
+    @SuppressWarnings("unchecked")
+    List<String> imageUrls = (List<String>) request.get("imageUrls");
+
+    if (imageUrls == null || imageUrls.isEmpty()) {
+        return ResponseEntity.badRequest().body(Map.of("message", "Aucune image fournie"));
+    }
+
+    for (String url : imageUrls) {
+        Images image = new Images();
+        image.setImageUrl(url);
+        image.setType("transport");
+        image.setOwnerID(transportId);
+        imagesRepository.save(image);
+    }
+
+    return ResponseEntity.ok(Map.of("message", imageUrls.size() + " image(s) ajoutée(s)"));
+}
+
+// Récupérer toutes les images d'un transport
+@GetMapping("/{transportId}/images")
+public ResponseEntity<List<String>> getTransportImages(@PathVariable Integer transportId) {
+    List<String> images = imagesRepository.findByTypeAndOwnerID("transport", transportId)
+            .stream()
+            .map(Images::getImageUrl)
+            .collect(Collectors.toList());
+    return ResponseEntity.ok(images);
+}
+
+//  Supprimer une image spécifique par ID
+@DeleteMapping("/images/{imageId}")
+public ResponseEntity<?> deleteTransportImage(@PathVariable Integer imageId) {
+    if (!imagesRepository.existsById(imageId)) {
+        return ResponseEntity.notFound().build();
+    }
+    imagesRepository.deleteById(imageId);
+    return ResponseEntity.ok(Map.of("message", "Image supprimée avec succès"));
+}
+
+// Supprimer plusieurs images à la fois 
+@DeleteMapping("/{transportId}/images")
+public ResponseEntity<?> deleteMultipleTransportImages(
+        @PathVariable Integer transportId,
+        @RequestBody Map<String, Object> request) {
+
+    if (!transportsRepository.existsById(transportId)) {
+        return ResponseEntity.notFound().build();
+    }
+
+    @SuppressWarnings("unchecked")
+    List<Integer> imageIds = (List<Integer>) request.get("imageIds");
+
+    if (imageIds == null || imageIds.isEmpty()) {
+        return ResponseEntity.badRequest().body(Map.of("message", "Aucune image fournie pour suppression"));
+    }
+
+    int deletedCount = 0;
+    for (Integer id : imageIds) {
+        if (imagesRepository.existsById(id)) {
+            imagesRepository.deleteById(id);
+            deletedCount++;
+        }
+    }
+
+    return ResponseEntity.ok(Map.of("message", deletedCount + " image(s) supprimée(s)"));
+}
+
+
 
     private TransportDTO convertToDTO(Transports transport) {
+
+        List<String> images = imagesRepository
+                .findByTypeAndOwnerID("transport", transport.getId())
+                .stream()
+                .map(Images::getImageUrl)
+                .collect(Collectors.toList());
+
         TransportDTO dto = new TransportDTO();
         dto.setId(transport.getId());
         dto.setName(transport.getName());
         dto.setDescription(transport.getDescription());
         dto.setCapacity(transport.getCapacity());
         dto.setPriceProxim(transport.getPriceProxim());
-        dto.setImageUrl(transport.getImageUrl());
+        dto.setImageUrl(transport.getImageUrl()); // image principale
+        dto.setImages(images); //  images multiples
 
         if (transport.getCity() != null) {
             dto.setCityID(transport.getCity().getId());
