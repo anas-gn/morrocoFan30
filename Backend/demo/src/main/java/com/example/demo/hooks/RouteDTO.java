@@ -1,6 +1,8 @@
 package com.example.demo.hooks;
 
-public class TrajetDTO {
+import java.util.List;
+
+public class RouteDTO {
 
     private int id;
     private String name;
@@ -10,13 +12,14 @@ public class TrajetDTO {
     private String cityHostFromName;
     private Long cityHostToID;
     private String cityHostToName;
+    private List<TransportDTO> transports;
+    private TransportDTO cheapestTransport;
 
-    public TrajetDTO() {
+    public RouteDTO() {
     }
 
-    public TrajetDTO(String name, String description, Float priceProxim,
+    public RouteDTO(String name, String description, Float priceProxim,
             Long cityHostFromID, String cityHostFromName, Long cityHostToID, String cityHostToName) {
-
         this.name = name;
         this.description = description;
         this.priceProxim = priceProxim;
@@ -89,6 +92,22 @@ public class TrajetDTO {
 
     public void setCityHostToName(String cityHostToName) {
         this.cityHostToName = cityHostToName;
+    }
+
+    public List<TransportDTO> getTransports() {
+        return transports;
+    }
+
+    public void setTransports(List<TransportDTO> transports) {
+        this.transports = transports;
+    }
+
+    public TransportDTO getCheapestTransport() {
+        return cheapestTransport;
+    }
+
+    public void setCheapestTransport(TransportDTO cheapestTransport) {
+        this.cheapestTransport = cheapestTransport;
     }
 
     public String getTrajetName() {
