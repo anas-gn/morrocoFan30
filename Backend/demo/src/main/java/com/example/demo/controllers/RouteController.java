@@ -452,6 +452,15 @@ public class RouteController {
             dto.setCityHostToName(route.getCityHostTo().getName());
         }
 
+        if (route.getTransports() != null && !route.getTransports().isEmpty()) {
+            Optional<Transports> cheapest = route.getTransports().stream()
+                    .min(Comparator.comparing(Transports::getPriceProxim));
+
+            if (cheapest.isPresent()) {
+                dto.setCheapestTransport(convertTransportToDTO(cheapest.get()));
+            }
+        }
+
         return dto;
     }
 
