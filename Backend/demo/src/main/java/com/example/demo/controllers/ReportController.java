@@ -3,9 +3,9 @@ package com.example.demo.controllers;
 import com.example.demo.models.Reports;
 import com.example.demo.models.Supporters;
 import com.example.demo.models.Matches;
-import com.example.demo.repositories.ReportsRepository;
-import com.example.demo.repositories.SupportersRepository;
-import com.example.demo.repositories.MatchesRepository;
+import com.example.demo.repositories.ReportRepository;
+import com.example.demo.repositories.SupporterRepository;
+import com.example.demo.repositories.MatchRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +27,7 @@ public class ReportController {
     private SupporterRepository supportersRepository;
 
     @Autowired
-    private MatcheRepository matchesRepository;
+    private MatchRepository matchesRepository;
 
     // GET all reports
     @GetMapping("/getAll")
@@ -47,13 +47,13 @@ public class ReportController {
     @GetMapping("/get/{id}")
     public ResponseEntity<List<Reports>> getReportsBySupporterId(@PathVariable("id") int supporterId) {
         try {
-            Optional<Supporters> supporterData = supportersRepository.findById(supporterId);
+            Supporters supporterData = supportersRepository.findById(supporterId);
             
-            if (!supporterData.isPresent()) {
+            if (supporterData == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
-            List<Reports> reports = reportsRepository.findBySupporter(supporterData.get());
+            List<Reports> reports = reportsRepository.findBySupporter(supporterData);
             
             if (reports.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -70,14 +70,14 @@ public class ReportController {
     public ResponseEntity<Reports> addReport(@RequestBody ReportRequest reportRequest) {
         try {
             // Verify supporter exists
-            Optional<Supporters> supporterData = supportersRepository.findById(reportRequest.getSupporterId());
-            if (!supporterData.isPresent()) {
+            Supporters supporterData = supportersRepository.findById(reportRequest.getSupporterId());
+            if (supporterData == null) {
                 return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
             }
 
             // Verify match exists
-            Optional<Matches> matchData = matchesRepository.findById(reportRequest.getMatchId());
-            if (!matchData.isPresent()) {
+            Matches matchData = matchesRepository.findById(reportRequest.getMatchId());
+            if (matchData == null) {
                 return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
             }
 
@@ -86,9 +86,9 @@ public class ReportController {
                 reportRequest.getDescription(),
                 reportRequest.isBadOrGood(),
                 reportRequest.getImageUrl(),
-                supporterData.get()
+                supporterData
             );
-            newReport.setMatch(matchData.get());
+            newReport.setMatch(matchData);
 
             Reports savedReport = reportsRepository.save(newReport);
             return new ResponseEntity<>(savedReport, HttpStatus.CREATED);
