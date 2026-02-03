@@ -14,14 +14,16 @@ public class AttractionDTO {
     private LocalTime houreOfOpening;
     private LocalTime houreOfClosing;
     private int cityHostId;
-    private String cityName;
+    private Double latitude;
+private Double longitude;
+
 
     // Constructors
     public AttractionDTO() {}
 
     public AttractionDTO(String name, String country, String type, double priceProxim, 
                         String description, String address, LocalTime houreOfOpening, 
-                        LocalTime houreOfClosing, int cityHostId,String cityName) {
+                        LocalTime houreOfClosing, int cityHostId , Double latitude,  Double longitude ) {
         this.name = name;
         this.country = country;
         this.type = type;
@@ -30,13 +32,15 @@ public class AttractionDTO {
         this.address = address;
         this.houreOfOpening = houreOfOpening;
         this.houreOfClosing = houreOfClosing;
+        this.latitude = latitude;
+        this. longitude =  longitude;
         this.cityHostId = cityHostId;
-        this.cityName=cityName;
+        
     }
 
     public AttractionDTO(int id, String name, String country, String type, double priceProxim,
                         String description, String address, LocalTime houreOfOpening,
-                        LocalTime houreOfClosing, int cityHostId) {
+                        LocalTime houreOfClosing, int cityHostId ,Double latitude,  Double longitude ) {
         this.id = id;
         this.name = name;
         this.country = country;
@@ -46,6 +50,9 @@ public class AttractionDTO {
         this.address = address;
         this.houreOfOpening = houreOfOpening;
         this.houreOfClosing = houreOfClosing;
+           this. longitude =  longitude;
+        this.cityHostId = cityHostId;
+        
         this.cityHostId = cityHostId;
     }
 
@@ -129,12 +136,9 @@ public class AttractionDTO {
     public void setCityHostId(int cityHostId) {
         this.cityHostId = cityHostId;
     }
+       public double getLongitude() { return longitude; }
+    public void setLongitude(double longitude) { this.longitude = longitude; }
+public double getLatitude() { return latitude; }
+    public void setLatitude(double latitude) { this.latitude= latitude; }
 
-    public String getCityName() {
-        return cityName;
-    }
-
-    public void setCityName(String cityName) {
-        this.cityName = cityName;
-    }
 }

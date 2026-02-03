@@ -1,7 +1,6 @@
 package com.example.demo.repositories;
 
 import com.example.demo.models.Hotels;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +12,5 @@ public interface HotelRepository extends JpaRepository<Hotels, Integer> {
 
     List<Hotels> findByNameContainingIgnoreCase(String name);
 
+    List<Hotels> findByCityHostId(int cityId);
 }
