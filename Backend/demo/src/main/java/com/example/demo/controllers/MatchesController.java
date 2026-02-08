@@ -762,7 +762,7 @@ public class MatchesController {
     }
 
     ///////////// Obtenir un joueur spécifique dans un match
-    @GetMapping("/matches/players/{id}")
+    @GetMapping("/matches/player/{id}")
     public MatchPlayerDTO getMatchPlayerById(@PathVariable int id) {
         MatchPlayer player = matchPlayerRepository.findById(id).orElse(null);
         if (player == null) {
