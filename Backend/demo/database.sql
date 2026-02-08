@@ -119,13 +119,7 @@ CREATE TABLE MatchTeam (
   FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
 );
-CREATE TABLE ItineraryAttraction (
-  itinerary_id INT,
-  attraction_id INT,
-  PRIMARY KEY (itinerary_id, attraction_id),
-  FOREIGN KEY (itinerary_id) REFERENCES Itineraries(id),
-  FOREIGN KEY (attraction_id) REFERENCES Attractions(id)
-);
+
 
 
 CREATE TABLE GroupTeam (
@@ -236,8 +230,8 @@ CREATE TABLE Attractions (
   houreOfOpening TIME,
   houreOfClosing TIME,
   cityID INT,
-  latitude NUMBER,
-longitude NUMBER,
+  latitude DOUBLE,
+longitude DOUBLE ,
   FOREIGN KEY (cityID) REFERENCES CityHosts(id) ON DELETE CASCADE
 );
 
@@ -250,13 +244,7 @@ CREATE TABLE Itineraries (
   FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE
 );
 
-CREATE TABLE ItineraryAttraction (
-  itineraryID INT,
-  attractionID INT,
-  PRIMARY KEY (itineraryID, attractionID),
-  FOREIGN KEY (itineraryID) REFERENCES Itineraries(id) ON DELETE CASCADE,
-  FOREIGN KEY (attractionID) REFERENCES Attractions(id) ON DELETE CASCADE
-);
+
 
 CREATE TABLE Images (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -337,4 +325,11 @@ CREATE TABLE Notifications (
   isRead BOOLEAN DEFAULT FALSE,
   supporterID INT,
   FOREIGN KEY (supporterID) REFERENCES Supporters(id) ON DELETE CASCADE
+);
+CREATE TABLE ItineraryAttraction (
+  itinerary_id INT,
+  attraction_id INT,
+  PRIMARY KEY (itinerary_id, attraction_id),
+  FOREIGN KEY (itinerary_id) REFERENCES Itineraries(id),
+  FOREIGN KEY (attraction_id) REFERENCES Attractions(id)
 );
