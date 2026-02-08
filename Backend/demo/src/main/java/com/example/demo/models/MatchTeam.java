@@ -12,6 +12,9 @@ public class MatchTeam {
 
     private int goals;
 
+    @Column(name = "formation")
+    private String formation;
+
     @ManyToOne
     @JoinColumn(name = "matchID", nullable = false)
     private Matches match;
@@ -21,11 +24,19 @@ public class MatchTeam {
     private Teams team;
 
     public MatchTeam() {
-}
+    }
+
     public MatchTeam(int goals, Matches m, Teams t) {
         this.goals = goals;
         this.match = m;
         this.team = t;
+    }
+
+    public MatchTeam(int goals, Matches m, Teams t, String formation) {
+        this.goals = goals;
+        this.match = m;
+        this.team = t;
+        this.formation = formation;
     }
 
     public int getGoals() {
@@ -51,11 +62,21 @@ public class MatchTeam {
     public void setTeam(Teams t) {
         this.team = t;
     }
+
     public int getId() {
         return id;
     }
+
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getFormation() {
+        return formation;
+    }
+
+    public void setFormation(String formation) {
+        this.formation = formation;
     }
 
 }

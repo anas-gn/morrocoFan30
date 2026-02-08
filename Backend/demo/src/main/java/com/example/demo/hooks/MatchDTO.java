@@ -13,12 +13,14 @@ public class MatchDTO {
     private Integer treeId;
     private List<MatchTeamDTO> mt;
     private String stadeName;
+    private List<MatchEventsDTO> matchEvents;
+    private List<MatchPlayerDTO> matchPlayers;
 
     public MatchDTO() {
     }
 
     public MatchDTO(LocalDateTime dateOfMatch, String referee, String statut, String type, int stadeId, Integer treeId,
-            String name,List<MatchTeamDTO>mt) {
+            String name, List<MatchTeamDTO> mt) {
         this.dateOfMatch = dateOfMatch;
         this.referee = referee;
         this.statut = statut;
@@ -26,7 +28,7 @@ public class MatchDTO {
         this.stadeId = stadeId;
         this.treeId = treeId;
         this.stadeName = name;
-        this.mt=mt;
+        this.mt = mt;
     }
 
     public List<MatchTeamDTO> getMatchTeams() {
@@ -101,4 +103,19 @@ public class MatchDTO {
         this.treeId = treeId;
     }
 
+    public List<MatchEventsDTO> getMatchEvents() {
+        return matchEvents;
+    }
+
+    public void setMatchEvents(List<MatchEventsDTO> matchEvents) {
+        this.matchEvents = matchEvents;
+    }
+
+    public List<MatchPlayerDTO> getMatchPlayers() {
+        return matchPlayers;
+    }
+
+    public void setMatchPlayers(List<MatchPlayerDTO> matchPlayers) {
+        this.matchPlayers = matchPlayers;
+    }
 }

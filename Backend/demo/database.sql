@@ -85,12 +85,37 @@ CREATE TABLE Players (
   teamID INT,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
 );
-
+CREATE TABLE MatchEvents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    matchID INT NOT NULL,
+    playerID INT NOT NULL,
+    teamID INT NOT NULL,
+    minute INT,
+    additionalInfo VARCHAR(255),
+    FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
+    FOREIGN KEY (playerID) REFERENCES Players(id) ON DELETE CASCADE,
+    FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
+);
+CREATE TABLE MatchPlayer (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    matchID INT NOT NULL,
+    teamID INT NOT NULL,
+    playerID INT NOT NULL,
+    isStarter BOOLEAN DEFAULT FALSE,
+    position VARCHAR(50),
+    jerseyNumber INT,
+    minutesPlayed INT,
+    rating DOUBLE,
+    FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
+    FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (playerID) REFERENCES Players(id) ON DELETE CASCADE
+);
 CREATE TABLE MatchTeam (
   id INT AUTO_INCREMENT PRIMARY KEY,
   matchID INT,
   teamID INT,
   goals INT,
+  formation VARCHAR(50),
   FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE
 );

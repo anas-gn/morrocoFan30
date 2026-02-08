@@ -2,22 +2,20 @@ package com.example.demo.controllers;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-
 import java.util.Comparator;
-
 import java.util.List;
-
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.hooks.CityHostDTO;
 import com.example.demo.hooks.CultureDTO;
 import com.example.demo.hooks.MatchTeamDTO;
+import com.example.demo.hooks.MatchEventsDTO;
+import com.example.demo.hooks.MatchPlayerDTO;
 import com.example.demo.hooks.EventDTO;
 import com.example.demo.hooks.GroupDTO;
 import com.example.demo.hooks.GroupTeamDTO;
@@ -32,20 +30,25 @@ import com.example.demo.models.Groups;
 import com.example.demo.models.GroupTeam;
 import com.example.demo.models.Matches;
 import com.example.demo.models.MatchTeam;
+import com.example.demo.models.MatchEvents;
+import com.example.demo.models.MatchPlayer;
 import com.example.demo.models.News;
 import com.example.demo.models.Stades;
 import com.example.demo.models.Teams;
+import com.example.demo.models.Players;
 
 import com.example.demo.repositories.NewsRepository;
-
 import com.example.demo.repositories.CityHostRepository;
 import com.example.demo.repositories.CultureRepository;
 import com.example.demo.repositories.EventRepository;
 import com.example.demo.repositories.GroupRepository;
 import com.example.demo.repositories.MatchRepository;
 import com.example.demo.repositories.MatchTeamRepository;
+import com.example.demo.repositories.MatchEventsRepository;
+import com.example.demo.repositories.MatchPlayerRepository;
 import com.example.demo.repositories.StadeRepository;
 import com.example.demo.repositories.TeamRepository;
+import com.example.demo.repositories.PlayerRepository;
 
 @RestController
 @RequestMapping("/api/acceuil")
@@ -59,6 +62,12 @@ public class AcceuilController {
     @Autowired
     private MatchTeamRepository MatchTeamRepository;
     @Autowired
+    private MatchEventsRepository matchEventsRepository;
+    @Autowired
+    private MatchPlayerRepository matchPlayerRepository;
+    @Autowired
+    private PlayerRepository playerRepository;
+    @Autowired
     private GroupRepository GroupeRepository;
     @Autowired
     private CityHostRepository CityHostRepository;
@@ -71,12 +80,21 @@ public class AcceuilController {
 
     public AcceuilController(TeamRepository teamRepository,
             StadeRepository stadeRepository, MatchRepository matchRepo,
-            MatchTeamRepository matchTeamRepository, GroupRepository groupeRepository,
-            CityHostRepository cityHostRepository, NewsRepository newsRepository, CultureRepository cultureRepository) {
+            MatchTeamRepository matchTeamRepository,
+            MatchEventsRepository matchEventsRepository,
+            MatchPlayerRepository matchPlayerRepository,
+            PlayerRepository playerRepository,
+            GroupRepository groupeRepository,
+            CityHostRepository cityHostRepository,
+            NewsRepository newsRepository,
+            CultureRepository cultureRepository) {
         this.TeamRepository = teamRepository;
         this.StadeRepository = stadeRepository;
         this.matchRepo = matchRepo;
         this.MatchTeamRepository = matchTeamRepository;
+        this.matchEventsRepository = matchEventsRepository;
+        this.matchPlayerRepository = matchPlayerRepository;
+        this.playerRepository = playerRepository;
         this.GroupeRepository = groupeRepository;
         this.CityHostRepository = cityHostRepository;
         this.newsRepository = newsRepository;
@@ -165,12 +183,9 @@ public class AcceuilController {
         LocalDateTime now = LocalDateTime.now();
 
         return matchRepo.findAll().stream()
-
                 .sorted(Comparator.comparing(
                         m -> Math.abs(Duration.between(now, m.getDateOfMatch()).toMinutes())))
-
                 .limit(6)
-
                 .sorted(Comparator.comparing(Matches::getDateOfMatch))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -194,6 +209,9 @@ public class AcceuilController {
     private MatchDTO convertToDTO(Matches match) {
         MatchDTO dto = new MatchDTO();
         List<MatchTeam> mt = MatchTeamRepository.findByMatchId(match.getId());
+        List<MatchEvents> events = matchEventsRepository.findByMatchID(match.getId());
+        List<MatchPlayer> players = matchPlayerRepository.findByMatchID(match.getId());
+
         dto.setId(match.getId());
         dto.setDateOfMatch(match.getDateOfMatch());
         dto.setReferee(match.getReferee());
@@ -201,10 +219,13 @@ public class AcceuilController {
         dto.setType(match.getType());
         dto.setTreeId(match.getTreeID());
         dto.setMatchTeams(convertMatchTeamToDTO(mt));
+        dto.setMatchEvents(convertMatchEventsToDTO(events));
+        dto.setMatchPlayers(convertMatchPlayerToDTO(players));
+
         if (match.getStade() != null) {
             dto.setStadeId(match.getStade().getId());
+            dto.setStadeName(match.getStade().getName());
         }
-        dto.setStadeName(match.getStade().getName());
 
         return dto;
     }
@@ -217,15 +238,70 @@ public class AcceuilController {
         mt.setGoals(cc.getGoals());
         mt.setTeamName(cc.getTeam().getName());
         return mt;
-
     }
 
     private List<MatchTeamDTO> convertMatchTeamToDTO(List<MatchTeam> cc) {
-
         return cc.stream()
                 .map(this::convertMatchTeamToDTO)
                 .collect(Collectors.toList());
+    }
 
+    private MatchEventsDTO convertMatchEventToDTO(MatchEvents event) {
+        MatchEventsDTO dto = new MatchEventsDTO();
+        dto.setId(event.getId());
+        dto.setMatchID(event.getMatchID());
+        dto.setPlayerID(event.getPlayerID());
+        dto.setTeamID(event.getTeamID());
+
+        dto.setMinute(event.getMinute());
+        dto.setAdditionalInfo(event.getAdditionalInfo());
+
+        // Ajouter les noms pour l'affichage (optionnel)
+        Players player = playerRepository.findById(event.getPlayerID());
+        Teams team = TeamRepository.findById(event.getTeamID()).orElse(null);
+
+        if (player != null) {
+            dto.setPlayerName(player.getName());
+        }
+        if (team != null) {
+            dto.setTeamName(team.getName());
+        }
+
+        return dto;
+    }
+
+    private List<MatchEventsDTO> convertMatchEventsToDTO(List<MatchEvents> events) {
+        return events.stream()
+                .map(this::convertMatchEventToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private MatchPlayerDTO convertMatchPlayerToDTO(MatchPlayer mp) {
+        MatchPlayerDTO dto = new MatchPlayerDTO();
+        dto.setId(mp.getId());
+        dto.setMatchID(mp.getMatchID());
+        dto.setTeamID(mp.getTeamID());
+        dto.setPlayerID(mp.getPlayerID());
+        dto.setStarter(mp.isStarter());
+        dto.setPosition(mp.getPosition());
+        dto.setJerseyNumber(mp.getJerseyNumber());
+        dto.setMinutesPlayed(mp.getMinutesPlayed());
+        dto.setRating(mp.getRating());
+
+        // Ajouter les infos du joueur pour l'affichage (optionnel)
+        Players player = playerRepository.findById(mp.getPlayerID());
+        if (player != null) {
+            dto.setPlayerName(player.getName());
+            dto.setPlayerImgUrl(player.getImgUrl());
+        }
+
+        return dto;
+    }
+
+    private List<MatchPlayerDTO> convertMatchPlayerToDTO(List<MatchPlayer> players) {
+        return players.stream()
+                .map(this::convertMatchPlayerToDTO)
+                .collect(Collectors.toList());
     }
 
     private StadeDTO convertStadeToDTO(Stades st) {
@@ -281,7 +357,6 @@ public class AcceuilController {
         dto.setCityId(neew.getCity().getId());
         dto.setDateOfEvent(neew.getDateOfEvent());
         dto.setDescription(neew.getDescription());
-
         dto.setImageUrl(neew.getImageUrl());
         dto.setPriceProxim(neew.getPriceProxim());
         dto.setName(neew.getName());
@@ -331,5 +406,4 @@ public class AcceuilController {
                 .map(this::convertGroupTeamToDTO)
                 .collect(Collectors.toList());
     }
-
 }
