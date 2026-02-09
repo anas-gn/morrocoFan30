@@ -158,7 +158,7 @@ public class AcceuilController {
     }
 
     /////// culture
-    @GetMapping("/culture/forYou")
+    @GetMapping("/culture/foryou")
     public List<CultureDTO> getLastCulture() {
         List<Cultures> cul = cultureRepository.findAll();
 
@@ -332,6 +332,8 @@ public class AcceuilController {
         dto.setDescription(cc.getDescription());
         dto.setImageUrl(cc.getImageUrl());
         dto.setDateOfCreation(cc.getDateOfCreation());
+        dto.setTeamId(cc.getTeam().getId());
+        dto.setTeamName(cc.getTeam().getName());
 
         return dto;
     }
