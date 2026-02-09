@@ -581,9 +581,6 @@ public class MatchesController {
         return convertMatchEventToDTO(savedEvent);
     }
 
-    ////////////////////////////////////////////
-    ////////// MATCH PLAYERS METHODS //////////
-    ////////////////////////////////////////////
 
     ///////////// Ajouter un joueur à un match (lineup)
     @PostMapping("/matches/players/add")

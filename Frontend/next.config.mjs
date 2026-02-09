@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
-};
+  // Désactiver l'overlay de dev en erreur
+  devIndicators: {
+    buildActivity: false,
+    buildActivityPosition: 'bottom-right',
+  },
+  
+  // Option: désactiver complètement l'overlay
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+}
 
-export default nextConfig;
+module.exports = nextConfig
