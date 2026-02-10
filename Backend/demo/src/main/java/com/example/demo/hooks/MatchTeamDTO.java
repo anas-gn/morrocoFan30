@@ -7,6 +7,7 @@ public class MatchTeamDTO {
     private int goals;
     private int teamId;
     private String teamName;
+    private String imageUrl;
 
     public MatchTeamDTO() {
     }
@@ -56,6 +57,14 @@ public class MatchTeamDTO {
 
     public void setTeamName(String teamName) {
         this.teamName = teamName;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
 }

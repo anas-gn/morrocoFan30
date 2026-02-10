@@ -237,6 +237,7 @@ public class AcceuilController {
         mt.setTeamId(cc.getTeam().getId());
         mt.setGoals(cc.getGoals());
         mt.setTeamName(cc.getTeam().getName());
+        mt.setImageUrl(cc.getTeam().getImageUrl());
         return mt;
     }
 
