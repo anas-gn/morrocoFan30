@@ -1,7 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-
-// Puis dans le JSX :
 
 export default function Acceuil() {
   // États pour stocker les données
@@ -17,6 +15,10 @@ export default function Acceuil() {
   // États pour gérer le chargement et les erreurs
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Refs pour les sliders
+  const citiesScrollRef = useRef(null);
+  const newsScrollRef = useRef(null);
 
   // Récupérer les villes
   useEffect(() => {
@@ -80,11 +82,19 @@ export default function Acceuil() {
       .catch((err) => console.error('Erreur:', err));
   }, []);
 
-  // Récupérer les matchs à venir
+  // Récupérer les matchs à venir - FILTRER SEULEMENT LES MATCHS FUTURS
   useEffect(() => {
     fetch('http://localhost:3309/api/acceuil/matches/upcoming')
       .then((res) => res.json())
-      .then((data) => setUpcomingMatches(data))
+      .then((data) => {
+        // Filtrer pour garder seulement les matchs dont la date est dans le futur
+        const now = new Date();
+        const futureMatches = data.filter(match => {
+          const matchDate = new Date(match.dateOfMatch);
+          return matchDate > now;
+        });
+        setUpcomingMatches(futureMatches);
+      })
       .catch((err) => console.error('Erreur:', err));
   }, []);
 
@@ -123,8 +133,41 @@ export default function Acceuil() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fonctions de navigation pour les sliders
+  const scrollCities = (direction) => {
+    if (citiesScrollRef.current) {
+      const scrollAmount = 360; // largeur d'une carte + gap
+      const newScrollPosition = citiesScrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+      citiesScrollRef.current.scrollTo({
+        left: newScrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollNews = (direction) => {
+    if (newsScrollRef.current) {
+      const scrollAmount = 400;
+      const newScrollPosition = newsScrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+      newsScrollRef.current.scrollTo({
+        left: newScrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   // Affichage du chargement ou des erreurs
-  if (loading) return <p className="text-center py-10">Chargement des données...</p>;
+ if (loading) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <img
+        src="/images/logo.png"
+        alt="Loading"
+        className="w-20 h-20 mb-4"
+      />
+    </div>
+  );
+}
   if (error) return <p className="text-center py-10 text-red-500">Erreur: {error}</p>;
 
   return (
@@ -136,6 +179,7 @@ export default function Acceuil() {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link rel="icon" href="/images/logo.png" />
       </Head>
 
       <style jsx global>{`
@@ -177,15 +221,12 @@ export default function Acceuil() {
         .animate-scroll-dot { animation: scroll-dot 2s ease-in-out infinite; }
       `}</style>
 
-      {/* Navigation - same as before */}
+      {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 glass transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <a href="#" className="flex items-center gap-3 group">
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#C1272D] via-[#a01e23] to-[#8b1820] rounded-lg flex items-center justify-center text-white shadow-xl shadow-red-500/30 transform group-hover:rotate-6 transition-transform duration-300">
-                <span className="material-icons text-[#006233]">star</span>
-              </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#006233] rounded-full border-2 border-white"></div>
+              <img src="/images/logo.png" alt="MoroccoFan2030 Logo" className="w-10 h-10 object-cover transition-all" />
             </div>
             <div className="flex flex-col">
               <span className="font-bold tracking-tight text-stone-900 text-sm">
@@ -202,7 +243,7 @@ export default function Acceuil() {
                 <span className="text-xs text-[#006233] decorative-font opacity-70">المدن</span>
               </div>
             </a>
-            <a href="#matches" className="group px-4 py-2 hover:bg-red-50 rounded-lg transition-all">
+            <a href="/Matches" className="group px-4 py-2 hover:bg-red-50 rounded-lg transition-all">
               <div className="flex flex-col items-center gap-1">
                 <span className="text-sm font-semibold text-stone-700 group-hover:text-[#C1272D] transition-colors">Matches</span>
                 <span className="text-xs text-[#C1272D] decorative-font opacity-70">المباريات</span>
@@ -220,10 +261,21 @@ export default function Acceuil() {
                 <span className="text-xs text-[#C1272D] decorative-font opacity-70">المجموعات</span>
               </div>
             </a>
+             <a href="#news" onClick={(e) => handleNavClick(e, 'news')} className="group px-4 py-2 hover:bg-amber-50 rounded-lg transition-all">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-sm font-semibold text-stone-700 group-hover:text-amber-600 transition-colors">News</span>
+                <span className="text-xs text-amber-600 decorative-font opacity-70">الأخبار</span>
+              </div>
+            </a>
+            <a href="#" className="group px-4 py-2 hover:bg-purple-50 rounded-lg transition-all">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-sm font-semibold text-stone-700 group-hover:text-purple-600 transition-colors">Prediction</span>
+                <span className="text-xs text-purple-600 decorative-font opacity-70">التوقعات</span>
+              </div>
+            </a>
           </div>
 
           <div className="flex items-center gap-3">
-            
             <a href="#" className="relative overflow-hidden bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white px-5 py-2.5 rounded-lg font-bold tracking-wide hover:shadow-xl hover:shadow-red-500/40 transition-all flex items-center gap-2 group">
               <span className="relative z-10">Tickets</span>
               <span className="text-xs decorative-font opacity-90 relative z-10">التذاكر</span>
@@ -246,7 +298,7 @@ export default function Acceuil() {
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
             <div className="mb-8 animate-fade-in-down">
-              <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl  backdrop-blur-md border border-[#006233]/30 shadow-2xl">
+              <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl backdrop-blur-md border border-[#006233]/30 shadow-2xl">
                 <span className="text-xs font-bold text-green-200 uppercase tracking-widest decorative-font">First Match Begins In</span>
                 <div className="flex items-center gap-3" id="countdown">
                   <div className="flex flex-col items-center">
@@ -297,12 +349,6 @@ export default function Acceuil() {
           </div>
         </div>
         
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 animate-bounce">
-          <div className="w-6 h-10 rounded-full border-2 border-white/50 flex items-start justify-center p-2">
-            <div className="w-1 h-2 bg-white/70 rounded-full animate-scroll-dot"></div>
-          </div>
-        </div>
-
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-[5]">
           <div className="absolute w-2 h-2 bg-white/30 rounded-full animate-float" style={{top: '20%', left: '10%', animationDelay: '0s', animationDuration: '8s'}}></div>
           <div className="absolute w-3 h-3 bg-[#C1272D]/30 rounded-full animate-float" style={{top: '60%', left: '80%', animationDelay: '2s', animationDuration: '10s'}}></div>
@@ -322,7 +368,7 @@ export default function Acceuil() {
 
           <div className="flex overflow-x-auto gap-12 px-6 pb-4 items-center no-scrollbar">
             {teams.map((team) => (
-              <div key={team.id} className="flex items-center gap-3 shrink-0 opacity-50 hover:opacity-100 transition-opacity cursor-default grayscale hover:grayscale-0 group">
+              <div key={team.id} className="flex items-center gap-3 shrink-0 opacity-50 hover:opacity-100 transition-opacity cursor-default group">
                 <div className="w-10 h-10 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center overflow-hidden group-hover:shadow-md group-hover:shadow-red-500/20 transition-all">
                   <img 
                     src={team.imageUrl}
@@ -337,7 +383,7 @@ export default function Acceuil() {
         </div>
       </section>
 
-      {/* Upcoming Matches */}
+      {/* Upcoming Matches - AFFICHER SEULEMENT LES MATCHS FUTURS */}
       <section id="matches" className="py-20 bg-white border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
@@ -350,60 +396,67 @@ export default function Acceuil() {
             </a>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {upcomingMatches.slice(0, 3).map((match) => (
-              <div key={match.id} className="col-span-1 bg-gradient-to-br from-[#C1272D] to-[#a01e23] text-white rounded-2xl p-6 relative overflow-hidden group shadow-2xl shadow-red-500/20">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#006233]/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                <div className="relative z-10 flex flex-col h-full justify-between">
-                  <div className="flex justify-between items-start mb-6">
-                    <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-medium uppercase tracking-wider">Next Match</span>
-                    <span className="material-icons text-white/60 hover:text-white cursor-pointer">notifications</span>
-                  </div>
+          {upcomingMatches.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-stone-500">No upcoming matches at the moment. Check back soon!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {upcomingMatches.slice(0, 3).map((match) => (
+                <div key={match.id} className="col-span-1 bg-gradient-to-br from-[#C1272D] to-[#a01e23] text-white rounded-2xl p-6 relative overflow-hidden group shadow-2xl shadow-red-500/20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#006233]/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+                  <div className="relative z-10 flex flex-col h-full justify-between">
+                    <div className="flex justify-between items-start mb-6">
+                      <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-medium uppercase tracking-wider">Next Match</span>
+                      <span className="material-icons text-white/60 hover:text-white cursor-pointer">notifications</span>
+                    </div>
 
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="text-center">
-                      <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mb-2 shadow-lg mx-auto overflow-hidden">
-                        <img 
-                           src={match.matchTeams[0].imageUrl}
-    alt={match.matchTeams[0].teamName}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { e.target.src = `https://via.placeholder.com/56x56/C1272D/FFFFFF?text=${match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].teamName.substring(0, 2) : 'MA'}`; }}
-                        />
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="text-center">
+                        <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mb-2 shadow-lg mx-auto overflow-hidden">
+                          <img 
+                            src={match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].imageUrl : ''}
+                            alt={match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].teamName : 'Team 1'}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.target.src = `https://via.placeholder.com/56x56/C1272D/FFFFFF?text=${match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].teamName.substring(0, 2) : 'T1'}`; }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium">{match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].teamName : 'Team 1'}</span>
                       </div>
-                      <span className="text-sm font-medium">{match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].teamName : 'Morocco'}</span>
-                    </div>
-                    <div className="text-center px-4">
-                      <span className="text-3xl font-light text-white/70">vs</span>
-                      <div className="text-xs text-white/70 mt-1 uppercase tracking-widest">
-                        {new Date(match.dateOfMatch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div className="text-center px-4">
+                        <span className="text-3xl font-light text-white/70">vs</span>
+                        <div className="text-xs text-white/70 mt-1 uppercase tracking-widest">
+                          {new Date(match.dateOfMatch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-14 h-14 bg-white/10 backdrop-blur border border-white/20 rounded-full flex items-center justify-center mb-2 mx-auto overflow-hidden">
+                          <img 
+                            src={match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].imageUrl : ''}
+                            alt={match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].teamName : 'Team 2'}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.target.src = `https://via.placeholder.com/56x56/006233/FFFFFF?text=${match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].teamName.substring(0, 2) : 'T2'}`; }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium">{match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].teamName : 'Team 2'}</span>
                       </div>
                     </div>
-                    <div className="text-center">
-                      <div className="w-14 h-14 bg-white/10 backdrop-blur border border-white/20 rounded-full flex items-center justify-center mb-2 mx-auto overflow-hidden">
-                        <img 
-                          src={match.matchTeams[1].imageUrl}
-    alt={match.matchTeams[1].teamName}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <span className="text-sm font-medium">{match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].teamName : 'Spain'}</span>
-                    </div>
-                  </div>
 
-                  <div className="pt-6 border-t border-white/20">
-                    <div className="flex items-center gap-2 text-xs text-white/90">
-                      <span className="material-icons text-white/60">location_on</span>
-                      <span>{match.stadeName || 'Grand Stade de Casablanca'}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-white/90 mt-1">
-                      <span className="material-icons text-white/60">calendar_today</span>
-                      <span>{new Date(match.dateOfMatch).toLocaleDateString()} • {match.type}</span>
+                    <div className="pt-6 border-t border-white/20">
+                      <div className="flex items-center gap-2 text-xs text-white/90">
+                        <span className="material-icons text-white/60">location_on</span>
+                        <span>{match.stadeName || 'Stadium TBD'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-white/90 mt-1">
+                        <span className="material-icons text-white/60">calendar_today</span>
+                        <span>{new Date(match.dateOfMatch).toLocaleDateString()} • {match.type}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -420,7 +473,6 @@ export default function Acceuil() {
               <div key={group.id} className={`bg-gradient-to-br ${groupIndex % 2 === 0 ? 'from-red-50 to-white border-red-100' : 'from-green-50 to-white border-green-100'} rounded-2xl border-2 p-6 hover:shadow-xl ${groupIndex % 2 === 0 ? 'hover:shadow-red-500/10' : 'hover:shadow-green-500/10'} transition-all duration-300`}>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className={`font-bold ${groupIndex % 2 === 0 ? 'text-[#C1272D]' : 'text-[#006233]'} text-lg`}>{group.name}</h3>
-                
                 </div>
                 <table className="w-full text-sm">
                   <thead>
@@ -437,8 +489,8 @@ export default function Acceuil() {
                         <td className={`py-3 ${index === 0 ? 'font-semibold text-stone-900' : ''} flex items-center gap-2`}>
                           <div className="w-5 h-5 rounded-full overflow-hidden border border-stone-200 flex-shrink-0">
                             <img 
-                               src={team.teamImageUrl}
-      alt={team.teamName}
+                              src={team.teamImageUrl}
+                              alt={team.teamName}
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -457,40 +509,49 @@ export default function Acceuil() {
         </div>
       </section>
 
-      {/* Host Cities Section */}
+      {/* Host Cities Section - AVEC FLECHES FONCTIONNELLES */}
       <section className="bg-gradient-to-br from-green-900 via-[#004d28] to-green-950 border-green-950 border-b pt-16 pb-16 relative overflow-hidden" id="cities">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
         
         <div className="flex max-w-7xl mr-auto mb-8 ml-auto pr-6 pl-6 items-end justify-between relative z-10">
           <div>
-            <h2 className="text-2xl font-medium text-white tracking-tight">Host Cities</h2>
-            <p className="text-green-200 mt-1 text-sm">Explore the six venues across the Kingdom.</p>
+            <h2 className="text-3xl font-medium text-white tracking-tight">Host Cities</h2>
+            <p className="text-green-200 mt-2">Explore the six venues across the Kingdom.</p>
           </div>
           <div className="flex gap-2">
-            <button className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all">
-              <span className="material-icons text-sm">arrow_back</span>
+            <button 
+              onClick={() => scrollCities('left')}
+              className="w-10 h-10 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/50 transition-all cursor-pointer"
+            >
+              <span className="material-icons">arrow_back</span>
             </button>
-            <button className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 hover:bg-white/10 transition-all">
-              <span className="material-icons text-sm">arrow_forward</span>
+            <button 
+              onClick={() => scrollCities('right')}
+              className="w-10 h-10 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/50 transition-all cursor-pointer"
+            >
+              <span className="material-icons">arrow_forward</span>
             </button>
           </div>
         </div>
 
-        <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 px-6 max-w-[100vw] no-scrollbar relative z-10">
+        <div 
+          ref={citiesScrollRef}
+          className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 px-6 max-w-[100vw] no-scrollbar relative z-10"
+        >
           {cities.map((city) => (
             <div key={city.id} className="min-w-[280px] md:min-w-[340px] snap-center group cursor-pointer">
               <div className="relative h-[400px] rounded-2xl overflow-hidden mb-4 ring-2 ring-white/20 group-hover:ring-white/40 transition-all">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
                 <img
-                  src="https://images.unsplash.com/photo-1539020140153-e479b8c22e70?q=80&w=1000&auto=format&fit=crop"
+                  src={city.imageUrl}
                   alt={city.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute bottom-6 left-6 z-20 text-white">
-                  <span className="text-xs font-bold uppercase tracking-wider mb-1 block text-amber-300">Final Venue</span>
-                  <h3 className="text-3xl font-serif">{city.name}</h3>
-                  <p className="text-sm opacity-80 mt-1 flex items-center gap-1">
-                    <span className="material-icons text-white/60">location_on</span>
+                  <span className="text-xs font-bold uppercase tracking-wider mb-1 block text-amber-300">Host City</span>
+                  <h3 className="text-3xl font-serif mb-1">{city.name}</h3>
+                  <p className="text-sm opacity-80 flex items-center gap-1">
+                    <span className="material-icons text-white/60 text-base">location_on</span>
                     {city.description}
                   </p>
                 </div>
@@ -500,16 +561,25 @@ export default function Acceuil() {
         </div>
       </section>
 
-      {/* Latest News Section - Structure from Image 2 */}
+      {/* Latest News Section - AVEC FLECHES FONCTIONNELLES ET TITRES CORRIGES */}
       <section className="border-y bg-white border-stone-100 pt-20 pb-20" id="news">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-end mb-10">
-            <h2 className="text-3xl font-medium text-stone-900 tracking-tight">Latest News</h2>
+            <div>
+              <h2 className="text-3xl font-medium text-stone-900 tracking-tight">Latest News</h2>
+              <p className="text-stone-500 mt-2">Stay updated with the latest from Morocco 2030</p>
+            </div>
             <div className="flex gap-2">
-              <button className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center hover:bg-stone-50 text-stone-500 hover:text-[#006233] hover:border-[#006233] transition-all">
+              <button 
+                onClick={() => scrollNews('left')}
+                className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center hover:bg-stone-50 text-stone-500 hover:text-[#006233] hover:border-[#006233] transition-all cursor-pointer"
+              >
                 <span className="material-icons">arrow_back</span>
               </button>
-              <button className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white flex items-center justify-center hover:shadow-lg hover:shadow-red-500/30 transition-all">
+              <button 
+                onClick={() => scrollNews('right')}
+                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white flex items-center justify-center hover:shadow-lg hover:shadow-red-500/30 transition-all cursor-pointer"
+              >
                 <span className="material-icons">arrow_forward</span>
               </button>
             </div>
@@ -517,14 +587,18 @@ export default function Acceuil() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Large Featured News - Left */}
-            {latestNews && latestNews[0] && (
+            {latestNews && latestNews.length > 0 && latestNews[0] && (
               <article className="md:col-span-2 group cursor-pointer">
                 <div className="relative h-[400px] rounded-2xl overflow-hidden mb-4 ring-2 ring-transparent group-hover:ring-[#C1272D]/20 transition-all">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
-                  <img src={latestNews[0].imageUrl || "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=2070&auto=format&fit=crop"} alt={latestNews[0].title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" />
+                  <img 
+                    src={latestNews[0].imageUrl || "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=2070&auto=format&fit=crop"} 
+                    alt={latestNews[0].title || 'News'} 
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
+                  />
                   <div className="absolute top-4 left-4 z-20">
                     <span className="px-3 py-1 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
-                      {latestNews[0].category || 'INFRASTRUCTURE'}
+                      {latestNews[0].category || 'NEWS'}
                     </span>
                   </div>
                 </div>
@@ -535,9 +609,9 @@ export default function Acceuil() {
                     <span>4 min read</span>
                   </div>
                   <h3 className="text-2xl md:text-3xl font-medium text-stone-900 mb-2 group-hover:text-[#C1272D] transition-colors serif-font">
-                    {latestNews[0].title}
+                    {latestNews[0].title || 'Latest News Update'}
                   </h3>
-                  <p className="text-stone-500 leading-relaxed">{latestNews[0].description}</p>
+                  <p className="text-stone-500 leading-relaxed">{latestNews[0].description || 'Read the latest updates about Morocco 2030'}</p>
                 </div>
               </article>
             )}
@@ -545,17 +619,21 @@ export default function Acceuil() {
             {/* Side News List - Right */}
             <div className="flex flex-col gap-6">
               {latestNews && latestNews.slice(1, 4).map((news, index) => (
-                <article key={news.id} className="group cursor-pointer">
+                <article key={news.id || index} className="group cursor-pointer">
                   <div className="flex items-start gap-4">
                     <div className="w-24 h-20 rounded-xl overflow-hidden shrink-0 ring-2 ring-transparent group-hover:ring-stone-200 transition-all">
-                      <img src={news.imageUrl || "https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=800&auto=format&fit=crop"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={news.title} />
+                      <img 
+                        src={news.imageUrl || "https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=800&auto=format&fit=crop"} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        alt={news.title || 'News'} 
+                      />
                     </div>
                     <div className="flex-1">
                       <span className={`text-xs font-bold uppercase tracking-wider mb-1 block ${index === 0 ? 'text-[#006233]' : index === 1 ? 'text-amber-600' : 'text-[#C1272D]'}`}>
                         {news.category || (index === 0 ? 'TEAM NEWS' : index === 1 ? 'TOURISM' : 'FIFA')}
                       </span>
                       <h4 className="text-base font-medium text-stone-900 mb-1 group-hover:text-[#C1272D] transition-colors leading-tight">
-                        {news.title}
+                        {news.title || 'News Update'}
                       </h4>
                       <p className="text-xs text-stone-400">{new Date(news.dateOfCreation).toLocaleDateString()}</p>
                     </div>
@@ -568,39 +646,43 @@ export default function Acceuil() {
         </div>
       </section>
 
-      {/* Cultural Pulse Section - Structure from Image 1 */}
+      {/* Cultural Pulse Section - TITRES CORRIGES */}
       <section id="culture" className="py-24 bg-gradient-to-br from-[#C1272D] via-[#a01e23] to-[#8b1820] text-stone-200 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
         
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-start mb-8">
-            <p className="text-red-100 text-sm">Experience the sights, sounds, and tastes of the Maghreb.</p>
-            <button className="text-amber-300 hover:text-white transition-colors text-sm font-medium flex items-center gap-2 mt-4 md:mt-0 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20">
+            <div>
+              <h2 className="text-3xl font-medium text-white tracking-tight mb-2">Cultural Pulse</h2>
+              <p className="text-red-100">Experience the sights, sounds, and tastes of the Maghreb.</p>
+            </div>
+            <button className="text-amber-300 hover:text-white transition-colors font-medium flex items-center gap-2 mt-4 md:mt-0 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20">
               Discover More
+              <span className="material-icons text-sm">arrow_forward</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Large Featured Culture Card - Left (2/3 width) */}
-            {cultures && cultures[0] && (
+            {cultures && cultures.length > 0 && cultures[0] && (
               <div className="md:col-span-2 relative h-[500px] rounded-3xl overflow-hidden group cursor-pointer ring-2 ring-white/20 hover:ring-white/40 transition-all">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10"></div>
                 <img
                   src={cultures[0].imageUrl || "https://images.unsplash.com/photo-1535069502363-2207185df19f?q=80&w=2070&auto=format&fit=crop"}
-                  alt={cultures[0].title}
+                  alt={cultures[0].title || 'Culture'}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute bottom-8 left-8 z-20 max-w-lg">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-black text-xs font-bold uppercase rounded-full shadow-lg">
-                      {cultures[0].category || 'GASTRONOMY'}
+                      {cultures[0].category || 'CULTURE'}
                     </span>
                   </div>
                   <h3 className="text-3xl md:text-4xl font-serif text-white mb-3 leading-tight">
-                    {cultures[0].title}
+                    {cultures[0].title || 'Discover Moroccan Culture'}
                   </h3>
                   <p className="text-stone-200 leading-relaxed">
-                    {cultures[0].description}
+                    {cultures[0].description || 'Experience the rich cultural heritage of Morocco'}
                   </p>
                 </div>
               </div>
@@ -608,12 +690,12 @@ export default function Acceuil() {
 
             {/* Stacked Smaller Culture Cards - Right (1/3 width) */}
             <div className="flex flex-col gap-6 h-[500px]">
-              {cultures && cultures[1] && (
+              {cultures && cultures.length > 1 && cultures[1] && (
                 <div className="flex-1 relative rounded-3xl overflow-hidden group cursor-pointer ring-2 ring-white/20 hover:ring-white/40 transition-all">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                   <img 
                     src={cultures[1].imageUrl || "https://images.unsplash.com/photo-1590418606746-0188b23364f9?q=80&w=800&auto=format&fit=crop"} 
-                    alt={cultures[1].title}
+                    alt={cultures[1].title || 'Culture'}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                   />
                   <div className="absolute bottom-6 left-6 z-20">
@@ -621,18 +703,18 @@ export default function Acceuil() {
                       {cultures[1].category || 'HERITAGE'}
                     </span>
                     <h4 className="text-xl font-medium text-white leading-tight">
-                      {cultures[1].title}
+                      {cultures[1].title || 'Moroccan Heritage'}
                     </h4>
                   </div>
                 </div>
               )}
 
-              {cultures && cultures[2] && (
+              {cultures && cultures.length > 2 && cultures[2] && (
                 <div className="flex-1 relative rounded-3xl overflow-hidden group cursor-pointer ring-2 ring-white/20 hover:ring-white/40 transition-all">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
                   <img 
                     src={cultures[2].imageUrl || "https://images.unsplash.com/photo-1512553353614-82a737009659?q=80&w=800&auto=format&fit=crop"} 
-                    alt={cultures[2].title}
+                    alt={cultures[2].title || 'Culture'}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                   />
                   <div className="absolute bottom-6 left-6 z-20">
@@ -640,7 +722,7 @@ export default function Acceuil() {
                       {cultures[2].category || 'ARCHITECTURE'}
                     </span>
                     <h4 className="text-xl font-medium text-white leading-tight">
-                      {cultures[2].title}
+                      {cultures[2].title || 'Moroccan Architecture'}
                     </h4>
                   </div>
                 </div>
@@ -670,14 +752,14 @@ export default function Acceuil() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"></div>
                   <img
                     src={event.imageUrl || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800&auto=format&fit=crop"}
-                    alt={event.name}
+                    alt={event.name || 'Event'}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   <div className="absolute top-4 left-4 z-20">
                     <span className="px-3 py-1 bg-[#C1272D] text-white rounded-full text-xs font-bold uppercase">Event</span>
                   </div>
                   <div className="absolute bottom-4 left-4 z-20">
-                    <h3 className="text-2xl font-bold text-white serif-font">{event.name}</h3>
+                    <h3 className="text-2xl font-bold text-white serif-font">{event.name || 'Event'}</h3>
                   </div>
                 </div>
                 <div className="p-6">
@@ -687,9 +769,9 @@ export default function Acceuil() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-stone-500 mb-4">
                     <span className="material-icons" style={{fontSize: '16px'}}>location_on</span>
-                    <span>{event.cityName}</span>
+                    <span>{event.cityName || 'Location TBD'}</span>
                   </div>
-                  <p className="text-stone-600 mb-4">{event.description}</p>
+                  <p className="text-stone-600 mb-4">{event.description || 'Join us for this exciting event'}</p>
                 </div>
               </div>
             ))}
@@ -707,9 +789,11 @@ export default function Acceuil() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-1 md:col-span-1">
               <a href="#" className="flex items-center gap-2 mb-6 text-white group">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#C1272D] to-[#a01e23] rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                  <span className="material-icons text-[#006233]">star</span>
-                </div>
+                <img 
+                  src="images/logo.png" 
+                  alt="MoroccoFan2030 Logo" 
+                  className="w-12 h-12 object-contain"
+                />
                 <span className="font-bold tracking-tight uppercase">MoroccoFan2030</span>
               </a>
               <p className="text-sm leading-relaxed mb-6 text-stone-400">
