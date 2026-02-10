@@ -1,11 +1,14 @@
 package com.example.demo.controllers;
 
 import com.example.demo.repositories.CityHostRepository;
+import com.example.demo.repositories.ImageRepository;
 import com.example.demo.models.CityHosts;
 import com.example.demo.models.Hotels;
+import com.example.demo.models.Images;
 import com.example.demo.models.Attractions;
 import com.example.demo.models.Stades;
 import com.example.demo.hooks.CityHostDTO;
+import com.example.demo.hooks.ImageDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,21 +22,25 @@ public class CityHostController {
 
     @Autowired
     private CityHostRepository cityHostRepository;
-    
+    @Autowired
+    private ImageRepository ImageRepository;
 
     // ADD CITY
- 
+
     @PostMapping("/add")
     public boolean addCity(@RequestBody CityHosts city) {
-        if (city == null) return false;
+        if (city == null)
+            return false;
         cityHostRepository.save(city);
         return true;
     }
+
     // UPDATE CITY
     @PutMapping("/update/{id}")
     public boolean updateCity(@PathVariable int id, @RequestBody CityHosts city) {
         CityHosts existingCity = cityHostRepository.findById(id).orElse(null);
-        if (existingCity == null) return false;
+        if (existingCity == null)
+            return false;
 
         existingCity.setName(city.getName());
         existingCity.setCountry(city.getCountry());
@@ -43,17 +50,27 @@ public class CityHostController {
         cityHostRepository.save(existingCity);
         return true;
     }
+
     // DELETE CITY
     @DeleteMapping("/delete/{id}")
     public boolean deleteCity(@PathVariable int id) {
         CityHosts city = cityHostRepository.findById(id).orElse(null);
-        if (city == null) return false;
+        if (city == null)
+            return false;
 
         cityHostRepository.deleteById(id);
         return true;
     }
 
-    //  GET ALL HOST CITIES
+    @GetMapping("/images/city/{cityId}")
+    public List<ImageDTO> getCityImages(@PathVariable int cityId) {
+        List<Images> images = ImageRepository.findByTypeAndOwnerID("city", cityId);
+        return images.stream()
+                .map(this::convertImageToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // GET ALL HOST CITIES
     // Page Cities
     @GetMapping("/all")
     public List<CityHostDTO> getAllCities() {
@@ -68,27 +85,34 @@ public class CityHostController {
     @GetMapping("/{id}")
     public CityHostDTO getCityById(@PathVariable int id) {
         CityHosts city = cityHostRepository.findById(id).orElse(null);
-        if (city == null) return null;
+        if (city == null)
+            return null;
         return convertToDTO(city);
-    } 
-    //  GET HOTELS OF CITY
+    }
+
+    // GET HOTELS OF CITY
     @GetMapping("/{id}/hotels")
     public List<Hotels> getCityHotels(@PathVariable int id) {
         CityHosts city = cityHostRepository.findById(id).orElse(null);
-        if (city == null) return null;
+        if (city == null)
+            return null;
         return city.getHotels();
     }
-    //  GET ATTRACTIONS OF CITY
+
+    // GET ATTRACTIONS OF CITY
     @GetMapping("/{id}/attractions")
     public List<Attractions> getCityAttractions(@PathVariable int id) {
         CityHosts city = cityHostRepository.findById(id).orElse(null);
-        if (city == null) return null;
+        if (city == null)
+            return null;
         return city.getAttractions();
     }
+
     @GetMapping("/{id}/stades")
     public List<Stades> getCityStades(@PathVariable int id) {
         CityHosts city = cityHostRepository.findById(id).orElse(null);
-        if (city == null) return null;
+        if (city == null)
+            return null;
         return city.getStades();
     }
 
@@ -100,5 +124,13 @@ public class CityHostController {
         dto.setDescription(city.getDescription());
         dto.setRegion(city.getRegion());
         return dto;
+    }
+
+    private ImageDTO convertImageToDTO(Images image) {
+        return new ImageDTO(
+                image.getId(),
+                image.getImageUrl(),
+                image.getType(),
+                image.getOwnerID());
     }
 }

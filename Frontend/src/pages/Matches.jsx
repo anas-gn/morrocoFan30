@@ -329,8 +329,8 @@ if (loading) {
                 <option value="all">All Stages</option>
                 <option value="Group stage">Group Stage</option>
                 <option value="Round of 16">Round of 16</option>
-                <option value="Quarter-finals">Quarter-finals</option>
-                <option value="Semi-finals">Semi-finals</option>
+                <option value="Quarter Final">Quarter-finals</option>
+                <option value="Semi Final">Semi-finals</option>
                 <option value="Final">Final</option>
               </select>
             </div>

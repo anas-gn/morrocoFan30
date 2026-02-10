@@ -167,7 +167,7 @@ public class TeamController {
         dto.setImageUrl(team.getImageUrl());
         dto.setName(team.getName());
         dto.setDescription(team.getDescription());
-
+        dto.setParticipation(team.getParticipation());
         return dto;
     }
 }

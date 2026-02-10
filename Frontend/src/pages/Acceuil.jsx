@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import Navbar from '@/components/Navbar';
 
 export default function Acceuil() {
   // États pour stocker les données
@@ -11,6 +12,9 @@ export default function Acceuil() {
   const [cultures, setCultures] = useState([]);
   const [teams, setTeams] = useState([]);
   const [upcomingMatches, setUpcomingMatches] = useState([]);
+
+  // État pour la rotation des actualités
+  const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
 
   // États pour gérer le chargement et les erreurs
   const [loading, setLoading] = useState(true);
@@ -98,6 +102,17 @@ export default function Acceuil() {
       .catch((err) => console.error('Erreur:', err));
   }, []);
 
+  // Rotation automatique des actualités toutes les 5 secondes
+  useEffect(() => {
+    if (latestNews.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentNewsIndex((prevIndex) => (prevIndex + 1) % latestNews.length);
+      }, 5000); // Change toutes les 5 secondes
+
+      return () => clearInterval(interval);
+    }
+  }, [latestNews]);
+
   // Fonction countdown timer
   useEffect(() => {
     const updateCountdown = () => {
@@ -156,6 +171,14 @@ export default function Acceuil() {
     }
   };
 
+  // Obtenir les actualités à afficher sur le côté (exclure l'actualité principale)
+  const getSideNews = () => {
+    if (latestNews.length === 0) return [];
+    
+    const sideNews = latestNews.filter((_, index) => index !== currentNewsIndex);
+    return sideNews.slice(0, 3);
+  };
+
   // Affichage du chargement ou des erreurs
  if (loading) {
   return (
@@ -212,6 +235,7 @@ export default function Acceuil() {
         @keyframes glow { 0%, 100% { text-shadow: 0 0 30px rgba(193, 39, 45, 0.5), 0 0 60px rgba(193, 39, 45, 0.3); } 50% { text-shadow: 0 0 40px rgba(193, 39, 45, 0.8), 0 0 80px rgba(193, 39, 45, 0.4); } }
         @keyframes float { 0%, 100% { transform: translateY(0) translateX(0); } 25% { transform: translateY(-30px) translateX(20px); } 50% { transform: translateY(-60px) translateX(-20px); } 75% { transform: translateY(-30px) translateX(20px); } }
         @keyframes scroll-dot { 0%, 100% { transform: translateY(0); opacity: 0; } 50% { transform: translateY(12px); opacity: 1; } }
+        @keyframes slide-in { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
 
         .animate-fade-in-down { animation: fade-in-down 0.8s ease-out; }
         .animate-fade-in-up { animation: fade-in-up 0.8s ease-out; }
@@ -219,72 +243,9 @@ export default function Acceuil() {
         .animate-glow { animation: glow 3s ease-in-out infinite; }
         .animate-float { animation: float 8s ease-in-out infinite; }
         .animate-scroll-dot { animation: scroll-dot 2s ease-in-out infinite; }
+        .animate-slide-in { animation: slide-in 0.6s ease-out; }
       `}</style>
-
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 glass transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <a href="#" className="flex items-center gap-3 group">
-            <div className="relative">
-              <img src="/images/logo.png" alt="MoroccoFan2030 Logo" className="w-10 h-10 object-cover transition-all" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold tracking-tight text-stone-900 text-sm">
-                Morocco<span className="text-[#C1272D]">2030</span>
-              </span>
-              <span className="text-xs text-[#006233] decorative-font" style={{marginTop: '-2px'}}>المغرب</span>
-            </div>
-          </a>
-
-          <div className="hidden md:flex items-center gap-1">
-            <a href="#cities" className="group px-4 py-2 hover:bg-green-50 rounded-lg transition-all">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-semibold text-stone-700 group-hover:text-[#006233] transition-colors">Cities</span>
-                <span className="text-xs text-[#006233] decorative-font opacity-70">المدن</span>
-              </div>
-            </a>
-            <a href="/Matches" className="group px-4 py-2 hover:bg-red-50 rounded-lg transition-all">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-semibold text-stone-700 group-hover:text-[#C1272D] transition-colors">Matches</span>
-                <span className="text-xs text-[#C1272D] decorative-font opacity-70">المباريات</span>
-              </div>
-            </a>
-            <a href="#culture" className="group px-4 py-2 hover:bg-green-50 rounded-lg transition-all">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-semibold text-stone-700 group-hover:text-[#006233] transition-colors">Culture</span>
-                <span className="text-xs text-[#006233] decorative-font opacity-70">الثقافة</span>
-              </div>
-            </a>
-            <a href="#groups" className="group px-4 py-2 hover:bg-red-50 rounded-lg transition-all">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-semibold text-stone-700 group-hover:text-[#C1272D] transition-colors">Groups</span>
-                <span className="text-xs text-[#C1272D] decorative-font opacity-70">المجموعات</span>
-              </div>
-            </a>
-             <a href="#news" onClick={(e) => handleNavClick(e, 'news')} className="group px-4 py-2 hover:bg-amber-50 rounded-lg transition-all">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-semibold text-stone-700 group-hover:text-amber-600 transition-colors">News</span>
-                <span className="text-xs text-amber-600 decorative-font opacity-70">الأخبار</span>
-              </div>
-            </a>
-            <a href="#" className="group px-4 py-2 hover:bg-purple-50 rounded-lg transition-all">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-sm font-semibold text-stone-700 group-hover:text-purple-600 transition-colors">Prediction</span>
-                <span className="text-xs text-purple-600 decorative-font opacity-70">التوقعات</span>
-              </div>
-            </a>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <a href="#" className="relative overflow-hidden bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white px-5 py-2.5 rounded-lg font-bold tracking-wide hover:shadow-xl hover:shadow-red-500/40 transition-all flex items-center gap-2 group">
-              <span className="relative z-10">Tickets</span>
-              <span className="text-xs decorative-font opacity-90 relative z-10">التذاكر</span>
-              <div className="absolute inset-0 bg-[#006233] transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-            </a>
-          </div>
-        </div>
-      </nav>
-
+      <Navbar />
       {/* Hero Section with Countdown */}
       <header className="relative w-full pt-32 pb-20 md:pt-48 md:pb-24 overflow-hidden border-b border-stone-200">
         <div className="absolute inset-0 w-full h-full z-0">
@@ -486,15 +447,17 @@ export default function Acceuil() {
                     {group.groupTeams && group.groupTeams.map((team, index) => (
                       <tr key={team.id} className={`border-b border-stone-50 ${index === 0 ? `bg-gradient-to-r ${groupIndex % 2 === 0 ? 'from-[#C1272D]/10' : 'from-[#006233]/10'} to-transparent` : ''}`}>
                         <td className={`py-3 ${index === 0 ? `font-medium ${groupIndex % 2 === 0 ? 'text-[#C1272D]' : 'text-[#006233]'}` : ''}`}>{index + 1}</td>
-                        <td className={`py-3 ${index === 0 ? 'font-semibold text-stone-900' : ''} flex items-center gap-2`}>
-                          <div className="w-5 h-5 rounded-full overflow-hidden border border-stone-200 flex-shrink-0">
-                            <img 
-                              src={team.teamImageUrl}
-                              alt={team.teamName}
-                              className="w-full h-full object-cover"
-                            />
+                        <td className={`py-3 ${index === 0 ? 'font-semibold text-stone-900' : ''}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full overflow-hidden border border-stone-200 flex-shrink-0 shadow-sm">
+                              <img 
+                                src={team.teamImageUrl}
+                                alt={team.teamName}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <span>{team.teamName}</span>
                           </div>
-                          {team.teamName}
                         </td>
                         <td className={`py-3 text-right ${index === 0 ? `font-bold ${groupIndex % 2 === 0 ? 'text-[#C1272D]' : 'text-[#006233]'}` : ''}`}>
                           {team.wins * 3 + team.draws}
@@ -561,7 +524,7 @@ export default function Acceuil() {
         </div>
       </section>
 
-      {/* Latest News Section - AVEC FLECHES FONCTIONNELLES ET TITRES CORRIGES */}
+      {/* Latest News Section - AVEC ROTATION AUTOMATIQUE */}
       <section className="border-y bg-white border-stone-100 pt-20 pb-20" id="news">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-end mb-10">
@@ -586,39 +549,48 @@ export default function Acceuil() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Large Featured News - Left */}
-            {latestNews && latestNews.length > 0 && latestNews[0] && (
-              <article className="md:col-span-2 group cursor-pointer">
+            {/* Large Featured News - Left - AVEC ROTATION */}
+            {latestNews && latestNews.length > 0 && latestNews[currentNewsIndex] && (
+              <article key={currentNewsIndex} className="md:col-span-2 group cursor-pointer animate-slide-in">
                 <div className="relative h-[400px] rounded-2xl overflow-hidden mb-4 ring-2 ring-transparent group-hover:ring-[#C1272D]/20 transition-all">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
                   <img 
-                    src={latestNews[0].imageUrl || "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=2070&auto=format&fit=crop"} 
-                    alt={latestNews[0].title || 'News'} 
+                    src={latestNews[currentNewsIndex].imageUrl || "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=2070&auto=format&fit=crop"} 
+                    alt={latestNews[currentNewsIndex].title || 'News'} 
                     className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
                   />
                   <div className="absolute top-4 left-4 z-20">
                     <span className="px-3 py-1 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
-                      {latestNews[0].category || 'NEWS'}
+                      {latestNews[currentNewsIndex].category || 'NEWS'}
                     </span>
+                  </div>
+                  {/* Indicateur de rotation */}
+                  <div className="absolute top-4 right-4 z-20 flex gap-1">
+                    {latestNews.map((_, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === currentNewsIndex ? 'bg-white w-6' : 'bg-white/40'}`}
+                      ></div>
+                    ))}
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center gap-3 text-xs text-stone-400 mb-2">
-                    <span>{new Date(latestNews[0].dateOfCreation).toLocaleDateString()}</span>
+                    <span>{new Date(latestNews[currentNewsIndex].dateOfCreation).toLocaleDateString()}</span>
                     <span className="w-1 h-1 rounded-full bg-stone-300"></span>
                     <span>4 min read</span>
                   </div>
                   <h3 className="text-2xl md:text-3xl font-medium text-stone-900 mb-2 group-hover:text-[#C1272D] transition-colors serif-font">
-                    {latestNews[0].title || 'Latest News Update'}
+                    {latestNews[currentNewsIndex].title || 'Latest News Update'}
                   </h3>
-                  <p className="text-stone-500 leading-relaxed">{latestNews[0].description || 'Read the latest updates about Morocco 2030'}</p>
+                  <p className="text-stone-500 leading-relaxed">{latestNews[currentNewsIndex].description || 'Read the latest updates about Morocco 2030'}</p>
                 </div>
               </article>
             )}
 
             {/* Side News List - Right */}
             <div className="flex flex-col gap-6">
-              {latestNews && latestNews.slice(1, 4).map((news, index) => (
+              {getSideNews().map((news, index) => (
                 <article key={news.id || index} className="group cursor-pointer">
                   <div className="flex items-start gap-4">
                     <div className="w-24 h-20 rounded-xl overflow-hidden shrink-0 ring-2 ring-transparent group-hover:ring-stone-200 transition-all">
@@ -646,7 +618,7 @@ export default function Acceuil() {
         </div>
       </section>
 
-      {/* Cultural Pulse Section - TITRES CORRIGES */}
+      {/* Cultural Pulse Section */}
       <section id="culture" className="py-24 bg-gradient-to-br from-[#C1272D] via-[#a01e23] to-[#8b1820] text-stone-200 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
         
@@ -821,7 +793,6 @@ export default function Acceuil() {
                 <li><a href="#" className="text-stone-400 hover:text-[#C1272D] hover:translate-x-1 inline-block transition-all">Match Schedule</a></li>
                 <li><a href="#" className="text-stone-400 hover:text-[#006233] hover:translate-x-1 inline-block transition-all">Venues</a></li>
                 <li><a href="#" className="text-stone-400 hover:text-[#C1272D] hover:translate-x-1 inline-block transition-all">Teams</a></li>
-                <li><a href="#" className="text-stone-400 hover:text-[#006233] hover:translate-x-1 inline-block transition-all">Ticketing</a></li>
               </ul>
             </div>
 
