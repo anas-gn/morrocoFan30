@@ -7,15 +7,17 @@ public class CityHostDTO {
     private String country;
     private String description;
     private String region;
+    private String imageUrl;
 
     public CityHostDTO() {
     }
 
-    public CityHostDTO(String name, String country, String description, String region) {
+    public CityHostDTO(String name, String country, String description, String region, String imageUrl) {
         this.name = name;
         this.country = country;
         this.description = description;
         this.region = region;
+        this.imageUrl = imageUrl;
     }
 
     public CityHostDTO(int id, String name, String country, String description, String region) {
@@ -64,5 +66,13 @@ public class CityHostDTO {
 
     public void setRegion(String region) {
         this.region = region;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

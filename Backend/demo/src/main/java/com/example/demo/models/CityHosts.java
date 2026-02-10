@@ -28,10 +28,13 @@ public class CityHosts {
     @OneToMany(mappedBy = "cityHost")
     private List<Stades> stades;
 
+    private String imageUrl;
+
     public CityHosts() {
     }
 
-    public CityHosts(String name, String country, String description, String region) {
+    public CityHosts(String name, String country, String description, String region, String imageUrl) {
+        this.imageUrl = imageUrl;
         this.name = name;
         this.country = country;
         this.description = description;
@@ -86,7 +89,7 @@ public class CityHosts {
         this.hotels = hotels;
     }
 
-     public List<Stades> getStades() {
+    public List<Stades> getStades() {
         return stades;
     }
 
@@ -94,12 +97,19 @@ public class CityHosts {
         this.stades = stades;
     }
 
-
     public List<Attractions> getAttractions() {
         return attractions;
     }
 
     public void setAttractions(List<Attractions> attractions) {
         this.attractions = attractions;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

@@ -174,7 +174,7 @@ public class AcceuilController {
     public List<TeamDTO> getSomeTeams() {
         List<Teams> teams = TeamRepository.findAll();
 
-        return teams.stream().limit(4).map(this::convertTeamToDTO).collect(Collectors.toList());
+        return teams.stream().limit(20).map(this::convertTeamToDTO).collect(Collectors.toList());
     }
 
     /////////// upcaming matches
@@ -202,6 +202,7 @@ public class AcceuilController {
             dto.setDescription(city.getDescription());
             dto.setName(city.getName());
             dto.setRegion(city.getRegion());
+            dto.setImageUrl(city.getImageUrl());
             return dto;
         }
     }

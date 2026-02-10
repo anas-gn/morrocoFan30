@@ -17,7 +17,8 @@ CREATE TABLE CityHosts (
   name VARCHAR(100),
   country VARCHAR(100),
   description TEXT,
-  region VARCHAR(100)
+  region VARCHAR(100),
+   imageUrl VARCHAR(255)
 );
 CREATE TABLE Responsables (
     id INT PRIMARY KEY AUTO_INCREMENT,
