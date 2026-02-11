@@ -145,13 +145,13 @@ export default function Teams() {
   // Fonction pour obtenir les initiales du pays
   const getCountryCode = (countryName) => {
     const codes = {
-      'Morocco': 'MA', 'Algeria': 'DZ', 'Tunisia': 'TN', 'Egypt': 'EG',
-      'France': 'FR', 'Germany': 'DE', 'Spain': 'ES', 'Italy': 'IT',
-      'Brazil': 'BR', 'Argentina': 'AR', 'Uruguay': 'UY', 'Colombia': 'CO',
-      'United States': 'US', 'Mexico': 'MX', 'Canada': 'CA',
-      'Japan': 'JP', 'South Korea': 'KR', 'Iran': 'IR', 'Saudi Arabia': 'SA',
-      'Portugal': 'PT', 'England': 'EN', 'Netherlands': 'NL', 'Belgium': 'BE',
-      'Senegal': 'SN', 'Nigeria': 'NG', 'Cameroon': 'CM', 'Ghana': 'GH'
+      'Morocco': 'MAR', 'Algeria': 'ALG', 'Tunisia': 'TNS', 'Egypt': 'EGY',
+      'France': 'FRA', 'Germany': 'GER', 'Spain': 'ESP', 'Italy': 'ITL',
+      'Brazil': 'BRA', 'Argentina': 'ARG', 'Uruguay': 'UGY', 'Colombia': 'COL',
+      'United States': 'USA', 'Mexico': 'MEX', 'Canada': 'CAN',
+      'Japan': 'JPA', 'South Korea': 'KRA', 'Iran': 'IRA', 'Saudi Arabia': 'KSA',
+      'Portugal': 'PRT', 'England': 'ENG', 'Netherlands': 'NLD', 'Belgium': 'BEL',
+      'Senegal': 'SNG', 'Nigeria': 'NIG', 'Cameroon': 'CMA', 'Ghana': 'GHA'
     };
     return codes[countryName] || countryName.substring(0, 2).toUpperCase();
   };

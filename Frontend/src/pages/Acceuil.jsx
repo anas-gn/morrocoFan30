@@ -22,6 +22,7 @@ export default function Acceuil() {
 
   // Refs pour les sliders
   const citiesScrollRef = useRef(null);
+  const stadesScrollRef = useRef(null);
   const newsScrollRef = useRef(null);
 
   // Récupérer les villes
@@ -154,6 +155,17 @@ export default function Acceuil() {
       const scrollAmount = 360; // largeur d'une carte + gap
       const newScrollPosition = citiesScrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
       citiesScrollRef.current.scrollTo({
+        left: newScrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollStades = (direction) => {
+    if (stadesScrollRef.current) {
+      const scrollAmount = 360; // largeur d'une carte + gap
+      const newScrollPosition = stadesScrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
+      stadesScrollRef.current.scrollTo({
         left: newScrollPosition,
         behavior: 'smooth'
       });
@@ -517,6 +529,73 @@ export default function Acceuil() {
                     <span className="material-icons text-white/60 text-base">location_on</span>
                     {city.description}
                   </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stades Section - AVEC FLECHES FONCTIONNELLES */}
+      <section className="bg-gradient-to-br from-stone-50 via-white to-stone-50 border-stone-200 border-b pt-16 pb-16 relative overflow-hidden" id="stades">
+        <div className="absolute inset-0 opacity-5 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
+        
+        <div className="flex max-w-7xl mr-auto mb-8 ml-auto pr-6 pl-6 items-end justify-between relative z-10">
+          <div>
+            <h2 className="text-3xl font-medium text-stone-900 tracking-tight">World Cup Stadiums</h2>
+            <p className="text-stone-600 mt-2">Discover the iconic venues hosting the matches.</p>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => scrollStades('left')}
+              className="w-10 h-10 rounded-full border-2 border-stone-300 flex items-center justify-center text-stone-600 hover:bg-stone-100 hover:border-stone-400 transition-all cursor-pointer"
+            >
+              <span className="material-icons">arrow_back</span>
+            </button>
+            <button 
+              onClick={() => scrollStades('right')}
+              className="w-10 h-10 rounded-full border-2 border-stone-300 flex items-center justify-center text-stone-600 hover:bg-stone-100 hover:border-stone-400 transition-all cursor-pointer"
+            >
+              <span className="material-icons">arrow_forward</span>
+            </button>
+          </div>
+        </div>
+
+        <div 
+          ref={stadesScrollRef}
+          className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 px-6 max-w-[100vw] no-scrollbar relative z-10"
+        >
+          {stades.map((stade) => (
+            <div 
+              key={stade.id} 
+              className="min-w-[280px] md:min-w-[340px] snap-center group cursor-pointer"
+              onClick={() => window.location.href = `/stade/${stade.id}`}
+            >
+              <div className="relative h-[400px] rounded-2xl overflow-hidden mb-4 ring-2 ring-stone-200 group-hover:ring-[#C1272D] transition-all shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10"></div>
+                <img
+                  src={stade.imageUrl}
+                  alt={stade.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute top-4 right-4 z-20">
+                  <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold text-white uppercase tracking-wider border border-white/30">
+                    Capacity: {stade.capacity ? stade.capacity.toLocaleString() : 'N/A'}
+                  </div>
+                </div>
+                <div className="absolute bottom-6 left-6 z-20 text-white">
+                  <span className="text-xs font-bold uppercase tracking-wider mb-1 block text-[#C1272D] bg-white px-2 py-1 rounded inline-block">Stadium</span>
+                  <h3 className="text-3xl font-serif mb-2">{stade.name}</h3>
+                  <p className="text-sm opacity-90 flex items-center gap-1 mb-2">
+                    <span className="material-icons text-white/80 text-base">location_on</span>
+                    {stade.cityName || stade.city}
+                  </p>
+                  {stade.description && (
+                    <p className="text-xs opacity-80 line-clamp-2">{stade.description}</p>
+                  )}
+                </div>
+                <div className="absolute inset-0 z-[15] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  
                 </div>
               </div>
             </div>
