@@ -327,7 +327,7 @@ if (loading) {
                 className="absolute inset-0 opacity-0 cursor-pointer w-full"
               >
                 <option value="all">All Stages</option>
-                <option value="Group stage">Group Stage</option>
+                <option value="Group Stage">Group Stage</option>
                 <option value="Round of 16">Round of 16</option>
                 <option value="Quarter Final">Quarter-finals</option>
                 <option value="Semi Final">Semi-finals</option>

@@ -236,6 +236,8 @@ public class StadeController {
             dto.setStadeId(match.getStade().getId());
         }
         dto.setStadeName(match.getStade().getName());
+        dto.setReferee(match.getReferee());
+
 
         return dto;
     }
@@ -247,6 +249,7 @@ public class StadeController {
         mt.setTeamId(cc.getTeam().getId());
         mt.setGoals(cc.getGoals());
         mt.setTeamName(cc.getTeam().getName());
+        mt.setImageUrl(cc.getTeam().getImageUrl());
         return mt;
 
     }
