@@ -211,6 +211,9 @@ export default function Teams() {
         h1, h2, h3, h4, .serif-font {
           font-family: 'Playfair Display', serif;
         }
+body { font-family: 'Cairo', sans-serif; }
+        h1, h2, h3, h4, .serif-font { font-family: 'Amiri', serif; }
+        .decorative-font { font-family: 'Aref Ruqaa', serif; }
 
         @keyframes scaleIn {
           0% { transform: scale(1); }
