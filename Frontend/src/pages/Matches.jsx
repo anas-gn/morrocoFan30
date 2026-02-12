@@ -630,7 +630,7 @@ if (loading) {
                         {dayMatches.map((match, matchIndex) => {
                           const status = getMatchStatus(match.statut);
                           return (
-                            <Link href={`/matches/${match.id}`} key={match.id}>
+                            <Link href={`/match/${match.id}`} key={match.id}>
                               <div 
                                 className="bg-white rounded-xl border border-stone-200 hover:border-[#C1272D] hover:shadow-lg transition-all p-6 cursor-pointer group card-hover animate-fade-in-up"
                                 style={{animationDelay: `${(dateIndex * 0.1) + (matchIndex * 0.05)}s`}}

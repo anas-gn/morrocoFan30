@@ -6,17 +6,19 @@ public class MatchTeamDTO {
     private int matchId;
     private int goals;
     private int teamId;
+    private double position;
     private String teamName;
     private String imageUrl;
 
     public MatchTeamDTO() {
     }
 
-    public MatchTeamDTO(int goals,int teamId,int matchId,String n) {
+    public MatchTeamDTO(int goals,int teamId,int matchId,String n,double position) {
         this.goals = goals;
         this.teamId=teamId;
         this.matchId=matchId;
         this.teamName=n;
+        this.position=position;
        }
 
     public int getMatchId() {
@@ -65,6 +67,14 @@ public class MatchTeamDTO {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public double getPosition() {
+        return position;
+    }
+
+    public void setPosition(double position) {
+        this.position = position;
     }
 
 }

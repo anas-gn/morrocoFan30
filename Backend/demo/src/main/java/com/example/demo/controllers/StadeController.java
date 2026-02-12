@@ -250,6 +250,7 @@ public class StadeController {
         mt.setGoals(cc.getGoals());
         mt.setTeamName(cc.getTeam().getName());
         mt.setImageUrl(cc.getTeam().getImageUrl());
+        mt.setPosition(cc.getPosition());
         return mt;
 
     }

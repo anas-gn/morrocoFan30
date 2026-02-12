@@ -116,6 +116,7 @@ CREATE TABLE MatchTeam (
   matchID INT,
   teamID INT,
   goals INT,
+  position DOUBLE,
   formation VARCHAR(50),
   FOREIGN KEY (matchID) REFERENCES Matches(id) ON DELETE CASCADE,
   FOREIGN KEY (teamID) REFERENCES Teams(id) ON DELETE CASCADE

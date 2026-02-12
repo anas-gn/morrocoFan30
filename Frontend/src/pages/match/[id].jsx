@@ -8,130 +8,266 @@ export default function MatchDetail() {
   const router = useRouter();
   const { id } = router.query;
 
-  // États pour les données
   const [match, setMatch] = useState(null);
   const [events, setEvents] = useState([]);
   const [lineup, setLineup] = useState([]);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'lineup', 'events', 'stats'
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Récupérer les données du match
+  // Prediction states
+  const [prediction, setPrediction] = useState(null);       // existing prediction from API
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [predSubmitting, setPredSubmitting] = useState(false);
+  const [predMessage, setPredMessage] = useState(null);
+
+  const supporterId =
+    typeof window !== 'undefined'
+      ? parseInt(localStorage.getItem('supporterId') || '0', 10)
+      : 0;
+
   useEffect(() => {
     if (!id) return;
-
-    const fetchMatchData = async () => {
+    const fetchAll = async () => {
       try {
-        // Récupérer le match
-        const matchRes = await fetch(`http://localhost:3309/api/matches/matches/${id}`);
-        const matchData = await matchRes.json();
+        const [matchRes, eventsRes, lineupRes] = await Promise.all([
+          fetch(`http://localhost:3309/api/matches/matches/${id}`),
+          fetch(`http://localhost:3309/api/matches/matches/${id}/events`),
+          fetch(`http://localhost:3309/api/matches/matches/${id}/players/lineup`),
+        ]);
+        const [matchData, eventsData, lineupData] = await Promise.all([
+          matchRes.json(), eventsRes.json(), lineupRes.json(),
+        ]);
         setMatch(matchData);
-
-        // Récupérer les événements
-        const eventsRes = await fetch(`http://localhost:3309/api/matches/matches/${id}/events`);
-        const eventsData = await eventsRes.json();
         setEvents(eventsData);
-
-        // Récupérer le lineup
-        const lineupRes = await fetch(`http://localhost:3309/api/matches/matches/${id}/players/lineup`);
-        const lineupData = await lineupRes.json();
         setLineup(lineupData);
+        if (matchData?.stadeId) fetchWeather(33.5731, -7.5898);
 
-        // Récupérer la météo (exemple avec des coordonnées fictives - à adapter selon le stade)
-        if (matchData?.stadeId) {
-          // Vous pouvez mapper les stades à leurs coordonnées
-          fetchWeather(33.5731, -7.5898); // Coordonnées de Casablanca par exemple
+        // fetch existing prediction
+        if (supporterId) {
+          try {
+            const predRes = await fetch(
+              `http://localhost:3309/api/predictions/supporter/${supporterId}/match/${id}`
+            );
+            if (predRes.ok) {
+              const predData = await predRes.json();
+              setPrediction(predData);
+            }
+          } catch (_) {}
         }
-
         setLoading(false);
       } catch (err) {
-        console.error('Erreur:', err);
+        console.error(err);
         setLoading(false);
       }
     };
-
-    fetchMatchData();
+    fetchAll();
   }, [id]);
 
   const fetchWeather = async (lat, lng) => {
     try {
-      // Remplacez par votre API météo réelle
-      const response = await fetch(
+      const res = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=YOUR_API_KEY`
       );
-      const data = await response.json();
-      setWeather(data);
-    } catch (err) {
-      console.error('Erreur météo:', err);
+      setWeather(await res.json());
+    } catch (_) {}
+  };
+
+  const submitPrediction = async () => {
+    if (!selectedTeamId) return;
+    setPredSubmitting(true);
+    try {
+      const res = await fetch(
+        `http://localhost:3309/api/predictions/add?matchId=${id}&supporterId=${supporterId}&predictedWinnerId=${selectedTeamId}`,
+        { method: 'POST' }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setPrediction(data);
+        setPredMessage(' Pronostic enregistré avec succès !');
+      } else {
+        setPredMessage(' Erreur lors de l\'enregistrement.');
+      }
+    } catch (_) {
+      setPredMessage('Erreur réseau.');
     }
+    setPredSubmitting(false);
   };
 
-  // Fonction pour obtenir le statut du match avec style
-  const getMatchStatus = (status) => {
-    const statusMap = {
-      'DIRECT': { label: 'LIVE', color: 'bg-red-500', textColor: 'text-white', pulse: true },
-      'started': { label: 'LIVE', color: 'bg-red-500', textColor: 'text-white', pulse: true },
-      'commence': { label: 'LIVE', color: 'bg-red-500', textColor: 'text-white', pulse: true },
-      'termine': { label: 'FT', color: 'bg-stone-500', textColor: 'text-white', pulse: false },
-      'Finished': { label: 'FT', color: 'bg-stone-500', textColor: 'text-white', pulse: false },
-      'upcoming': { label: 'Upcoming', color: 'bg-green-500', textColor: 'text-white', pulse: false },
-      'default': { label: 'Scheduled', color: 'bg-stone-200', textColor: 'text-stone-700', pulse: false }
+  const getStatus = (s) => {
+    const map = {
+      DIRECT:   { label: 'LIVE',      live: true,  color: 'red' },
+      started:  { label: 'LIVE',      live: true,  color: 'red' },
+      commence: { label: 'LIVE',      live: true,  color: 'red' },
+      termine:  { label: 'FT',        live: false, color: 'stone' },
+      Finished: { label: 'FT',        live: false, color: 'stone' },
+      upcoming: { label: 'À venir',   live: false, color: 'green' },
     };
-    return statusMap[status] || statusMap.default;
+    return map[s] || { label: 'Prévu', live: false, color: 'stone' };
   };
 
-  // Grouper les joueurs par équipe
-  const getTeamLineup = (teamId) => {
-    return lineup.filter(player => player.teamID === teamId);
+  const isMatchActive = (s) => ['DIRECT','started','commence'].includes(s);
+  const isMatchFinished = (s) => ['termine','Finished'].includes(s);
+  const isMatchUpcoming = (s) => !isMatchActive(s) && !isMatchFinished(s);
+
+  const getEventIcon = (info = '') => {
+    const l = info.toLowerCase();
+    if (l.includes('goal'))         return { icon: '⚽', bg: 'bg-emerald-50', ring: 'ring-emerald-200', text: 'text-emerald-700' };
+    if (l.includes('yellow'))       return { icon: '🟨', bg: 'bg-yellow-50',  ring: 'ring-yellow-200',  text: 'text-yellow-700' };
+    if (l.includes('red'))          return { icon: '🟥', bg: 'bg-red-50',     ring: 'ring-red-200',     text: 'text-red-700'    };
+    if (l.includes('substitution')) return { icon: '🔄', bg: 'bg-stone-100',  ring: 'ring-stone-200',   text: 'text-stone-600'  };
+    return                                 { icon: '📌', bg: 'bg-stone-100',  ring: 'ring-stone-200',   text: 'text-stone-600'  };
   };
 
-  // Séparer titulaires et remplaçants
-  const getStarters = (teamPlayers) => {
-    return teamPlayers.filter(player => player.starter);
+  const getTeamLineup = (teamId) => lineup.filter(p => p.teamID === teamId);
+  const starters      = (arr)    => arr.filter(p =>  p.starter);
+  const substitutes   = (arr)    => arr.filter(p => !p.starter);
+
+  const PredictionPanel = () => {
+    const team1 = match?.matchTeams?.[0];
+    const team2 = match?.matchTeams?.[1];
+    const status = match?.statut;
+
+    /* ── Already predicted ── */
+    if (prediction) {
+      const winnerName = prediction.predictedWinnerName || 'Inconnue';
+      const st = prediction.status?.toLowerCase();
+      const resultConfig = {
+        correct:   { bg: 'bg-emerald-500/10 border-emerald-500/30', badge: 'bg-emerald-500', icon: '✅', label: 'Correct !', text: 'text-emerald-400' },
+        incorrect: { bg: 'bg-red-500/10 border-red-500/30',         badge: 'bg-red-500',     icon: '❌', label: 'Incorrect', text: 'text-red-400'     },
+        pending:   { bg: 'bg-amber-500/10 border-amber-500/30',      badge: 'bg-amber-500',   icon: '⏳', label: 'En attente', text: 'text-amber-400'  },
+      };
+      const r = resultConfig[st] || resultConfig.pending;
+
+      return (
+        <div className={`rounded-3xl p-6 border ${r.bg} backdrop-blur-sm`}>
+          <div className="flex items-center gap-2 mb-5">
+            <span className="text-xl">{r.icon}</span>
+            <h3 className="font-semibold text-white text-sm tracking-wide">Mon Pronostic</h3>
+            <span className={`ml-auto text-[11px] font-bold uppercase px-2.5 py-1 rounded-full text-white ${r.badge}`}>
+              {r.icon} {r.label}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 bg-white/5 rounded-2xl p-4">
+            <img
+              src={selectedTeamId === team1?.teamId ? team1?.imageUrl : team2?.imageUrl}
+              className="w-10 h-10 rounded-full object-cover border-2 border-white/20"
+              alt={winnerName}
+            />
+            <div>
+              <p className="text-xs text-stone-400 mb-0.5">Équipe pronostiquée</p>
+              <p className="font-bold text-white">{winnerName}</p>
+            </div>
+          </div>
+          {st === 'pending' && isMatchActive(status) && (
+            <p className="mt-4 text-xs text-stone-400 text-center">
+              Le match est en cours — résultat en attente…
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    /* ── Match started / finished → too late ── */
+    if (!isMatchUpcoming(status) && !prediction) {
+      return (
+        <div className="rounded-3xl p-6 bg-white/5 border border-white/10">
+          <div className="flex items-center gap-2 mb-3">
+            
+            <h3 className="font-semibold text-white text-sm">Pronostic</h3>
+          </div>
+          <p className="text-stone-500 text-sm text-center py-4">
+            Les pronostics ne sont plus acceptés.<br />Le match a {isMatchFinished(status) ? 'terminé' : 'commencé'}.
+          </p>
+        </div>
+      );
+    }
+
+    /* ── Upcoming → prediction form ── */
+    return (
+      <div className="rounded-3xl p-6 bg-white/5 border border-white/10">
+        <div className="flex items-center gap-2 mb-5">
+         
+          <h3 className="font-semibold text-white text-sm tracking-wide">Votre Pronostic</h3>
+          <span className="ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            Ouvert
+          </span>
+        </div>
+        <p className="text-stone-400 text-xs mb-4">Qui remportera ce match ?</p>
+        <div className="flex flex-col gap-3 mb-5">
+          {[team1, team2].map(team => (
+            <button
+              key={team?.teamId}
+              onClick={() => setSelectedTeamId(team?.teamId)}
+              className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all duration-200 text-left ${
+                selectedTeamId === team?.teamId
+                  ? 'bg-[#C1272D]/20 border-[#C1272D]/60 shadow-lg shadow-[#C1272D]/10'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+              }`}
+            >
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                selectedTeamId === team?.teamId ? 'border-[#C1272D] bg-[#C1272D]' : 'border-stone-600'
+              }`}>
+                {selectedTeamId === team?.teamId && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
+              </div>
+              <img src={team?.imageUrl} className="w-9 h-9 rounded-full object-cover border border-white/20" alt={team?.teamName} />
+              <span className="font-medium text-white text-sm">{team?.teamName}</span>
+            </button>
+          ))}
+        </div>
+        {predMessage && (
+          <p className="text-xs text-center text-stone-400 mb-3">{predMessage}</p>
+        )}
+        <button
+          onClick={submitPrediction}
+          disabled={!selectedTeamId || predSubmitting}
+          className={`w-full py-3 rounded-2xl font-semibold text-sm transition-all duration-200 ${
+            selectedTeamId && !predSubmitting
+              ? 'bg-[#C1272D] hover:bg-[#A01F24] text-white shadow-lg shadow-[#C1272D]/30 active:scale-[0.98]'
+              : 'bg-white/10 text-stone-500 cursor-not-allowed'
+          }`}
+        >
+          {predSubmitting ? 'Envoi…' : 'Confirmer le pronostic'}
+        </button>
+      </div>
+    );
   };
 
-  const getSubstitutes = (teamPlayers) => {
-    return teamPlayers.filter(player => !player.starter);
-  };
-
-  // Icône d'événement
-  const getEventIcon = (info) => {
-    if (info?.toLowerCase().includes('goal')) return '⚽';
-    if (info?.toLowerCase().includes('yellow')) return '🟨';
-    if (info?.toLowerCase().includes('red')) return '🟥';
-    if (info?.toLowerCase().includes('substitution')) return '🔄';
-    return '📌';
-  };
+  /* ─────────────── RENDER ─────────────── */
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50">
-        <img
-          src="/images/logo.png"
-          alt="Loading"
-          className="w-20 h-20 mb-4 animate-pulse"
-        />
+      <div className="flex items-center justify-center min-h-screen bg-[#1C1917]">
+        <img src="/images/logo.png" alt="Loading" className="w-16 h-16 animate-pulse opacity-60" />
       </div>
     );
   }
 
   if (!match) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50">
-        <h2 className="text-2xl font-bold text-stone-700">Match non trouvé</h2>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#1C1917] text-white">
+        <h2 className="text-2xl font-bold">Match non trouvé</h2>
       </div>
     );
   }
 
-  const status = getMatchStatus(match.statut);
-  const team1 = match.matchTeams?.[0];
-  const team2 = match.matchTeams?.[1];
+  const status = getStatus(match.statut);
+  const team1  = match.matchTeams?.[0];
+  const team2  = match.matchTeams?.[1];
+  const showScore = isMatchActive(match.statut) || isMatchFinished(match.statut);
+
+  const TABS = [
+    { key: 'overview', label: 'Overview',     icon: '' },
+    { key: 'lineup',   label: 'Compositions', icon: '' },
+    { key: 'events',   label: 'Événements',   icon: '', badge: events.length },
+    { key: 'stats',    label: 'Statistiques', icon: '' },
+  ];
 
   return (
     <>
-      <Head>
-        <title>{`${team1?.teamName} vs ${team2?.teamName} | MoroccoFan2030`}</title>
-        <meta name="description" content={`Match details for ${team1?.teamName} vs ${team2?.teamName}`} />
+       <Head>
+        <title>MoroccoFan2030 | The Kingdom Roars</title>
+        <meta name="description" content="MoroccoFan2030 - Football World Cup 2030 in Morocco" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
@@ -140,130 +276,146 @@ export default function MatchDetail() {
       </Head>
 
       <style jsx global>{`
-        body { font-family: 'Cairo', sans-serif; }
-        h1, h2, h3, h4, .serif-font { font-family: 'Amiri', serif; }
-        .decorative-font { font-family: 'Aref Ruqaa', serif; }
+        body { font-family: 'Outfit', sans-serif; background-color: #FAFAF9; color: #1C1917; }
+        .serif-font { font-family: 'Playfair Display', serif; }
 
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-          50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        @keyframes ping-dot {
+          75%, 100% { transform: scale(2); opacity: 0; }
         }
-        .animate-pulse-glow { animation: pulse-glow 2s infinite; }
+        .animate-ping-dot { animation: ping-dot 1.2s cubic-bezier(0,0,0.2,1) infinite; }
 
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        @keyframes fade-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
+        .animate-fade-up { animation: fade-up 0.55s ease-out forwards; }
+        .delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .delay-3 { animation-delay: 0.3s; opacity: 0; }
 
-        .animate-fade-in-up {
-          animation: fadeInUp 0.6s ease-out forwards;
+        .timeline-line::before {
+          content: '';
+          position: absolute;
+          top: 24px;
+          bottom: 0;
+          left: 23px;
+          width: 2px;
+          background: #E7E5E4;
+          z-index: 0;
         }
-
-        .delay-100 { animation-delay: 0.1s; }
-        .delay-200 { animation-delay: 0.2s; }
-        .delay-300 { animation-delay: 0.3s; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .glass-panel {
+          background: rgba(255,255,255,0.95);
+          backdrop-filter: blur(12px);
+          border-bottom: 1px solid rgba(231,229,228,0.8);
+        }
       `}</style>
 
       <Navbar />
 
-      {/* Hero Section - Score principal */}
-      <header className="relative pt-32 pb-12 bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900 overflow-hidden">
-        {/* Pattern background */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-            backgroundSize: '24px 24px'
-          }}></div>
+      {/* ══════════════ HERO ══════════════ */}
+      <header className="relative pt-32 pb-16 bg-[#1C1917] overflow-hidden">
+        {/* Background stadium image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src=""
+            className="w-full h-full object-cover opacity-15 grayscale"
+            alt=""
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1C1917] via-[#1C1917]/80 to-transparent" />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-6">
-          {/* Badge de statut */}
-          <div className="flex justify-center mb-6">
-            <span className={`px-6 py-2 rounded-full text-sm font-bold uppercase ${status.color} ${status.textColor} ${status.pulse ? 'animate-pulse-glow' : ''}`}>
-              {status.label}
-            </span>
+        <div className="relative z-10 max-w-5xl mx-auto px-6">
+          {/* Status pill */}
+          <div className="flex justify-center mb-10 animate-fade-up">
+            <div className={`flex items-center gap-2 px-5 py-1.5 rounded-full border backdrop-blur-sm ${
+              status.live
+                ? 'bg-[#C1272D]/10 border-[#C1272D]/30'
+                : isMatchFinished(match.statut)
+                  ? 'bg-stone-700/40 border-stone-600/30'
+                  : 'bg-emerald-500/10 border-emerald-500/30'
+            }`}>
+              {status.live && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping-dot absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#C1272D]" />
+                </span>
+              )}
+              <span className={`text-xs font-bold uppercase tracking-widest ${
+                status.live ? 'text-[#C1272D]' : isMatchFinished(match.statut) ? 'text-stone-400' : 'text-emerald-400'
+              }`}>
+                {status.label}
+              </span>
+            </div>
           </div>
 
-          {/* Score principal */}
-          <div className="flex items-center justify-center gap-8 md:gap-16 mb-8">
+          {/* Score board */}
+          <div className="flex items-center justify-between md:justify-center gap-6 md:gap-20 animate-fade-up delay-1">
             {/* Team 1 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-full border-4 border-[#C1272D] flex items-center justify-center mb-4 overflow-hidden">
-                <img 
-                  src={team1?.imageUrl}
-                  alt={team1?.teamName}
-                  className="w-full h-full object-cover"
-                />
+            <div className="flex flex-col items-center gap-4 w-1/3 md:w-auto">
+              <div className="relative group">
+                <div className="absolute -inset-4 bg-[#C1272D] opacity-20 blur-xl rounded-full group-hover:opacity-30 transition-opacity" />
+                <div className="relative w-20 h-20 md:w-32 md:h-32 rounded-full bg-stone-100 border-4 border-[#1C1917] shadow-2xl flex items-center justify-center overflow-hidden">
+                  <img src={team1?.imageUrl} alt={team1?.teamName} className="w-full h-full object-cover" />
+                </div>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">{team1?.teamName}</h2>
-              {(match.statut === 'termine' || match.statut === 'Finished' || match.statut === 'DIRECT' || match.statut === 'started') && (
-                <div className="text-6xl md:text-7xl font-bold text-[#C1272D]">{team1?.goals || 0}</div>
+              <h2 className="serif-font text-white text-xl md:text-2xl text-center">{team1?.teamName}</h2>
+              {showScore && (
+                <div className="text-5xl md:text-7xl font-light text-white">{team1?.goals ?? 0}</div>
               )}
             </div>
 
-            {/* VS / Time */}
-            <div className="text-center">
-              {(match.statut === 'termine' || match.statut === 'Finished' || match.statut === 'DIRECT' || match.statut === 'started') ? (
-                <div className="text-4xl font-light text-stone-400">-</div>
+            {/* Centre */}
+            <div className="flex flex-col items-center">
+              {showScore ? (
+                <div className="text-4xl font-light text-stone-600">:</div>
               ) : (
-                <div>
-                  <div className="text-5xl font-light text-white mb-2">VS</div>
-                  <div className="text-sm text-stone-400">
+                <>
+                  <div className="serif-font text-4xl font-light text-white mb-3">VS</div>
+                  <div className="px-4 py-1.5 rounded-lg bg-white/5 border border-white/10 text-stone-400 text-xs font-medium uppercase tracking-wider">
                     {new Date(match.dateOfMatch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                </div>
+                </>
               )}
             </div>
 
             {/* Team 2 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-full border-4 border-[#006233] flex items-center justify-center mb-4 overflow-hidden">
-                <img 
-                  src={team2?.imageUrl}
-                  alt={team2?.teamName}
-                  className="w-full h-full object-cover"
-                />
+            <div className="flex flex-col items-center gap-4 w-1/3 md:w-auto">
+              <div className="relative group">
+                <div className="absolute -inset-4 bg-emerald-500 opacity-10 blur-xl rounded-full group-hover:opacity-20 transition-opacity" />
+                <div className="relative w-20 h-20 md:w-32 md:h-32 rounded-full bg-stone-100 border-4 border-[#1C1917] shadow-2xl flex items-center justify-center overflow-hidden">
+                  <img src={team2?.imageUrl} alt={team2?.teamName} className="w-full h-full object-cover" />
+                </div>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">{team2?.teamName}</h2>
-              {(match.statut === 'termine' || match.statut === 'Finished' || match.statut === 'DIRECT' || match.statut === 'started') && (
-                <div className="text-6xl md:text-7xl font-bold text-[#006233]">{team2?.goals || 0}</div>
+              <h2 className="serif-font text-white text-xl md:text-2xl text-center">{team2?.teamName}</h2>
+              {showScore && (
+                <div className="text-5xl md:text-7xl font-light text-stone-400">{team2?.goals ?? 0}</div>
               )}
             </div>
           </div>
 
-          {/* Informations du match */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-stone-300">
+          {/* Meta info */}
+          <div className="mt-12 flex flex-wrap justify-center gap-4 md:gap-8 text-stone-400 text-sm font-medium border-t border-white/5 pt-8 animate-fade-up delay-2">
             <div className="flex items-center gap-2">
-              <span className="material-icons text-sm">calendar_today</span>
-              <span className="text-sm">{new Date(match.dateOfMatch).toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</span>
+             
+              <span>{new Date(match.dateOfMatch).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
-            <div className="w-1 h-1 bg-stone-500 rounded-full"></div>
+            <div className="w-1 h-1 rounded-full bg-stone-700" />
             <div className="flex items-center gap-2">
-              <span className="material-icons text-sm">stadium</span>
-              <span className="text-sm font-medium">{match.stadeName}</span>
+             
+              <span>{match.stadeName}</span>
             </div>
-            <div className="w-1 h-1 bg-stone-500 rounded-full"></div>
+            <div className="w-1 h-1 rounded-full bg-stone-700" />
             <div className="flex items-center gap-2">
-              <span className="material-icons text-sm">emoji_events</span>
-              <span className="text-sm">{match.type}</span>
+             
+              <span>{match.type}</span>
             </div>
             {match.referee && (
               <>
-                <div className="w-1 h-1 bg-stone-500 rounded-full"></div>
+                <div className="w-1 h-1 rounded-full bg-stone-700" />
                 <div className="flex items-center gap-2">
-                  <span className="material-icons text-sm">sports</span>
-                  <span className="text-sm">Arbitre: {match.referee}</span>
+                
+                  <span>Arbitre: {match.referee}</span>
                 </div>
               </>
             )}
@@ -271,504 +423,400 @@ export default function MatchDetail() {
         </div>
       </header>
 
-      {/* Navigation tabs */}
-      <section className="sticky top-20 bg-white border-b border-stone-200 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center gap-2 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-6 py-4 font-medium transition-all border-b-2 whitespace-nowrap ${
-                activeTab === 'overview'
-                  ? 'border-[#C1272D] text-[#C1272D]'
-                  : 'border-transparent text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-icons text-sm">info</span>
-                <span>Vue d'ensemble</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('lineup')}
-              className={`px-6 py-4 font-medium transition-all border-b-2 whitespace-nowrap ${
-                activeTab === 'lineup'
-                  ? 'border-[#006233] text-[#006233]'
-                  : 'border-transparent text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-icons text-sm">groups</span>
-                <span>Compositions</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('events')}
-              className={`px-6 py-4 font-medium transition-all border-b-2 whitespace-nowrap ${
-                activeTab === 'events'
-                  ? 'border-amber-500 text-amber-500'
-                  : 'border-transparent text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-icons text-sm">sports_soccer</span>
-                <span>Événements</span>
-                {events.length > 0 && (
-                  <span className="px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">
-                    {events.length}
+      {/* ══════════════ STICKY TABS ══════════════ */}
+      <div className="sticky top-16 z-40 bg-[#FAFAF9]/95 backdrop-blur border-b border-stone-200">
+        <div className="max-w-7xl mx-auto px-6 overflow-x-auto hide-scroll">
+          <div className="flex items-center gap-6 min-w-max">
+            {TABS.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`py-4 border-b-2 transition-all text-sm font-medium flex items-center gap-2 ${
+                  activeTab === tab.key
+                    ? 'border-[#1C1917] text-[#1C1917] font-semibold'
+                    : 'border-transparent text-stone-500 hover:text-stone-800'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                {tab.label}
+                {tab.badge > 0 && (
+                  <span className="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full">
+                    {tab.badge}
                   </span>
                 )}
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('stats')}
-              className={`px-6 py-4 font-medium transition-all border-b-2 whitespace-nowrap ${
-                activeTab === 'stats'
-                  ? 'border-stone-500 text-stone-500'
-                  : 'border-transparent text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-icons text-sm">bar_chart</span>
-                <span>Statistiques</span>
-              </div>
-            </button>
+              </button>
+            ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Contenu principal */}
-      <section className="py-12 bg-stone-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-6">
-          
-          {/* Overview Tab */}
+      {/* ══════════════ MAIN CONTENT ══════════════ */}
+      <main className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+        {/* ── LEFT COLUMN ── */}
+        <div className="lg:col-span-8 space-y-10">
+
+          {/* ── OVERVIEW TAB ── */}
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Météo */}
-              <div className="bg-white rounded-2xl border-2 border-stone-200 p-6 animate-fade-in-up">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="material-icons text-[#C1272D]">wb_sunny</span>
-                  <h3 className="text-lg font-bold text-stone-900">Conditions Météo</h3>
+            <>
+              {/* Quick stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-up">
+                <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-1">
+                  <span className="text-xs text-stone-500 font-medium uppercase tracking-wider">Buts</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-semibold text-[#C1272D]">{team1?.goals ?? 0}</span>
+                    <span className="text-stone-400 text-sm">vs</span>
+                    <span className="text-2xl font-semibold text-stone-600">{team2?.goals ?? 0}</span>
+                  </div>
                 </div>
-                
-                {weather ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-stone-600">Température</span>
-                      <span className="text-2xl font-bold text-[#C1272D]">
-                        {Math.round(weather.main?.temp)}°C
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-stone-600">Conditions</span>
-                      <span className="font-medium capitalize">{weather.weather?.[0]?.description}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-stone-600">Humidité</span>
-                      <span className="font-medium">{weather.main?.humidity}%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-stone-600">Vent</span>
-                      <span className="font-medium">{Math.round(weather.wind?.speed * 3.6)} km/h</span>
-                    </div>
+                <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-1">
+                  <span className="text-xs text-stone-500 font-medium uppercase tracking-wider">Possession</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-semibold">{match.matchTeams?.[0]?.position ?? 50}%</span>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-stone-500">
-                    <span className="material-icons text-4xl mb-2">cloud_off</span>
-                    <p className="text-sm">Données météo non disponibles</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Résumé du match */}
-              <div className="lg:col-span-2 bg-white rounded-2xl border-2 border-stone-200 p-6 animate-fade-in-up delay-100">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="material-icons text-[#006233]">description</span>
-                  <h3 className="text-lg font-bold text-stone-900">Résumé du Match</h3>
                 </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Équipe 1 */}
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <img 
-                        src={team1?.imageUrl}
-                        alt={team1?.teamName}
-                        className="w-12 h-12 rounded-full border-2 border-stone-200"
-                      />
-                      <h4 className="font-bold text-lg">{team1?.teamName}</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-stone-600">Buts marqués</span>
-                        <span className="font-bold text-[#C1272D]">{team1?.goals || 0}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-stone-600">Événements</span>
-                        <span className="font-bold">
-                          {events.filter(e => e.teamID === team1?.teamId).length}
-                        </span>
-                      </div>
-                    </div>
+                <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-1">
+                  <span className="text-xs text-stone-500 font-medium uppercase tracking-wider">Événements</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-semibold">{events.length}</span>
                   </div>
-
-                  {/* Équipe 2 */}
-                  <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <img 
-                        src={team2?.imageUrl}
-                        alt={team2?.teamName}
-                        className="w-12 h-12 rounded-full border-2 border-stone-200"
-                      />
-                      <h4 className="font-bold text-lg">{team2?.teamName}</h4>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-stone-600">Buts marqués</span>
-                        <span className="font-bold text-[#006233]">{team2?.goals || 0}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-stone-600">Événements</span>
-                        <span className="font-bold">
-                          {events.filter(e => e.teamID === team2?.teamId).length}
-                        </span>
-                      </div>
-                    </div>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-1">
+                  <span className="text-xs text-stone-500 font-medium uppercase tracking-wider">Joueurs</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-semibold">{lineup.length}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Timeline rapide des événements */}
+              {/* Event timeline preview */}
               {events.length > 0 && (
-                <div className="lg:col-span-3 bg-white rounded-2xl border-2 border-stone-200 p-6 animate-fade-in-up delay-200">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="material-icons text-amber-500">timeline</span>
-                    <h3 className="text-lg font-bold text-stone-900">Timeline Rapide</h3>
+                <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm animate-fade-up delay-1">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="serif-font text-xl text-stone-900">Timeline du Match</h3>
+                    <div className="flex items-center gap-3 text-xs font-medium text-stone-500">
+                      <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#C1272D] inline-block" />{team1?.teamName}</span>
+                      <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-stone-700 inline-block" />{team2?.teamName}</span>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center gap-4 overflow-x-auto pb-2">
-                    {events.slice(0, 10).map((event, index) => (
-                      <div 
-                        key={event.id} 
-                        className="flex-shrink-0 bg-stone-50 rounded-lg px-4 py-3 border border-stone-200"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">{getEventIcon(event.additionalInfo)}</span>
-                          <div>
-                            <div className="text-xs text-stone-500">{event.minute}'</div>
-                            <div className="text-sm font-medium text-stone-900">{event.playerName}</div>
+                  <div className="space-y-0 relative timeline-line pl-2">
+                    {events.slice(0, 6).sort((a, b) => (b.minute || 0) - (a.minute || 0)).map((ev) => {
+                      const ei = getEventIcon(ev.additionalInfo);
+                      const isTeam1 = ev.teamID === team1?.teamId;
+                      return (
+                        <div key={ev.id} className="relative pl-12 pb-6 group">
+                          <div className="absolute left-0 top-0 w-12 h-12 flex items-center justify-center bg-white z-10">
+                            <div className="w-8 h-8 rounded-full bg-stone-50 border border-stone-200 flex items-center justify-center text-[11px] font-bold text-stone-500 group-hover:border-[#C1272D] group-hover:text-[#C1272D] transition-colors">
+                              {ev.minute}'
+                            </div>
+                          </div>
+                          <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 flex items-center justify-between hover:bg-white hover:shadow-md hover:border-stone-200 transition-all">
+                            <div className="flex items-center gap-4">
+                              <div className={`w-10 h-10 rounded-full ${ei.bg} ring-1 ${ei.ring} flex items-center justify-center text-lg`}>
+                                {ei.icon}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-stone-900">{ev.playerName}</div>
+                                <div className={`text-xs ${ei.text}`}>{ev.additionalInfo}</div>
+                                <div className="text-xs text-stone-400">{ev.teamName}</div>
+                              </div>
+                            </div>
+                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isTeam1 ? 'bg-[#C1272D]' : 'bg-stone-700'}`} />
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+                  {events.length > 6 && (
+                    <button
+                      onClick={() => setActiveTab('events')}
+                      className="mt-2 w-full text-sm text-[#C1272D] hover:underline font-medium text-center"
+                    >
+                      Voir tous les événements ({events.length}) →
+                    </button>
+                  )}
                 </div>
               )}
-            </div>
+
+              {/* Lineup preview */}
+              <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm animate-fade-up delay-2">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="serif-font text-xl text-stone-900">Compositions</h3>
+                  <button onClick={() => setActiveTab('lineup')} className="text-sm font-medium text-[#C1272D] hover:underline">
+                    Voir tout →
+                  </button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-8">
+                  {[team1, team2].map((team, idx) => {
+                    const players = starters(getTeamLineup(team?.teamId)).slice(0, 4);
+                    const accent = idx === 0 ? '#C1272D' : '#1C1917';
+                    return (
+                      <div key={team?.teamId}>
+                        <div className="flex items-center gap-3 mb-4 pb-3 border-b border-stone-100">
+                          <img src={team?.imageUrl} className="w-6 h-6 rounded-full object-cover border border-stone-200" alt={team?.teamName} />
+                          <span className="font-semibold text-stone-900 text-sm">{team?.teamName}</span>
+                        </div>
+                        <ul className="space-y-3">
+                          {players.map((player, i) => (
+                            <li key={player.id} className="flex items-center gap-3 text-sm">
+                              <span style={{ color: accent }} className="w-6 text-center text-xs font-bold">{player.jerseyNumber || i + 1}</span>
+                              <span className="text-stone-800 font-medium">{player.playerName}</span>
+                              {player.position === 'GK' && (
+                                <span className="ml-auto text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded">GK</span>
+                              )}
+                              {player.rating && (
+                                <span className="ml-auto text-xs font-bold px-1.5 py-0.5 bg-stone-100 text-stone-700 rounded">{player.rating.toFixed(1)}</span>
+                              )}
+                            </li>
+                          ))}
+                          {starters(getTeamLineup(team?.teamId)).length > 4 && (
+                            <li className="flex items-center gap-3 text-sm opacity-40">
+                              <span className="w-6 text-center text-xs font-bold text-stone-400">···</span>
+                              <span>+{starters(getTeamLineup(team?.teamId)).length - 4} joueurs</span>
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
 
-          {/* Lineup Tab */}
+          {/* ── LINEUP TAB ── */}
           {activeTab === 'lineup' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Équipe 1 */}
-              <div className="bg-white rounded-2xl border-2 border-[#C1272D] p-6 animate-fade-in-up">
-                <div className="flex items-center gap-3 mb-6">
-                  <img 
-                    src={team1?.imageUrl}
-                    alt={team1?.teamName}
-                    className="w-12 h-12 rounded-full border-2 border-stone-200"
-                  />
-                  <h3 className="text-xl font-bold text-stone-900">{team1?.teamName}</h3>
-                </div>
-
-                {/* Titulaires */}
-                <div className="mb-6">
-                  <h4 className="text-sm font-bold text-stone-700 uppercase mb-3 flex items-center gap-2">
-                    <span className="material-icons text-sm">person</span>
-                    Titulaires
-                  </h4>
-                  <div className="space-y-2">
-                    {getStarters(getTeamLineup(team1?.teamId)).map((player, index) => (
-                      <div 
-                        key={player.id} 
-                        className="flex items-center justify-between p-3 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-[#C1272D] text-white rounded-full flex items-center justify-center font-bold text-sm">
-                            {player.jerseyNumber || index + 1}
-                          </div>
-                          {player.playerImgUrl && (
-                            <img 
-                              src={player.playerImgUrl}
-                              alt={player.playerName}
-                              className="w-10 h-10 rounded-full object-cover border-2 border-stone-200"
-                            />
-                          )}
-                          <div>
-                            <div className="font-medium text-stone-900">{player.playerName}</div>
-                            <div className="text-xs text-stone-500">{player.position || 'Position N/A'}</div>
-                          </div>
-                        </div>
-                        {player.rating && (
-                          <div className="px-3 py-1 bg-[#C1272D] text-white rounded-full text-sm font-bold">
-                            {player.rating.toFixed(1)}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Remplaçants */}
-                {getSubstitutes(getTeamLineup(team1?.teamId)).length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-bold text-stone-700 uppercase mb-3 flex items-center gap-2">
-                      <span className="material-icons text-sm">group_add</span>
-                      Remplaçants
-                    </h4>
-                    <div className="space-y-2">
-                      {getSubstitutes(getTeamLineup(team1?.teamId)).map((player, index) => (
-                        <div 
-                          key={player.id} 
-                          className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg opacity-75"
-                        >
-                          <div className="w-8 h-8 bg-stone-300 text-stone-600 rounded-full flex items-center justify-center font-bold text-sm">
-                            {player.jerseyNumber || index + 12}
-                          </div>
-                          <div>
-                            <div className="font-medium text-stone-700">{player.playerName}</div>
-                            <div className="text-xs text-stone-500">{player.position || 'Position N/A'}</div>
-                          </div>
-                        </div>
-                      ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[team1, team2].map((team, idx) => {
+                const accent = idx === 0 ? '#C1272D' : '#006233';
+                const teamPlayers = getTeamLineup(team?.teamId);
+                return (
+                  <div key={team?.teamId} className="bg-white rounded-3xl p-6 border-2 shadow-sm animate-fade-up" style={{ borderColor: accent }}>
+                    <div className="flex items-center gap-3 mb-6">
+                      <img src={team?.imageUrl} className="w-12 h-12 rounded-full border-2 border-stone-100 object-cover" alt={team?.teamName} />
+                      <h3 className="font-bold text-lg text-stone-900">{team?.teamName}</h3>
                     </div>
-                  </div>
-                )}
-              </div>
 
-              {/* Équipe 2 */}
-              <div className="bg-white rounded-2xl border-2 border-[#006233] p-6 animate-fade-in-up delay-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <img 
-                    src={team2?.imageUrl}
-                    alt={team2?.teamName}
-                    className="w-12 h-12 rounded-full border-2 border-stone-200"
-                  />
-                  <h3 className="text-xl font-bold text-stone-900">{team2?.teamName}</h3>
-                </div>
-
-                {/* Titulaires */}
-                <div className="mb-6">
-                  <h4 className="text-sm font-bold text-stone-700 uppercase mb-3 flex items-center gap-2">
-                    <span className="material-icons text-sm">person</span>
-                    Titulaires
-                  </h4>
-                  <div className="space-y-2">
-                    {getStarters(getTeamLineup(team2?.teamId)).map((player, index) => (
-                      <div 
-                        key={player.id} 
-                        className="flex items-center justify-between p-3 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-[#006233] text-white rounded-full flex items-center justify-center font-bold text-sm">
-                            {player.jerseyNumber || index + 1}
+                    <div className="mb-6">
+                      <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">Titulaires</p>
+                      <div className="space-y-2">
+                        {starters(teamPlayers).map((player, i) => (
+                          <div key={player.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-xl hover:bg-stone-100 transition-colors group">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-xs flex-shrink-0" style={{ backgroundColor: accent }}>
+                                {player.jerseyNumber || i + 1}
+                              </div>
+                              {player.playerImgUrl && (
+                                <img src={player.playerImgUrl} className="w-9 h-9 rounded-full object-cover border border-stone-200" alt={player.playerName} />
+                              )}
+                              <div>
+                                <p className="font-medium text-stone-900 text-sm">{player.playerName}</p>
+                                <p className="text-xs text-stone-400">{player.position || 'N/A'}</p>
+                              </div>
+                            </div>
+                            {player.rating && (
+                              <span className="text-xs font-bold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: accent }}>
+                                {player.rating.toFixed(1)}
+                              </span>
+                            )}
                           </div>
-                          {player.playerImgUrl && (
-                            <img 
-                              src={player.playerImgUrl}
-                              alt={player.playerName}
-                              className="w-10 h-10 rounded-full object-cover border-2 border-stone-200"
-                            />
-                          )}
-                          <div>
-                            <div className="font-medium text-stone-900">{player.playerName}</div>
-                            <div className="text-xs text-stone-500">{player.position || 'Position N/A'}</div>
-                          </div>
-                        </div>
-                        {player.rating && (
-                          <div className="px-3 py-1 bg-[#006233] text-white rounded-full text-sm font-bold">
-                            {player.rating.toFixed(1)}
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Remplaçants */}
-                {getSubstitutes(getTeamLineup(team2?.teamId)).length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-bold text-stone-700 uppercase mb-3 flex items-center gap-2">
-                      <span className="material-icons text-sm">group_add</span>
-                      Remplaçants
-                    </h4>
-                    <div className="space-y-2">
-                      {getSubstitutes(getTeamLineup(team2?.teamId)).map((player, index) => (
-                        <div 
-                          key={player.id} 
-                          className="flex items-center gap-3 p-3 bg-stone-50 rounded-lg opacity-75"
-                        >
-                          <div className="w-8 h-8 bg-stone-300 text-stone-600 rounded-full flex items-center justify-center font-bold text-sm">
-                            {player.jerseyNumber || index + 12}
-                          </div>
-                          <div>
-                            <div className="font-medium text-stone-700">{player.playerName}</div>
-                            <div className="text-xs text-stone-500">{player.position || 'Position N/A'}</div>
-                          </div>
-                        </div>
-                      ))}
                     </div>
+
+                    {substitutes(teamPlayers).length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">Remplaçants</p>
+                        <div className="space-y-2">
+                          {substitutes(teamPlayers).map((player, i) => (
+                            <div key={player.id} className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl opacity-60">
+                              <div className="w-8 h-8 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                {player.jerseyNumber || i + 12}
+                              </div>
+                              <div>
+                                <p className="font-medium text-stone-700 text-sm">{player.playerName}</p>
+                                <p className="text-xs text-stone-400">{player.position || 'N/A'}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })}
             </div>
           )}
 
-          {/* Events Tab */}
+          {/* ── EVENTS TAB ── */}
           {activeTab === 'events' && (
-            <div className="bg-white rounded-2xl border-2 border-stone-200 p-6 animate-fade-in-up">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="material-icons text-amber-500">sports_soccer</span>
-                <h3 className="text-xl font-bold text-stone-900">Événements du Match</h3>
-                <span className="ml-auto px-3 py-1 bg-amber-500 text-white rounded-full text-sm font-bold">
-                  {events.length}
-                </span>
+            <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm animate-fade-up">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="serif-font text-xl text-stone-900">Événements du Match</h3>
+                <span className="text-sm font-bold text-white bg-amber-500 px-3 py-1 rounded-full">{events.length}</span>
               </div>
-
               {events.length === 0 ? (
-                <div className="text-center py-12">
-                  <span className="material-icons text-6xl text-stone-300 mb-4">event_busy</span>
-                  <p className="text-stone-500">Aucun événement pour le moment</p>
+                <div className="text-center py-16">
+                  <div className="text-5xl mb-4 opacity-20">⚽</div>
+                  <p className="text-stone-400 text-sm">Aucun événement pour le moment</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {events.sort((a, b) => (b.minute || 0) - (a.minute || 0)).map((event, index) => (
-                    <div 
-                      key={event.id} 
-                      className="flex items-start gap-4 p-4 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors animate-fade-in-up"
-                      style={{animationDelay: `${index * 0.05}s`}}
-                    >
-                      {/* Minute */}
-                      <div className="flex-shrink-0 w-16 text-center">
-                        <div className="text-2xl font-bold text-[#C1272D]">{event.minute}'</div>
-                      </div>
-
-                      {/* Icône */}
-                      <div className="text-3xl">{getEventIcon(event.additionalInfo)}</div>
-
-                      {/* Détails */}
-                      <div className="flex-1">
-                        <div className="font-bold text-stone-900 mb-1">{event.playerName}</div>
-                        <div className="text-sm text-stone-600 mb-1">{event.teamName}</div>
-                        <div className="text-sm text-stone-500 italic">{event.additionalInfo}</div>
-                      </div>
-
-                      {/* Badge équipe */}
-                      <div className="flex-shrink-0">
-                        <div className={`w-10 h-10 rounded-full ${
-                          event.teamID === team1?.teamId ? 'bg-[#C1272D]' : 'bg-[#006233]'
-                        } flex items-center justify-center`}>
-                          <span className="material-icons text-white text-sm">sports</span>
+                <div className="relative timeline-line pl-2 space-y-0">
+                  {events.sort((a, b) => (b.minute || 0) - (a.minute || 0)).map((ev) => {
+                    const ei = getEventIcon(ev.additionalInfo);
+                    const isTeam1 = ev.teamID === team1?.teamId;
+                    return (
+                      <div key={ev.id} className="relative pl-12 pb-6 group">
+                        <div className="absolute left-0 top-0 w-12 h-12 flex items-center justify-center bg-white z-10">
+                          <div className="w-8 h-8 rounded-full bg-stone-50 border border-stone-200 flex items-center justify-center text-[11px] font-bold text-stone-500 group-hover:border-[#C1272D] group-hover:text-[#C1272D] transition-colors">
+                            {ev.minute}'
+                          </div>
+                        </div>
+                        <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 flex items-center justify-between hover:bg-white hover:shadow-md hover:border-stone-200 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full ${ei.bg} ring-1 ${ei.ring} flex items-center justify-center text-xl`}>
+                              {ei.icon}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-stone-900">{ev.playerName}</p>
+                              <p className="text-xs text-stone-500">{ev.teamName}</p>
+                              <p className={`text-xs ${ei.text} italic`}>{ev.additionalInfo}</p>
+                            </div>
+                          </div>
+                          <span className={`w-3 h-3 rounded-full flex-shrink-0 ${isTeam1 ? 'bg-[#C1272D]' : 'bg-stone-700'}`} />
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
 
-          {/* Stats Tab */}
+          {/* ── STATS TAB ── */}
           {activeTab === 'stats' && (
-            <div className="bg-white rounded-2xl border-2 border-stone-200 p-6 animate-fade-in-up">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="material-icons text-stone-500">bar_chart</span>
-                <h3 className="text-xl font-bold text-stone-900">Statistiques Détaillées</h3>
-              </div>
-
+            <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm animate-fade-up">
+              <h3 className="serif-font text-xl text-stone-900 mb-8">Statistiques Détaillées</h3>
               <div className="space-y-6">
-                {/* Possession simulée - vous pouvez ajouter de vraies stats depuis l'API */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-stone-600">Possession</span>
-                    <span className="text-sm font-bold">50% - 50%</span>
-                  </div>
-                  <div className="h-4 bg-stone-200 rounded-full overflow-hidden flex">
-                    <div className="bg-[#C1272D] w-1/2"></div>
-                    <div className="bg-[#006233] w-1/2"></div>
-                  </div>
-                </div>
-
-                {/* Buts */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-stone-600">Buts</span>
-                    <span className="text-sm font-bold">{team1?.goals || 0} - {team2?.goals || 0}</span>
-                  </div>
-                  <div className="h-4 bg-stone-200 rounded-full overflow-hidden flex">
-                    <div 
-                      className="bg-[#C1272D]" 
-                      style={{width: `${((team1?.goals || 0) / Math.max((team1?.goals || 0) + (team2?.goals || 0), 1)) * 100}%`}}
-                    ></div>
-                    <div 
-                      className="bg-[#006233]" 
-                      style={{width: `${((team2?.goals || 0) / Math.max((team1?.goals || 0) + (team2?.goals || 0), 1)) * 100}%`}}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Événements par équipe */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-stone-600">Événements</span>
-                    <span className="text-sm font-bold">
-                      {events.filter(e => e.teamID === team1?.teamId).length} - {events.filter(e => e.teamID === team2?.teamId).length}
-                    </span>
-                  </div>
-                  <div className="h-4 bg-stone-200 rounded-full overflow-hidden flex">
-                    <div 
-                      className="bg-[#C1272D]" 
-                      style={{width: `${(events.filter(e => e.teamID === team1?.teamId).length / Math.max(events.length, 1)) * 100}%`}}
-                    ></div>
-                    <div 
-                      className="bg-[#006233]" 
-                      style={{width: `${(events.filter(e => e.teamID === team2?.teamId).length / Math.max(events.length, 1)) * 100}%`}}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Note moyenne des joueurs */}
-                {lineup.length > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-stone-600">Note Moyenne</span>
-                      <span className="text-sm font-bold">
-                        {(getTeamLineup(team1?.teamId).filter(p => p.rating).reduce((sum, p) => sum + p.rating, 0) / 
-                          Math.max(getTeamLineup(team1?.teamId).filter(p => p.rating).length, 1)).toFixed(1)} - 
-                        {(getTeamLineup(team2?.teamId).filter(p => p.rating).reduce((sum, p) => sum + p.rating, 0) / 
-                          Math.max(getTeamLineup(team2?.teamId).filter(p => p.rating).length, 1)).toFixed(1)}
-                      </span>
+                {[
+                  {
+                    label: 'Possession',
+                    v1: match.matchTeams?.[0]?.position ?? 50,
+                    v2: match.matchTeams?.[1]?.position ?? 50,
+                    fmt: v => `${v}%`,
+                    pct1: match.matchTeams?.[0]?.position ?? 50,
+                  },
+                  {
+                    label: 'Buts',
+                    v1: team1?.goals ?? 0,
+                    v2: team2?.goals ?? 0,
+                    fmt: v => v,
+                    pct1: ((team1?.goals ?? 0) / Math.max((team1?.goals ?? 0) + (team2?.goals ?? 0), 1)) * 100,
+                  },
+                  {
+                    label: 'Événements',
+                    v1: events.filter(e => e.teamID === team1?.teamId).length,
+                    v2: events.filter(e => e.teamID === team2?.teamId).length,
+                    fmt: v => v,
+                    pct1: (events.filter(e => e.teamID === team1?.teamId).length / Math.max(events.length, 1)) * 100,
+                  },
+                ].map(stat => (
+                  <div key={stat.label}>
+                    <div className="flex items-center justify-between mb-2.5 text-sm">
+                      <span className="font-semibold text-[#C1272D]">{stat.fmt(stat.v1)}</span>
+                      <span className="text-stone-500 text-xs font-medium uppercase tracking-wider">{stat.label}</span>
+                      <span className="font-semibold text-stone-700">{stat.fmt(stat.v2)}</span>
                     </div>
-                    <div className="h-4 bg-stone-200 rounded-full overflow-hidden flex">
-                      <div className="bg-[#C1272D] w-1/2"></div>
-                      <div className="bg-[#006233] w-1/2"></div>
+                    <div className="h-2 bg-stone-100 rounded-full overflow-hidden flex">
+                      <div className="bg-[#C1272D] h-full rounded-full transition-all duration-700" style={{ width: `${stat.pct1}%` }} />
+                      <div className="bg-stone-700 h-full rounded-full transition-all duration-700" style={{ width: `${100 - stat.pct1}%` }} />
                     </div>
                   </div>
-                )}
+                ))}
               </div>
-
-              {/* Placeholder pour plus de stats */}
-              <div className="mt-8 p-6 bg-stone-50 rounded-lg border-2 border-dashed border-stone-300 text-center">
-                <span className="material-icons text-4xl text-stone-400 mb-2">analytics</span>
-                <p className="text-stone-600 text-sm">Plus de statistiques seront disponibles bientôt</p>
+              <div className="mt-10 p-6 bg-stone-50 rounded-2xl border-2 border-dashed border-stone-200 text-center">
+                <div className="text-3xl mb-2 opacity-30"></div>
+              
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── RIGHT COLUMN ── */}
+        <div className="lg:col-span-4 space-y-6">
+
+          {/* ── PREDICTION PANEL ── */}
+          <div className="rounded-3xl overflow-hidden bg-[#1C1917] border border-white/10 shadow-2xl animate-fade-up">
+            <div className="p-6">
+              <PredictionPanel />
+            </div>
+          </div>
+
+          {/* ── WEATHER ── */}
+          <div className="rounded-3xl p-6 text-white relative overflow-hidden shadow-lg animate-fade-up delay-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-700" />
+            <div className="absolute top-0 right-0 p-8 opacity-10 text-[120px] leading-none select-none">☁️</div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-6">
+             
+                <span className="text-sm font-medium opacity-90">{match.stadeName || 'Casablanca, MA'}</span>
+              </div>
+              {weather ? (
+                <>
+                  <div className="flex items-end gap-3 mb-2">
+                    <span className="text-5xl font-bold">{Math.round(weather.main?.temp)}°</span>
+                    <span className="text-base mb-1 opacity-80 capitalize">{weather.weather?.[0]?.description}</span>
+                  </div>
+                  <div className="h-px bg-white/20 my-4" />
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="block opacity-60 text-xs mb-1">Humidité</span><span className="font-medium">{weather.main?.humidity}%</span></div>
+                    <div><span className="block opacity-60 text-xs mb-1">Vent</span><span className="font-medium">{Math.round((weather.wind?.speed || 0) * 3.6)} km/h</span></div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-6 opacity-60">
+                  <p className="text-sm">Données météo non disponibles</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── MATCH INFO CARD ── */}
+          <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm animate-fade-up delay-2">
+            <h3 className="font-semibold text-stone-900 text-sm mb-5 flex items-center gap-2">
+              <span>ℹ️</span> Informations du Match
+            </h3>
+            <div className="space-y-4 text-sm">
+              <div className="flex justify-between items-start">
+                <span className="text-stone-400">Date</span>
+                <span className="font-medium text-stone-800 text-right">
+                  {new Date(match.dateOfMatch).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+              <div className="h-px bg-stone-100" />
+              <div className="flex justify-between items-start">
+                <span className="text-stone-400">Stade</span>
+                <span className="font-medium text-stone-800 text-right">{match.stadeName}</span>
+              </div>
+              <div className="h-px bg-stone-100" />
+              <div className="flex justify-between items-start">
+                <span className="text-stone-400">Compétition</span>
+                <span className="font-medium text-stone-800 text-right">{match.type}</span>
+              </div>
+              {match.referee && (
+                <>
+                  <div className="h-px bg-stone-100" />
+                  <div className="flex justify-between items-start">
+                    <span className="text-stone-400">Arbitre</span>
+                    <span className="font-medium text-stone-800 text-right">{match.referee}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
 
         </div>
-      </section>
+      </main>
 
       <Footer />
     </>

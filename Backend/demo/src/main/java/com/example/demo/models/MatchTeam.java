@@ -23,7 +23,19 @@ public class MatchTeam {
     @JoinColumn(name = "teamID", nullable = false)
     private Teams team;
 
+     @Column(name = "position")
+    private double position;
+
+
     public MatchTeam() {
+    }
+
+    public MatchTeam(int goals, String formation, Matches match, Teams team, double position) {
+        this.goals = goals;
+        this.formation = formation;
+        this.match = match;
+        this.team = team;
+        this.position = position;
     }
 
     public MatchTeam(int goals, Matches m, Teams t) {
@@ -77,6 +89,14 @@ public class MatchTeam {
 
     public void setFormation(String formation) {
         this.formation = formation;
+    }
+
+    public double getPosition() {
+        return position;
+    }
+
+    public void setPosition(double position) {
+        this.position = position;
     }
 
 }
