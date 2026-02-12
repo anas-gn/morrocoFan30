@@ -344,7 +344,7 @@ body { font-family: 'Cairo', sans-serif; }
                 return (
                   <div 
                     key={team.id}
-                    onClick={() => router.push(`/teams/${team.id}`)}
+                    onClick={() => router.push(`/Team/${team.id}`)}
                     className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
                   >
                     {/* Host Badge */}
