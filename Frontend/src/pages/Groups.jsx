@@ -17,9 +17,9 @@ export default function Groups() {
     fetch('http://localhost:3309/api/groups/getAll')
       .then((res) => res.json())
       .then((data) => {
-        setGroups(data);
-        setLoading(false);
-      })
+  setGroups(data.groups || []);
+  setLoading(false);
+})
       .catch((err) => {
         setError(err.message);
         setLoading(false);
