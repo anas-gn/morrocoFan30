@@ -4,3 +4,9 @@ button,
 select {
     cursor: pointer;
 }
+body {
+  font-family: 'Cairo', sans-serif;
+}
+.decorative-font {
+  font-family: 'Aref Ruqaa', serif;
+}

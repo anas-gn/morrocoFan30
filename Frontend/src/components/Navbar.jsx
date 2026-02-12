@@ -58,7 +58,7 @@ export default function Navbar() {
       `}</style>
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 glass transition-all duration-300">
+<nav className="fixed top-0 w-full z-50 glass transition-all duration-300 font-[Cairo]">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
           {/* LOGO */}

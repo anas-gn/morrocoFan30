@@ -205,29 +205,120 @@ export default function Teams() {
           border-bottom: 1px solid rgba(0,0,0,0.05);
         }
 
-        body {
-          font-family: 'Outfit', sans-serif;
-        }
-        h1, h2, h3, h4, .serif-font {
-          font-family: 'Playfair Display', serif;
-        }
-body { font-family: 'Cairo', sans-serif; }
+        body { font-family: 'Cairo', sans-serif; }
         h1, h2, h3, h4, .serif-font { font-family: 'Amiri', serif; }
         .decorative-font { font-family: 'Aref Ruqaa', serif; }
 
         @keyframes scaleIn {
           0% { transform: scale(1); }
-          50% { transform: scale(1.1); }
+          50% { transform: scale(1.05); }
           100% { transform: scale(1); }
         }
         .group:hover .animate-scale {
-          animation: scaleIn 0.5s ease-in-out;
+          animation: scaleIn 0.6s ease-in-out;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: -1000px 0; }
+          100% { background-position: 1000px 0; }
+        }
+        .shimmer {
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          background-size: 1000px 100%;
+          animation: shimmer 2s infinite;
+        }
+
+        /* Animations pour les lignes décoratives */
+        @keyframes floatLine1 {
+          0%, 100% { transform: translateY(0) rotate(-15deg); }
+          50% { transform: translateY(-30px) rotate(-15deg); }
+        }
+        
+        @keyframes floatLine2 {
+          0%, 100% { transform: translateY(0) rotate(25deg); }
+          50% { transform: translateY(20px) rotate(25deg); }
+        }
+        
+        @keyframes floatLine3 {
+          0%, 100% { transform: translateY(0) rotate(-35deg); }
+          50% { transform: translateY(-20px) rotate(-35deg); }
+        }
+
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-100px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(100px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-slide-in-left {
+          animation: slideInLeft 0.8s ease-out forwards;
+        }
+
+        .animate-slide-in-right {
+          animation: slideInRight 0.8s ease-out forwards;
+        }
+
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+
+        /* Lignes décoratives */
+        .decorative-line-red {
+          animation: floatLine1 8s ease-in-out infinite;
+        }
+
+        .decorative-line-yellow {
+          animation: floatLine2 10s ease-in-out infinite;
+        }
+
+        .decorative-line-green {
+          animation: floatLine3 12s ease-in-out infinite;
+        }
+       
+        .card-hover {
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+          transform: translateY(-8px) scale(1.02);
         }
       `}</style>
       
       <Navbar />
 
-     <header className="relative w-full pt-32 pb-12 overflow-hidden border-b border-stone-200">
+     <header className="relative w-full pt-32 pb-16 overflow-hidden border-b border-stone-200">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img
@@ -236,27 +327,58 @@ body { font-family: 'Cairo', sans-serif; }
             className="w-full h-full object-cover"
           />
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/50"></div>
-          {/* Pattern Overlay */}
-          <div className="absolute inset-0 bg-pattern opacity-20"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/70 to-black/60"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm border border-white/20 text-stone-700 text-xs font-medium uppercase tracking-widest mb-4 shadow-lg">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-stone-700 text-xs font-bold uppercase tracking-widest mb-6 shadow-lg animate-slide-in-left">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10" strokeWidth="2"/>
                   <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" strokeWidth="2"/>
                 </svg>
                 Qualified Nations
               </div>
-              <h1 className="text-4xl md:text-6xl font-medium tracking-tighter text-white mb-2 drop-shadow-lg">
-                Participating <span className="serif-font italic text-[#C1272D]">Teams</span>
+              <h1 className="text-5xl md:text-7xl font-normal tracking-tight text-white mb-4 leading-tight animate-slide-in-left delay-100">
+                Participating <span className="serif-font italic text-[#C1272D] font-medium">Teams</span>
               </h1>
-              <p className="text-white/90 max-w-xl text-lg drop-shadow">
+              <p className="text-white/90 text-base md:text-lg leading-relaxed animate-slide-in-left delay-200">
                 Discover the 48 nations competing for glory in Morocco, Portugal, and Spain.
               </p>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="flex gap-12 animate-slide-in-right delay-300">
+              {/* Teams - RED */}
+              <div className="text-center">
+                <div className="text-5xl font-bold text-[#C1272D] mb-1">
+                  {stats.totalTeams}
+                </div>
+                <div className="text-xs font-bold text-white uppercase tracking-widest">
+                  Teams
+                </div>
+              </div>
+
+              {/* Continents - YELLOW */}
+              <div className="text-center">
+                <div className="text-5xl font-bold text-amber-500 mb-1">
+                  {stats.totalContinents}
+                </div>
+                <div className="text-xs font-bold text-white uppercase tracking-widest">
+                  Continents
+                </div>
+              </div>
+
+              {/* Groups - GREEN */}
+              <div className="text-center">
+                <div className="text-5xl font-bold text-emerald-500 mb-1">
+                  {stats.totalGroups}
+                </div>
+                <div className="text-xs font-bold text-white uppercase tracking-widest">
+                  Groups
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -316,12 +438,31 @@ body { font-family: 'Cairo', sans-serif; }
       </div>
 
       {/* Main Content */}
-      <main className="py-12 bg-stone-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-6">
+      <main className="relative py-12 bg-stone-50 min-h-screen overflow-hidden">
+        {/* Lignes décoratives dans le contenu principal */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Ligne Rouge */}
+          <div className="decorative-line-red absolute top-40 -left-40 w-[500px] h-0.5 bg-gradient-to-r from-transparent via-[#C1272D]/20 to-transparent"></div>
+          <div className="decorative-line-red absolute top-[600px] right-20 w-[400px] h-0.5 bg-gradient-to-l from-transparent via-[#C1272D]/15 to-transparent" style={{animationDelay: '2s'}}></div>
+          
+          {/* Ligne Jaune */}
+          <div className="decorative-line-yellow absolute top-[300px] right-10 w-[450px] h-0.5 bg-gradient-to-r from-amber-400/20 to-transparent"></div>
+          <div className="decorative-line-yellow absolute top-[800px] left-10 w-[380px] h-0.5 bg-gradient-to-r from-transparent via-amber-500/15 to-transparent" style={{animationDelay: '3s'}}></div>
+          
+          {/* Ligne Verte */}
+          <div className="decorative-line-green absolute top-[200px] left-32 w-[420px] h-0.5 bg-gradient-to-r from-[#006233]/20 via-transparent to-transparent"></div>
+          <div className="decorative-line-green absolute top-[900px] right-32 w-[480px] h-0.5 bg-gradient-to-l from-transparent via-[#006233]/15 to-transparent" style={{animationDelay: '1s'}}></div>
+          
+          {/* Lignes supplémentaires pour plus de dynamisme */}
+          <div className="decorative-line-red absolute top-[1100px] left-20 w-[350px] h-0.5 bg-gradient-to-r from-[#C1272D]/15 to-transparent" style={{animationDelay: '4s'}}></div>
+          <div className="decorative-line-yellow absolute top-[1300px] right-40 w-[400px] h-0.5 bg-gradient-to-l from-amber-400/15 to-transparent" style={{animationDelay: '5s'}}></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
           
           {/* Teams Grid */}
           {!Array.isArray(filteredTeams) || filteredTeams.length === 0 ? (
-            <div className="text-center py-20">
+            <div className="text-center py-20 animate-fade-in-up">
               <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-10 h-10 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" strokeWidth="2"/>
@@ -335,7 +476,7 @@ body { font-family: 'Cairo', sans-serif; }
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
-              {filteredTeams.map((team) => {
+              {filteredTeams.map((team, index) => {
                 const continent = getContinent(team.country);
                 const confederation = getConfederation(continent);
                 const countryCode = getCountryCode(team.country);
@@ -345,7 +486,8 @@ body { font-family: 'Cairo', sans-serif; }
                   <div 
                     key={team.id}
                     onClick={() => router.push(`/Team/${team.id}`)}
-                    className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                    className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-pointer card-hover animate-fade-in-up"
+                    style={{animationDelay: `${index * 0.05}s`}}
                   >
                     {/* Host Badge */}
                     {isHost && (
@@ -399,8 +541,9 @@ body { font-family: 'Cairo', sans-serif; }
             </div>
           )}
 
+          {/* View All Button */}
           {filteredTeams.length > 0 && filteredTeams.length < teams.length && (
-            <div className="mt-12 text-center">
+            <div className="mt-12 text-center animate-fade-in-up delay-400">
               <button 
                 onClick={() => {
                   setSelectedContinent('all');

@@ -554,6 +554,7 @@ export default function Stades() {
       </main>
 
       <Footer />
+  
     </>
   );
 }

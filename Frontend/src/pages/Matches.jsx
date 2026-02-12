@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -133,11 +134,11 @@ export default function Matches() {
 
 if (loading) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50">
       <img
         src="/images/logo.png"
         alt="Loading"
-        className="w-20 h-20 mb-4"
+        className="w-20 h-20 mb-4 animate-pulse"
       />
       
     </div>
@@ -164,6 +165,15 @@ if (loading) {
           background-size: 24px 24px;
         }
 
+        /* Hide scrollbar for sliders but allow scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
         body { font-family: 'Cairo', sans-serif; }
         h1, h2, h3, h4, .serif-font { font-family: 'Amiri', serif; }
         .decorative-font { font-family: 'Aref Ruqaa', serif; }
@@ -183,6 +193,93 @@ if (loading) {
           50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
         }
         .animate-pulse-glow { animation: pulse-glow 2s infinite; }
+
+        /* Animations pour les lignes décoratives */
+        @keyframes floatLine1 {
+          0%, 100% { transform: translateY(0) rotate(-15deg); }
+          50% { transform: translateY(-30px) rotate(-15deg); }
+        }
+        
+        @keyframes floatLine2 {
+          0%, 100% { transform: translateY(0) rotate(25deg); }
+          50% { transform: translateY(20px) rotate(25deg); }
+        }
+        
+        @keyframes floatLine3 {
+          0%, 100% { transform: translateY(0) rotate(-35deg); }
+          50% { transform: translateY(-20px) rotate(-35deg); }
+        }
+
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-100px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(100px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-slide-in-left {
+          animation: slideInLeft 0.8s ease-out forwards;
+        }
+
+        .animate-slide-in-right {
+          animation: slideInRight 0.8s ease-out forwards;
+        }
+
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+
+        /* Lignes décoratives */
+        .decorative-line-red {
+          animation: floatLine1 8s ease-in-out infinite;
+        }
+
+        .decorative-line-yellow {
+          animation: floatLine2 10s ease-in-out infinite;
+        }
+
+        .decorative-line-green {
+          animation: floatLine3 12s ease-in-out infinite;
+        }
+       
+        .card-hover {
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-hover:hover {
+          transform: translateY(-8px) scale(1.02);
+        }
       `}</style>
       <Navbar />
       {/* Hero Section */}
@@ -203,7 +300,7 @@ if (loading) {
   <div className="relative max-w-7xl mx-auto px-6">
     
     {/* Badge */}
-    <div className="flex items-center gap-3 mb-6">
+    <div className="flex items-center gap-3 mb-6 animate-slide-in-left">
       <div className="px-4 py-1.5 bg-white border border-stone-200 rounded-full flex items-center gap-2 shadow-sm">
         <span className="material-icons text-[#C1272D] text-sm">event</span>
         <span className="text-xs font-bold uppercase tracking-wider text-stone-700">
@@ -216,19 +313,19 @@ if (loading) {
       
       {/* Titre + description */}
       <div>
-        <h1 className="text-5xl md:text-6xl font-medium text-white text-stone-900 tracking-tight mb-3">
+        <h1 className="text-5xl md:text-6xl font-medium text-white text-stone-900 tracking-tight mb-3 animate-slide-in-left delay-100">
           Tournament{" "}
           <span className="text-[#C1272D] italic serif-font">
             Fixtures
           </span>
         </h1>
-        <p className="text-lg text-stone-600 text-white">
+        <p className="text-lg text-stone-600 text-white animate-slide-in-left delay-200">
           Explore the match schedule across 6 host cities.
         </p>
       </div>
 
       {/* Statistics */}
-      <div className="flex gap-12">
+      <div className="flex gap-12 animate-slide-in-right delay-300">
 
         {/* Matches - RED */}
         <div className="text-center">
@@ -359,7 +456,7 @@ if (loading) {
       {/* Date Selector */}
       <section className="bg-white border-b border-stone-100 py-4">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center gap-3 overflow-x-auto pb-2">
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
             <button
               onClick={() => setSelectedDate(null)}
               className={`flex-shrink-0 px-6 py-3 rounded-xl font-medium transition-all ${
@@ -404,10 +501,29 @@ if (loading) {
       </section>
 
       {/* Matches Grid */}
-      <section className="py-12 bg-gradient-to-br from-stone-50 to-white min-h-screen">
-        <div className="max-w-7xl mx-auto px-6">
+      <section className="relative py-12 bg-stone-50 min-h-screen overflow-hidden">
+        {/* Lignes décoratives dans le contenu principal */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Ligne Rouge */}
+          <div className="decorative-line-red absolute top-40 -left-40 w-[500px] h-0.5 bg-gradient-to-r from-transparent via-[#C1272D]/20 to-transparent"></div>
+          <div className="decorative-line-red absolute top-[600px] right-20 w-[400px] h-0.5 bg-gradient-to-l from-transparent via-[#C1272D]/15 to-transparent" style={{animationDelay: '2s'}}></div>
+          
+          {/* Ligne Jaune */}
+          <div className="decorative-line-yellow absolute top-[300px] right-10 w-[450px] h-0.5 bg-gradient-to-r from-amber-400/20 to-transparent"></div>
+          <div className="decorative-line-yellow absolute top-[800px] left-10 w-[380px] h-0.5 bg-gradient-to-r from-transparent via-amber-500/15 to-transparent" style={{animationDelay: '3s'}}></div>
+          
+          {/* Ligne Verte */}
+          <div className="decorative-line-green absolute top-[200px] left-32 w-[420px] h-0.5 bg-gradient-to-r from-[#006233]/20 via-transparent to-transparent"></div>
+          <div className="decorative-line-green absolute top-[900px] right-32 w-[480px] h-0.5 bg-gradient-to-l from-transparent via-[#006233]/15 to-transparent" style={{animationDelay: '1s'}}></div>
+          
+          {/* Lignes supplémentaires pour plus de dynamisme */}
+          <div className="decorative-line-red absolute top-[1100px] left-20 w-[350px] h-0.5 bg-gradient-to-r from-[#C1272D]/15 to-transparent" style={{animationDelay: '4s'}}></div>
+          <div className="decorative-line-yellow absolute top-[1300px] right-40 w-[400px] h-0.5 bg-gradient-to-l from-amber-400/15 to-transparent" style={{animationDelay: '5s'}}></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
           {filteredMatches.length === 0 ? (
-            <div className="text-center py-20">
+            <div className="text-center py-20 animate-fade-in-up">
               <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="material-icons text-stone-400 text-4xl">search_off</span>
               </div>
@@ -418,84 +534,89 @@ if (loading) {
             <>
               {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredMatches.map((match) => {
+                  {filteredMatches.map((match, index) => {
                     const status = getMatchStatus(match.statut);
                     return (
-                      <div key={match.id} className="bg-white rounded-2xl border-2 border-stone-200 hover:border-[#C1272D] hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 overflow-hidden group cursor-pointer">
-                        {/* Match Header */}
-                        <div className="bg-gradient-to-r from-stone-50 to-white px-6 py-4 border-b border-stone-100">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${status.color} ${status.textColor} ${status.pulse ? 'animate-pulse-glow' : ''}`}>
-                              {status.label}
-                            </span>
-                            <span className="text-xs text-stone-400 font-medium">{match.type}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-stone-500">
-                            <span className="material-icons text-stone-400" style={{fontSize: '14px'}}>schedule</span>
-                            <span>{new Date(match.dateOfMatch).toLocaleString()}</span>
-                          </div>
-                        </div>
-
-                        {/* Teams */}
-                        <div className="p-6">
-                          <div className="flex items-center justify-between mb-6">
-                            {/* Team 1 */}
-                            <div className="flex-1 text-center">
-                              <div className="w-16 h-16 bg-white rounded-full border-2 border-stone-200 flex items-center justify-center mx-auto mb-3 overflow-hidden group-hover:border-[#C1272D] transition-all">
-                                <img 
-                                  src={ match.matchTeams[0].imageUrl}
-                                  alt={match.matchTeams?.[0]?.teamName}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <div className="font-semibold text-stone-900 text-sm mb-1">{match.matchTeams?.[0]?.teamName}</div>
-                              {match.statut === 'termine' || match.statut === 'Finished' ? (
-                                <div className="text-2xl font-bold text-[#C1272D]">{match.matchTeams?.[0]?.goals || 0}</div>
-                              ) : null}
+                      <Link href={`/match/${match.id}`} key={match.id}>
+                        <div 
+                          className="bg-white rounded-2xl border-2 border-stone-200 hover:border-[#C1272D] hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 overflow-hidden group cursor-pointer card-hover animate-fade-in-up"
+                          style={{animationDelay: `${index * 0.1}s`}}
+                        >
+                          {/* Match Header */}
+                          <div className="bg-gradient-to-r from-stone-50 to-white px-6 py-4 border-b border-stone-100">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${status.color} ${status.textColor} ${status.pulse ? 'animate-pulse-glow' : ''}`}>
+                                {status.label}
+                              </span>
+                              <span className="text-xs text-stone-400 font-medium">{match.type}</span>
                             </div>
-
-                            {/* VS / Score */}
-                            <div className="px-6 text-center">
-                              {match.statut === 'termine' || match.statut === 'Finished' ? (
-                                <div className="text-sm font-medium text-stone-400">FT</div>
-                              ) : (
-                                <div className="text-2xl font-light text-stone-300">VS</div>
-                              )}
-                            </div>
-
-                            {/* Team 2 */}
-                            <div className="flex-1 text-center">
-                              <div className="w-16 h-16 bg-white rounded-full border-2 border-stone-200 flex items-center justify-center mx-auto mb-3 overflow-hidden group-hover:border-[#006233] transition-all">
-                                <img 
-                                  src={ match.matchTeams[1].imageUrl}
-                                  alt={match.matchTeams?.[1]?.teamName}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <div className="font-semibold text-stone-900 text-sm mb-1">{match.matchTeams?.[1]?.teamName}</div>
-                              {match.statut === 'termine' || match.statut === 'Finished' ? (
-                                <div className="text-2xl font-bold text-[#006233]">{match.matchTeams?.[1]?.goals || 0}</div>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          {/* Venue */}
-                          <div className="pt-4 border-t border-stone-100">
                             <div className="flex items-center gap-2 text-xs text-stone-500">
-                              <span className="material-icons text-stone-400" style={{fontSize: '14px'}}>stadium</span>
-                              <span className="font-medium">{match.stadeName || 'Stadium TBD'}</span>
+                              <span className="material-icons text-stone-400" style={{fontSize: '14px'}}>schedule</span>
+                              <span>{new Date(match.dateOfMatch).toLocaleString()}</span>
+                            </div>
+                          </div>
+
+                          {/* Teams */}
+                          <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                              {/* Team 1 */}
+                              <div className="flex-1 text-center">
+                                <div className="w-16 h-16 bg-white rounded-full border-2 border-stone-200 flex items-center justify-center mx-auto mb-3 overflow-hidden group-hover:border-[#C1272D] transition-all">
+                                  <img 
+                                    src={ match.matchTeams[0].imageUrl}
+                                    alt={match.matchTeams?.[0]?.teamName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="font-semibold text-stone-900 text-sm mb-1">{match.matchTeams?.[0]?.teamName}</div>
+                                {match.statut === 'termine' || match.statut === 'Finished' ? (
+                                  <div className="text-2xl font-bold text-[#C1272D]">{match.matchTeams?.[0]?.goals || 0}</div>
+                                ) : null}
+                              </div>
+
+                              {/* VS / Score */}
+                              <div className="px-6 text-center">
+                                {match.statut === 'termine' || match.statut === 'Finished' ? (
+                                  <div className="text-sm font-medium text-stone-400">FT</div>
+                                ) : (
+                                  <div className="text-2xl font-light text-stone-300">VS</div>
+                                )}
+                              </div>
+
+                              {/* Team 2 */}
+                              <div className="flex-1 text-center">
+                                <div className="w-16 h-16 bg-white rounded-full border-2 border-stone-200 flex items-center justify-center mx-auto mb-3 overflow-hidden group-hover:border-[#006233] transition-all">
+                                  <img 
+                                    src={ match.matchTeams[1].imageUrl}
+                                    alt={match.matchTeams?.[1]?.teamName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="font-semibold text-stone-900 text-sm mb-1">{match.matchTeams?.[1]?.teamName}</div>
+                                {match.statut === 'termine' || match.statut === 'Finished' ? (
+                                  <div className="text-2xl font-bold text-[#006233]">{match.matchTeams?.[1]?.goals || 0}</div>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            {/* Venue */}
+                            <div className="pt-4 border-t border-stone-100">
+                              <div className="flex items-center gap-2 text-xs text-stone-500">
+                                <span className="material-icons text-stone-400" style={{fontSize: '14px'}}>stadium</span>
+                                <span className="font-medium">{match.stadeName || 'Stadium TBD'}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
               ) : (
                 // Calendar View
                 <div className="space-y-8">
-                  {Object.entries(matchesByDate).map(([date, dayMatches]) => (
-                    <div key={date}>
+                  {Object.entries(matchesByDate).map(([date, dayMatches], dateIndex) => (
+                    <div key={date} className="animate-fade-in-up" style={{animationDelay: `${dateIndex * 0.1}s`}}>
                       <div className="flex items-center gap-4 mb-4">
                         <div className="flex items-center gap-2 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white px-4 py-2 rounded-lg">
                           <span className="material-icons text-sm">calendar_today</span>
@@ -506,71 +627,76 @@ if (loading) {
                       </div>
 
                       <div className="grid grid-cols-1 gap-4">
-                        {dayMatches.map((match) => {
+                        {dayMatches.map((match, matchIndex) => {
                           const status = getMatchStatus(match.statut);
                           return (
-                            <div key={match.id} className="bg-white rounded-xl border border-stone-200 hover:border-[#C1272D] hover:shadow-lg transition-all p-6 cursor-pointer group">
-                              <div className="flex items-center gap-6">
-                                {/* Time */}
-                                <div className="text-center min-w-[80px]">
-                                  <div className="text-2xl font-bold text-stone-900">
-                                    {new Date(match.dateOfMatch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </div>
-                                  <span className={`inline-block px-2 py-1 rounded text-xs font-bold mt-1 ${status.color} ${status.textColor}`}>
-                                    {status.label}
-                                  </span>
-                                </div>
-
-                                <div className="h-16 w-px bg-stone-200"></div>
-
-                                {/* Teams */}
-                                <div className="flex-1 flex items-center justify-between gap-4">
-                                  {/* Team 1 */}
-                                  <div className="flex items-center gap-3 flex-1">
-                                    <div className="w-12 h-12 rounded-full border-2 border-stone-200 overflow-hidden flex-shrink-0">
-                                      <img 
-                                        src={match.matchTeams?.[0]?.imageUrl}
-                                        alt={match.matchTeams?.[0]?.teamName}
-                                        className="w-full h-full object-cover"
-                                      />
+                            <Link href={`/matches/${match.id}`} key={match.id}>
+                              <div 
+                                className="bg-white rounded-xl border border-stone-200 hover:border-[#C1272D] hover:shadow-lg transition-all p-6 cursor-pointer group card-hover animate-fade-in-up"
+                                style={{animationDelay: `${(dateIndex * 0.1) + (matchIndex * 0.05)}s`}}
+                              >
+                                <div className="flex items-center gap-6">
+                                  {/* Time */}
+                                  <div className="text-center min-w-[80px]">
+                                    <div className="text-2xl font-bold text-stone-900">
+                                      {new Date(match.dateOfMatch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
-                                    <span className="font-semibold text-stone-900">{match.matchTeams?.[0]?.teamName}</span>
-                                    {match.statut === 'termine' || match.statut === 'Finished' ? (
-                                      <span className="text-xl font-bold text-[#C1272D] ml-auto">{match.matchTeams?.[0]?.goals || 0}</span>
-                                    ) : null}
+                                    <span className={`inline-block px-2 py-1 rounded text-xs font-bold mt-1 ${status.color} ${status.textColor}`}>
+                                      {status.label}
+                                    </span>
                                   </div>
 
-                                  {/* VS */}
-                                  <div className="text-stone-300 font-light px-4">vs</div>
+                                  <div className="h-16 w-px bg-stone-200"></div>
 
-                                  {/* Team 2 */}
-                                  <div className="flex items-center gap-3 flex-1 flex-row-reverse">
-                                    <div className="w-12 h-12 rounded-full border-2 border-stone-200 overflow-hidden flex-shrink-0">
-                                      <img 
-                                        src={match.matchTeams?.[1]?.imageUrl}
-                                        alt={match.matchTeams?.[1]?.teamName}
-                                        className="w-full h-full object-cover"
-                                      />
+                                  {/* Teams */}
+                                  <div className="flex-1 flex items-center justify-between gap-4">
+                                    {/* Team 1 */}
+                                    <div className="flex items-center gap-3 flex-1">
+                                      <div className="w-12 h-12 rounded-full border-2 border-stone-200 overflow-hidden flex-shrink-0">
+                                        <img 
+                                          src={match.matchTeams?.[0]?.imageUrl}
+                                          alt={match.matchTeams?.[0]?.teamName}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                      <span className="font-semibold text-stone-900">{match.matchTeams?.[0]?.teamName}</span>
+                                      {match.statut === 'termine' || match.statut === 'Finished' ? (
+                                        <span className="text-xl font-bold text-[#C1272D] ml-auto">{match.matchTeams?.[0]?.goals || 0}</span>
+                                      ) : null}
                                     </div>
-                                    <span className="font-semibold text-stone-900">{match.matchTeams?.[1]?.teamName}</span>
-                                    {match.statut === 'termine' || match.statut === 'Finished' ? (
-                                      <span className="text-xl font-bold text-[#006233] mr-auto">{match.matchTeams?.[1]?.goals || 0}</span>
-                                    ) : null}
-                                  </div>
-                                </div>
 
-                                <div className="h-16 w-px bg-stone-200"></div>
+                                    {/* VS */}
+                                    <div className="text-stone-300 font-light px-4">vs</div>
 
-                                {/* Venue Info */}
-                                <div className="min-w-[180px] text-right">
-                                  <div className="flex items-center gap-2 justify-end text-sm text-stone-600 mb-1">
-                                    <span className="material-icons text-stone-400" style={{fontSize: '16px'}}>stadium</span>
-                                    <span className="font-medium">{match.stadeName}</span>
+                                    {/* Team 2 */}
+                                    <div className="flex items-center gap-3 flex-1 flex-row-reverse">
+                                      <div className="w-12 h-12 rounded-full border-2 border-stone-200 overflow-hidden flex-shrink-0">
+                                        <img 
+                                          src={match.matchTeams?.[1]?.imageUrl}
+                                          alt={match.matchTeams?.[1]?.teamName}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                      <span className="font-semibold text-stone-900">{match.matchTeams?.[1]?.teamName}</span>
+                                      {match.statut === 'termine' || match.statut === 'Finished' ? (
+                                        <span className="text-xl font-bold text-[#006233] mr-auto">{match.matchTeams?.[1]?.goals || 0}</span>
+                                      ) : null}
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-stone-400">{match.type}</div>
+
+                                  <div className="h-16 w-px bg-stone-200"></div>
+
+                                  {/* Venue Info */}
+                                  <div className="min-w-[180px] text-right">
+                                    <div className="flex items-center gap-2 justify-end text-sm text-stone-600 mb-1">
+                                      <span className="material-icons text-stone-400" style={{fontSize: '16px'}}>stadium</span>
+                                      <span className="font-medium">{match.stadeName}</span>
+                                    </div>
+                                    <div className="text-xs text-stone-400">{match.type}</div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            </Link>
                           );
                         })}
                       </div>
