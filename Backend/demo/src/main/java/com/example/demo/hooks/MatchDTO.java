@@ -13,6 +13,7 @@ public class MatchDTO {
     private Integer treeId;
     private List<MatchTeamDTO> mt;
     private String stadeName;
+    private String imageUrl;
     private List<MatchEventsDTO> matchEvents;
     private List<MatchPlayerDTO> matchPlayers;
 
@@ -33,6 +34,22 @@ public class MatchDTO {
 
     public List<MatchTeamDTO> getMatchTeams() {
         return mt;
+    }
+
+    public List<MatchTeamDTO> getMt() {
+        return mt;
+    }
+
+    public void setMt(List<MatchTeamDTO> mt) {
+        this.mt = mt;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public void setMatchTeams(List<MatchTeamDTO> teams) {

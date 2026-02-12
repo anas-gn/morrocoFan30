@@ -461,6 +461,7 @@ public class MatchesController {
         if (match.getStade() != null) {
             dto.setStadeId(match.getStade().getId());
             dto.setStadeName(match.getStade().getName());
+            dto.setImageUrl(match.getStade().getImageUrl());
         }
 
         return dto;
