@@ -42,9 +42,9 @@ export default function Footer() {
                 Tournament
               </h4>
               <ul className="space-y-3 text-sm">
-                <li><a href="#" className="text-stone-400 hover:text-[#C1272D] hover:translate-x-1 inline-block transition-all">Match Schedule</a></li>
+                <li><a href="/Matches" className="text-stone-400 hover:text-[#C1272D] hover:translate-x-1 inline-block transition-all">Match Schedule</a></li>
                 <li><a href="#" className="text-stone-400 hover:text-[#006233] hover:translate-x-1 inline-block transition-all">Venues</a></li>
-                <li><a href="#" className="text-stone-400 hover:text-[#C1272D] hover:translate-x-1 inline-block transition-all">Teams</a></li>
+                <li><a href="/Teams" className="text-stone-400 hover:text-[#C1272D] hover:translate-x-1 inline-block transition-all">Teams</a></li>
                 <li><a href="#" className="text-stone-400 hover:text-[#006233] hover:translate-x-1 inline-block transition-all">Ticketing</a></li>
               </ul>
             </div>

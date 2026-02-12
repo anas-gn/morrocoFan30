@@ -72,6 +72,17 @@ public class TeamController {
         }
     }
 
+    @GetMapping("/teams/{id}")
+    public TeamDTO getTeamById(@PathVariable int id) {
+        Teams team = TeamRepository.findById(id).orElse(null);
+
+        if (team == null) {
+            return null;
+        } else {
+            return convertTeamToDTO(team);
+        }
+    }
+
     @GetMapping("/teams/plyers/{id}")
     public List<PlayerDTO> getAllPlayersTeam(@PathVariable int id) {
 
