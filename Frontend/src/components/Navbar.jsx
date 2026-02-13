@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen]       = useState(false);
@@ -15,6 +16,7 @@ export default function Navbar() {
     email:    "",
     initials: "",
     type:     "",
+    imageUrl: "", // Ajout de l'image
   });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -25,6 +27,7 @@ export default function Navbar() {
       const email = localStorage.getItem("userEmail") || "";
       const type  = localStorage.getItem("userType")  || "";
       const supporterId = localStorage.getItem("supporterId") || "0";
+      const imageUrl = localStorage.getItem("userImageUrl") || ""; // Récupérer l'image
 
       // Vérifier si l'utilisateur est connecté
       const loggedIn = name && email && supporterId !== "0";
@@ -37,7 +40,7 @@ export default function Navbar() {
           ? (parts[0][0] + parts[1][0]).toUpperCase()
           : name.slice(0, 2).toUpperCase();
 
-        setUser({ name: parts[0] || "User", fullName: name, email, initials, type });
+        setUser({ name: parts[0] || "User", fullName: name, email, initials, type, imageUrl });
       }
     };
 
@@ -111,7 +114,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
           {/* LOGO */}
-          <a href="/Acceuil" className="flex items-center gap-3 group">
+          <Link href="/Acceuil" className="flex items-center gap-3 group">
             <img src="/images/logo.png" alt="MoroccoFan2030 Logo" className="w-10 h-10 object-cover" />
             <div className="flex flex-col">
               <span className="font-bold tracking-tight text-stone-900 text-sm">
@@ -119,7 +122,7 @@ export default function Navbar() {
               </span>
               <span className="text-xs text-[#006233] decorative-font -mt-1">المغرب</span>
             </div>
-          </a>
+          </Link>
 
           {/* DESKTOP MENU */}
           <div className="hidden md:flex items-center gap-1">
@@ -132,7 +135,7 @@ export default function Navbar() {
               { href: "/News",    en: "News",    ar: "الأخبار",     color: "#d97706", bg: "amber"  },
               { href: "/Stades",  en: "Stades",  ar: "ملاعب",       color: "#7c3aed", bg: "purple" },
             ].map(({ href, en, ar, color, bg }) => (
-              <a key={en} href={href}
+              <Link key={en} href={href}
                 className={`group px-4 py-2 hover:bg-${bg}-50 rounded-lg transition-all`}>
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-sm font-semibold text-stone-700 group-hover:transition-colors"
@@ -143,7 +146,7 @@ export default function Navbar() {
                   </span>
                   <span className="text-xs decorative-font opacity-70" style={{ color }}>{ar}</span>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -155,9 +158,13 @@ export default function Navbar() {
             >
               {/* Badge role */}
               <div className="relative">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden"
                      style={{ background: user.type === "RESPONSABLE" ? "#006233" : "#C1272D" }}>
-                  {user.initials || "?"}
+                  {user.imageUrl ? (
+                    <img src={user.imageUrl} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    user.initials || "?"
+                  )}
                 </div>
                 <span className="absolute -bottom-1 -right-1 text-[9px] px-1 rounded-full text-white font-bold leading-tight"
                       style={{ background: user.type === "RESPONSABLE" ? "#006233" : "#C1272D" }}>
@@ -171,14 +178,14 @@ export default function Navbar() {
               </svg>
             </button>
           ) : (
-            <a href="/Login"
+            <Link href="/Login"
                className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#C1272D] hover:bg-[#A01F24] text-white font-medium text-sm transition-all shadow-sm">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
               Login
-            </a>
+            </Link>
           )}
 
           {/* BURGER (MOBILE) */}
@@ -203,9 +210,13 @@ export default function Navbar() {
           {/* Header avec vraies infos */}
           <div className="px-5 py-4 border-b border-stone-100">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold"
+              <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden"
                    style={{ background: user.type === "RESPONSABLE" ? "#006233" : "#C1272D" }}>
-                {user.initials || "?"}
+                {user.imageUrl ? (
+                  <img src={user.imageUrl} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  user.initials || "?"
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-stone-900 truncate">{user.fullName || "Utilisateur"}</h3>
@@ -226,13 +237,13 @@ export default function Navbar() {
               { href: "/my-predictions", label: "My Predictions", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
               { href: "/settings",       label: "Settings",       icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
             ].map(({ href, label, icon }) => (
-              <a key={label} href={href}
+              <Link key={label} href={href}
                  className="flex items-center gap-3 px-5 py-3 hover:bg-stone-50 transition-all group">
                 <svg className="w-5 h-5 text-stone-400 group-hover:text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icon} />
                 </svg>
                 <span className="text-sm font-medium text-stone-700 group-hover:text-stone-900">{label}</span>
-              </a>
+              </Link>
             ))}
 
             <div className="my-2 border-t border-stone-100"></div>
@@ -269,9 +280,13 @@ export default function Navbar() {
               </svg>
             </button>
             <div className="flex items-center gap-3 mt-2">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold"
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden"
                    style={{ background: user.type === "RESPONSABLE" ? "#006233" : "#C1272D" }}>
-                {user.initials || "?"}
+                {user.imageUrl ? (
+                  <img src={user.imageUrl} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  user.initials || "?"
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-stone-900 truncate">{user.fullName || "Utilisateur"}</h3>
@@ -292,14 +307,14 @@ export default function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <a href="/Login"
+            <Link href="/Login"
                className="flex items-center justify-center gap-2 mt-2 px-5 py-3 rounded-full bg-[#C1272D] hover:bg-[#A01F24] text-white font-medium text-sm transition-all shadow-sm">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
               Login
-            </a>
+            </Link>
           </div>
         )}
 
@@ -314,29 +329,29 @@ export default function Navbar() {
               { href: "/News",    en: "News",    ar: "الأخبار"    },
               { href: "/Stades",  en: "Stades",  ar: "ملاعب"      },
             ].map(({ href, en, ar }) => (
-              <a key={en} href={href}
+              <Link key={en} href={href}
                  className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50 transition-all">
                 <span className="text-sm font-medium text-stone-700">{en}</span>
                 <span className="text-xs text-stone-400 ml-auto decorative-font">{ar}</span>
-              </a>
+              </Link>
             ))}
           </div>
 
           {isLoggedIn && (
             <>
               <div className="border-t border-stone-100 pt-4">
-                <a href="/profile"        className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50">
+                <Link href="/profile"        className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50">
                   <span className="text-sm font-medium text-stone-700">Profile</span>
-                </a>
-                <a href="/favorites"      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50">
+                </Link>
+                <Link href="/favorites"      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50">
                   <span className="text-sm font-medium text-stone-700">Favorites</span>
-                </a>
-                <a href="/my-predictions" className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50">
+                </Link>
+                <Link href="/my-predictions" className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50">
                   <span className="text-sm font-medium text-stone-700">My Predictions</span>
-                </a>
-                <a href="/settings"       className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50">
+                </Link>
+                <Link href="/settings"       className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50">
                   <span className="text-sm font-medium text-stone-700">Settings</span>
-                </a>
+                </Link>
 
                 <div className="my-3 border-t border-stone-100"></div>
 

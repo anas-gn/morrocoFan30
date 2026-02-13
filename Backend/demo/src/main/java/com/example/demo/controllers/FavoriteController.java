@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -50,6 +51,15 @@ public class FavoriteController {
         Supporters supporter = supportersRepository.findById(supporterId);
         if (supporter == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Supporter introuvable");
+        }
+
+        // Vérifier si le favori existe déjà
+        Optional<Favorites> existingFavorite = favoriteRepository
+            .findBySupporterAndTypeAndOwnerID(supporter, type, ownerId);
+        
+        if (existingFavorite.isPresent()) {
+            // Le favori existe déjà, retourner le favori existant
+            return convertToDTO(existingFavorite.get());
         }
 
         // Créer et sauvegarder le favori
@@ -89,35 +99,56 @@ public class FavoriteController {
         return favorites.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    // Vérifier si un favori existe déjà
+    // Vérifier si un favori existe déjà - VERSION CORRIGÉE
     @GetMapping("/check")
     public ResponseEntity<Boolean> checkFavorite(
             @RequestParam int supporterId,
             @RequestParam int ownerId,
             @RequestParam String type) {
         Supporters supporter = supportersRepository.findById(supporterId);
-        if (supporter == null)
+        if (supporter == null) {
             return ResponseEntity.ok(false);
+        }
 
-        boolean exists = favoriteRepository
-                .findByTypeAndOwnerID(type, ownerId)
-                .stream()
-                .anyMatch(fav -> fav.getSupporter().getId() == supporterId);
-
+        // Utiliser la méthode du repository pour vérifier directement
+        boolean exists = favoriteRepository.existsBySupporterAndTypeAndOwnerID(supporter, type, ownerId);
+        
         return ResponseEntity.ok(exists);
     }
 
-    // Supprimer un favori (inchangé)
+    // Supprimer un favori - VERSION AMÉLIORÉE
     @DeleteMapping("/{favoriteId}")
-    public void deleteFavorite(@PathVariable int favoriteId) {
+    public ResponseEntity<Void> deleteFavorite(@PathVariable int favoriteId) {
         if (!favoriteRepository.existsById(favoriteId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Favori introuvable");
         }
         favoriteRepository.deleteById(favoriteId);
+        return ResponseEntity.noContent().build();
     }
 
-    // Méthode privée pour ajouter automatiquement les matchs d'une équipe aux
-    // favoris
+    // Nouvelle méthode pour supprimer par critères
+    @DeleteMapping("/remove")
+    public ResponseEntity<Void> removeFavorite(
+            @RequestParam int supporterId,
+            @RequestParam int ownerId,
+            @RequestParam String type) {
+        Supporters supporter = supportersRepository.findById(supporterId);
+        if (supporter == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Supporter introuvable");
+        }
+
+        Optional<Favorites> favorite = favoriteRepository
+            .findBySupporterAndTypeAndOwnerID(supporter, type, ownerId);
+        
+        if (favorite.isPresent()) {
+            favoriteRepository.delete(favorite.get());
+            return ResponseEntity.noContent().build();
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Favori introuvable");
+        }
+    }
+
+    // Méthode privée pour ajouter automatiquement les matchs d'une équipe aux favoris
     private void addTeamMatchesToFavorites(Supporters supporter, int teamId) {
         // Récupérer tous les matchs de l'équipe
         List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(teamId);
@@ -126,9 +157,8 @@ public class FavoriteController {
             Matches match = matchTeam.getMatch();
 
             // Vérifier si le match n'est pas déjà dans les favoris du supporter
-            boolean alreadyFavorite = favoriteRepository.findByTypeAndOwnerID("Match", match.getId())
-                    .stream()
-                    .anyMatch(fav -> fav.getSupporter().getId() == supporter.getId());
+            boolean alreadyFavorite = favoriteRepository
+                .existsBySupporterAndTypeAndOwnerID(supporter, "Match", match.getId());
 
             if (!alreadyFavorite) {
                 // Ajouter le match aux favoris

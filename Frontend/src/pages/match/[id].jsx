@@ -23,24 +23,24 @@ export default function MatchDetail() {
   const [matchPredictions, setMatchPredictions] = useState([]);
 
   const [supporterId, setSupporterId] = useState(null);
+  const [supporterIdLoaded, setSupporterIdLoaded] = useState(false);
 
   // Récupérer supporterId après le montage du composant
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const id = parseInt(localStorage.getItem('supporterId') || '0', 10);
-      console.log('localStorage supporterId:', id); // Debug
-      setSupporterId(id);
+      console.log('localStorage supporterId:', id);
+      setSupporterId(id > 0 ? id : null);
+      setSupporterIdLoaded(true);
     }
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CHANGEMENT 1 — États pour les favoris
-  // ═══════════════════════════════════════════════════════════════════════════
+  // États pour les favoris
   const [isFavorite, setIsFavorite] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
 
   useEffect(() => {
-    if (!id || supporterId === null) return; // Attendre que supporterId soit chargé
+    if (!id || supporterId === null) return;
     const fetchAll = async () => {
       try {
         const [matchRes, eventsRes, lineupRes, predictionsRes] = await Promise.all([
@@ -84,22 +84,27 @@ export default function MatchDetail() {
     fetchAll();
   }, [id, supporterId]);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CHANGEMENT 2 — useEffect pour vérifier si le match est dans les favoris
-  // ═══════════════════════════════════════════════════════════════════════════
+  // useEffect pour vérifier si le match est dans les favoris
   useEffect(() => {
-    if (!id || !supporterId || supporterId === 0) return;
-    console.log('Checking favorite for supporterId:', supporterId, 'matchId:', id); // Debug
+    // Attendre que supporterId soit chargé ET qu'il soit valide
+    if (!supporterIdLoaded || !id || !supporterId || supporterId === 0) {
+      setIsFavorite(false);
+      return;
+    }
+    
+    console.log('Checking favorite for supporterId:', supporterId, 'matchId:', id);
+    
     fetch(`http://localhost:3309/api/favorites/check?supporterId=${supporterId}&ownerId=${id}&type=Match`)
       .then(res => res.json())
       .then(data => {
-        console.log('Is favorite:', data); // Debug
+        console.log('Is favorite:', data);
         setIsFavorite(data);
       })
       .catch((err) => {
         console.error('Error checking favorite:', err);
+        setIsFavorite(false);
       });
-  }, [id, supporterId]);
+  }, [id, supporterId, supporterIdLoaded]);
 
   const fetchWeather = async (cityName) => {
     try {
@@ -141,11 +146,9 @@ export default function MatchDetail() {
     setPredSubmitting(false);
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // CHANGEMENT 3 — Fonction toggle favorite
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Fonction toggle favorite
   const toggleFavorite = async () => {
-    console.log('supporterId:', supporterId); // Debug
+    console.log('supporterId:', supporterId);
     if (!supporterId || supporterId === 0) {
       router.push('/Login');
       return;
@@ -161,8 +164,8 @@ export default function MatchDetail() {
         const fav = favs.find(f => f.ownerId === parseInt(id));
         if (fav) {
           await fetch(`http://localhost:3309/api/favorites/${fav.id}`, { method: 'DELETE' });
+          setIsFavorite(false);
         }
-        setIsFavorite(false);
       } else {
         // Ajouter
         await fetch(
@@ -412,17 +415,19 @@ export default function MatchDetail() {
       </div>
     );
   };
-if (loading) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <img
-        src="/images/logo.png"
-        alt="Loading"
-        className="w-20 h-20 mb-4"
-      />
-    </div>
-  );
-}
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <img
+          src="/images/logo.png"
+          alt="Loading"
+          className="w-20 h-20 mb-4"
+        />
+      </div>
+    );
+  }
+
   if (!match) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#1C1917] text-white">
@@ -504,16 +509,14 @@ if (loading) {
         <div className="absolute inset-0 z-0">
           <img
             src={match.imageUrl || "/images/default-stadium.jpg"}
-            className="w-full h-full object-cover   mix-blend-overlay"
+            className="w-full h-full object-cover mix-blend-overlay"
             alt={match.stadeName}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1C1917] via-[#1C1917]/80 to-transparent" />
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-6">
-          {/* ═══════════════════════════════════════════════════════════════════════════
-              CHANGEMENT 4 — Bouton Favori (avant le Match Status Pill)
-              ═══════════════════════════════════════════════════════════════════════════ */}
+          {/* Bouton Favori */}
           <div className="flex justify-end mb-2">
             <button
               onClick={toggleFavorite}
@@ -639,7 +642,6 @@ if (loading) {
             </div>
             <div className="w-1 h-1 rounded-full bg-stone-700" />
             <div className="flex items-center gap-2">
-             
               <span>{match.type}</span>
             </div>
           </div>
