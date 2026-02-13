@@ -322,12 +322,6 @@ export default function Acceuil() {
           </div>
         </div>
         
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-[5]">
-          <div className="absolute w-2 h-2 bg-white/30 rounded-full animate-float" style={{top: '20%', left: '10%', animationDelay: '0s', animationDuration: '8s'}}></div>
-          <div className="absolute w-3 h-3 bg-[#C1272D]/30 rounded-full animate-float" style={{top: '60%', left: '80%', animationDelay: '2s', animationDuration: '10s'}}></div>
-          <div className="absolute w-2 h-2 bg-[#006233]/30 rounded-full animate-float" style={{top: '40%', left: '70%', animationDelay: '4s', animationDuration: '12s'}}></div>
-          <div className="absolute w-3 h-3 bg-white/20 rounded-full animate-float" style={{top: '80%', left: '30%', animationDelay: '1s', animationDuration: '9s'}}></div>
-        </div>
       </header>
 
       {/* Participating Teams Slider */}
