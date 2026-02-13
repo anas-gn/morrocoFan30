@@ -13,6 +13,7 @@ import com.example.demo.repositories.MatchRepository;
 import com.example.demo.repositories.MatchTeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -55,7 +56,8 @@ public class FavoriteController {
         Favorites favorite = new Favorites(LocalDateTime.now(), type, ownerId, supporter);
         favoriteRepository.save(favorite);
 
-        // Si le type est "Team", ajouter automatiquement les matchs de cette équipe aux favoris
+        // Si le type est "Team", ajouter automatiquement les matchs de cette équipe aux
+        // favoris
         if ("Team".equalsIgnoreCase(type)) {
             addTeamMatchesToFavorites(supporter, ownerId);
         }
@@ -87,6 +89,24 @@ public class FavoriteController {
         return favorites.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    // Vérifier si un favori existe déjà
+    @GetMapping("/check")
+    public ResponseEntity<Boolean> checkFavorite(
+            @RequestParam int supporterId,
+            @RequestParam int ownerId,
+            @RequestParam String type) {
+        Supporters supporter = supportersRepository.findById(supporterId);
+        if (supporter == null)
+            return ResponseEntity.ok(false);
+
+        boolean exists = favoriteRepository
+                .findByTypeAndOwnerID(type, ownerId)
+                .stream()
+                .anyMatch(fav -> fav.getSupporter().getId() == supporterId);
+
+        return ResponseEntity.ok(exists);
+    }
+
     // Supprimer un favori (inchangé)
     @DeleteMapping("/{favoriteId}")
     public void deleteFavorite(@PathVariable int favoriteId) {
@@ -96,7 +116,8 @@ public class FavoriteController {
         favoriteRepository.deleteById(favoriteId);
     }
 
-    // Méthode privée pour ajouter automatiquement les matchs d'une équipe aux favoris
+    // Méthode privée pour ajouter automatiquement les matchs d'une équipe aux
+    // favoris
     private void addTeamMatchesToFavorites(Supporters supporter, int teamId) {
         // Récupérer tous les matchs de l'équipe
         List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(teamId);

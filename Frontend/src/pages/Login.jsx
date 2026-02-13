@@ -66,8 +66,12 @@ export default function Login() {
       localStorage.setItem('token',    data.token);
       localStorage.setItem('userType', data.type);
       localStorage.setItem('userId',   data.id);
+      localStorage.setItem('supporterId', data.id); // ✅ AJOUT: pour que le Navbar et les favoris fonctionnent
       localStorage.setItem('userName', data.name);
       localStorage.setItem('userEmail',data.email);
+
+      // ✅ AJOUT: Déclencher l'événement pour mettre à jour le Navbar
+      window.dispatchEvent(new Event('userLoggedIn'));
 
       setSuccess(`Bienvenue, ${data.name} !`);
 
