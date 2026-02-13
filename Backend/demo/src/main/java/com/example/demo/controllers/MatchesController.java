@@ -46,6 +46,7 @@ import com.example.demo.models.Players;
 import com.example.demo.models.Predictions;
 import com.example.demo.models.Favorites;
 import com.example.demo.models.GroupTeam;
+import com.example.demo.models.Groups;
 import com.example.demo.models.MatchTeam;
 import com.example.demo.models.Stades;
 import com.example.demo.models.Supporters;
@@ -105,6 +106,26 @@ public class MatchesController {
                 .map(this::convertToDTO)
                 .sorted(Comparator.comparing(MatchDTO::getDateOfMatch).reversed())
                 .collect(Collectors.toList());
+    }
+
+    @GetMapping("/matches/{id}/group")
+    public GroupController.GroupDTO getGroupByMatchId(@PathVariable int id) {
+
+        Matches match = matchRepo.findById(id);
+        if (match == null)
+            return null;
+        if (!"Group stage".equalsIgnoreCase(match.getType())) {
+            return null;
+        }
+        List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(id);
+        if (matchTeams == null || matchTeams.isEmpty())
+            return null;
+        Teams team = matchTeams.get(0).getTeam();
+        List<GroupTeam> groupTeams = groupTeamRepository.findByTeamId(team.getId());
+        if (groupTeams == null || groupTeams.isEmpty())
+            return null;
+        Groups group = groupTeams.get(0).getGroup();
+        return new GroupController.GroupDTO(group);
     }
 
     // matches by groupe
@@ -583,7 +604,6 @@ public class MatchesController {
 
         return convertMatchEventToDTO(savedEvent);
     }
-
 
     ///////////// Ajouter un joueur à un match (lineup)
     @PostMapping("/matches/players/add")

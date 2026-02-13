@@ -1,5 +1,6 @@
 package com.example.demo.auth;
 
+import com.example.demo.models.Responsables;
 import com.example.demo.models.Supporters;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -51,6 +52,17 @@ public class JwtUtils {
         }
     }
 
+    public String generateToken(Responsables responsable) {
+        return Jwts.builder()
+                .setSubject(String.valueOf(responsable.getId()))
+                .claim("type", "RESPONSABLE")
+                .claim("email", responsable.getEmail())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -62,7 +74,8 @@ public class JwtUtils {
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
- {
-    
-}
+
+    {
+
+    }
 }
