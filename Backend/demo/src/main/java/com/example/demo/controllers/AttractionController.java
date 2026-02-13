@@ -111,6 +111,7 @@ public class AttractionController {
         dto.setAddress(attraction.getAddress());
         dto.setHoureOfOpening(attraction.getHoureOfOpening());
         dto.setHoureOfClosing(attraction.getHoureOfClosing());
+       
 dto.setLatitude(attraction.getLatitude());
 dto.setLongitude(attraction.getLongitude());
 

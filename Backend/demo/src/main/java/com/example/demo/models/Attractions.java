@@ -17,6 +17,7 @@ public class Attractions {
     private double priceProxim;
     private Double latitude;
     private Double longitude;
+    private String imageUrl;
 
 
     @Column(columnDefinition = "TEXT")
@@ -71,4 +72,12 @@ public double getLatitude() { return latitude; }
 
     public CityHosts getCityHost() { return cityHost; }
     public void setCityHost(CityHosts cityHost) { this.cityHost = cityHost; }
+
+      public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 }
