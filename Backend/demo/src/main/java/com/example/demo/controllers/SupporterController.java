@@ -171,7 +171,7 @@ public class SupporterController {
 
     // Vérifier si un email existe déjà
     @GetMapping("/checkEmail/{email}")
-    public ResponseEntity<Boolean> checkEmailExists(@RequestParam String email) {
+    public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
         boolean exists = supporterRepository.existsByEmail(email);
         return ResponseEntity.ok(exists);
     }
