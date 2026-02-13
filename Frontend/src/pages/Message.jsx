@@ -4,27 +4,30 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function Community() {
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
   const [selectedCountry, setSelectedCountry] = useState("");
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [currentUser] = useState({ id: 1, name: 'Guest Fan' });
+  const [currentUser, setCurrentUser] = useState({ id: userId ? Number(userId) : 1, name: 'Guest Fan' });
   const [teamImages, setTeamImages] = useState({});
 
   const messagesEndRef = useRef(null);
 
-
   useEffect(() => {
     const fetchSupporter = async () => {
+      if (!userId) return;
+
       try {
-        const res = await fetch("http://localhost:3309/api/supporters/1");
+        const res = await fetch(`http://localhost:3309/api/supporters/${userId}`);
         if (!res.ok) throw new Error("Erreur récupération supporter");
 
         const data = await res.json();
         if (data.country) {
           setSelectedCountry(data.country);
         }
+        setCurrentUser({ id: Number(userId), name: data.name || 'Guest Fan' });
       } catch (err) {
         console.error(err);
         setSelectedCountry("Morocco");
@@ -32,7 +35,7 @@ export default function Community() {
     };
 
     fetchSupporter();
-  }, []);
+  }, [userId]);
 
   const fetchTeamImage = async (country) => {
     if (!country || teamImages[country]) return;
@@ -47,7 +50,7 @@ export default function Community() {
       if (team && team.imageUrl) {
         setTeamImages(prev => ({ ...prev, [country]: team.imageUrl }));
       }
-    } catch (err) {
+    } catch ( err ) {
       console.error(err);
     }
   };
@@ -85,7 +88,6 @@ export default function Community() {
     });
   }, [messages]);
 
-
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
@@ -116,6 +118,7 @@ export default function Community() {
       setIsSending(false);
     }
   };
+
   const getFlagEmoji = (countryName) => {
     if (!countryName) return "🌍";
     try {
@@ -203,15 +206,11 @@ export default function Community() {
       <Navbar />
 
       <main className="min-h-screen bg-[#fafaf9] pt-24 pb-8 relative isolate">
-
-        {/* Decorative Background Blurs */}
         <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-stone-100 to-transparent -z-10 pointer-events-none"></div>
         <div className="fixed top-1/4 left-10 w-96 h-96 bg-[#C1272D]/5 rounded-full blur-[120px] -z-10"></div>
         <div className="fixed bottom-0 right-10 w-80 h-80 bg-[#006233]/5 rounded-full blur-[100px] -z-10"></div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-[calc(100vh-8rem)] flex flex-col gap-6">
-
-          {/* Top Info Bar */}
           <div className="flex flex-col sm:flex-row justify-between items-end gap-4 animate-enter">
             <div>
               <h1 className="text-3xl md:text-4xl font-medium text-stone-900 leading-none serif-font tracking-tight mb-2">
@@ -232,10 +231,7 @@ export default function Community() {
             )}
           </div>
 
-          {/* Main Chat Interface - Centered Card */}
           <div className="flex-1 bg-white ring-1 ring-stone-900/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[2rem] overflow-hidden flex flex-col relative animate-enter" style={{animationDelay: '0.1s'}}>
-
-            {/* Chat Header */}
             <div className="h-16 border-b border-stone-100 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 z-20 sticky top-0">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center text-2xl shadow-sm">
@@ -269,7 +265,6 @@ export default function Community() {
               </div>
             </div>
 
-            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto bg-dots relative p-4 sm:p-6 space-y-6">
               {isLoading ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm z-10">
@@ -310,7 +305,6 @@ export default function Community() {
                             </span>
                           )}
 
-                          {/* Message Bubble */}
                           <div
                             className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm transition-all relative group-hover:shadow-md
                             ${isMe
@@ -318,11 +312,9 @@ export default function Community() {
                               : 'bg-white border border-stone-200/60 text-stone-700 rounded-[1.25rem] rounded-tl-sm'
                             }`}
                           >
-                            
                             {msg.content}
                           </div>
 
-                          {/* Time */}
                           <span className={`text-[9px] text-stone-300 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity select-none`}>
                             {msg.dateOfSend ? new Date(msg.dateOfSend).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                           </span>
@@ -335,11 +327,8 @@ export default function Community() {
               <div ref={messagesEndRef} className="h-4" />
             </div>
 
-            {/* Input Area - Floating Capsule */}
             <div className="p-4 sm:p-5 bg-gradient-to-t from-white via-white to-transparent z-20">
               <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 max-w-3xl mx-auto bg-white p-1.5 rounded-full ring-1 ring-stone-200 shadow-lg shadow-stone-200/50 transition-shadow focus-within:ring-[#C1272D]/30 focus-within:shadow-xl">
-
-                {/* Emoji Button (Visual Only) */}
                 <button type="button" className="w-10 h-10 flex items-center justify-center rounded-full text-stone-400 hover:bg-stone-50 hover:text-stone-600 transition-colors flex-shrink-0">
                   <iconify-icon icon="solar:smile-circle-linear" width="22"></iconify-icon>
                 </button>
@@ -377,7 +366,6 @@ export default function Community() {
                 <p className="text-[10px] text-stone-400 decorative-font">Be respectful • كن محترماً • Soyez respectueux</p>
               </div>
             </div>
-
           </div>
         </div>
       </main>
