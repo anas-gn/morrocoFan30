@@ -258,8 +258,8 @@ public class MatchesController {
         match.setStatus(etat);
         matchRepo.save(match);
         List<MatchTeam> matchTeams = MatchTeamRepository.findByMatchId(id);
-        if (("DIRECT".equalsIgnoreCase(etat) || "started".equalsIgnoreCase(etat) || "commence".equalsIgnoreCase(etat))
-                && !"DIRECT".equalsIgnoreCase(oldStatus)
+        if (("LIVE".equalsIgnoreCase(etat) || "started".equalsIgnoreCase(etat) || "commence".equalsIgnoreCase(etat))
+                && !"Live".equalsIgnoreCase(oldStatus)
                 && !"STARTED".equalsIgnoreCase(oldStatus)
                 && !"commence".equalsIgnoreCase(oldStatus)) {
             List<Favorites> matchFavorites = favoritesRepo.findByTypeAndOwnerID("match", match.getId());
@@ -294,7 +294,7 @@ public class MatchesController {
                 }
             }
         }
-        if (("termine".equalsIgnoreCase(etat) || "FINISHED".equalsIgnoreCase(etat))
+        if (("termine".equalsIgnoreCase(etat) || "Finished".equalsIgnoreCase(etat))
                 && !"termine".equalsIgnoreCase(oldStatus)
                 && !"FINISHED".equalsIgnoreCase(oldStatus)) {
             List<Favorites> matchFavorites = favoritesRepo.findByTypeAndOwnerID("match", match.getId());

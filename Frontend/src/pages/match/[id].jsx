@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
@@ -25,44 +25,58 @@ export default function MatchDetail() {
   const [supporterId, setSupporterId] = useState(null);
   const [supporterIdLoaded, setSupporterIdLoaded] = useState(false);
 
-  // Récupérer supporterId après le montage du composant
+  // ── Review states ──────────────────────────────
+  const [reviews, setReviews] = useState([]);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewRating, setReviewRating] = useState(0);
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState(null);
+
+  const matchRef = useRef(null);
+  const weatherFetchedRef = useRef(false);
+
+  const [chrono, setChrono] = useState(0);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const id = parseInt(localStorage.getItem('supporterId') || '0', 10);
-      console.log('localStorage supporterId:', id);
       setSupporterId(id > 0 ? id : null);
       setSupporterIdLoaded(true);
     }
   }, []);
 
-  // États pour les favoris
   const [isFavorite, setIsFavorite] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
 
   useEffect(() => {
-    if (!id || supporterId === null) return;
+    if (!id || !supporterIdLoaded) return;
+
     const fetchAll = async () => {
       try {
-        const [matchRes, eventsRes, lineupRes, predictionsRes] = await Promise.all([
+        const [matchRes, eventsRes, lineupRes, predictionsRes, reviewsRes] = await Promise.all([
           fetch(`http://localhost:3309/api/matches/matches/${id}`),
           fetch(`http://localhost:3309/api/matches/matches/${id}/events`),
           fetch(`http://localhost:3309/api/matches/matches/${id}/players/lineup`),
           fetch(`http://localhost:3309/api/predictions/match/${id}`),
+          fetch(`http://localhost:3309/api/reviews/match/${id}`),
         ]);
-        const [matchData, eventsData, lineupData, predictionsData] = await Promise.all([
-          matchRes.json(), eventsRes.json(), lineupRes.json(), predictionsRes.json(),
+        const [matchData, eventsData, lineupData, predictionsData, reviewsData] = await Promise.all([
+          matchRes.json(), eventsRes.json(), lineupRes.json(), predictionsRes.json(), reviewsRes.json(),
         ]);
+
         setMatch(matchData);
+        matchRef.current = matchData;
         setEvents(eventsData);
         setLineup(lineupData);
         setMatchPredictions(predictionsData || []);
+        setReviews(Array.isArray(reviewsData) ? reviewsData : []);
 
-        // Fetch weather based on stadium location
-        if (matchData?.stadeName) {
+        if (matchData?.stadeName && !weatherFetchedRef.current) {
+          weatherFetchedRef.current = true;
           fetchWeather(matchData.stadeName);
         }
 
-        // fetch existing prediction
         if (supporterId && supporterId > 0) {
           try {
             const predRes = await fetch(
@@ -75,35 +89,32 @@ export default function MatchDetail() {
             }
           } catch (_) {}
         }
+
         setLoading(false);
       } catch (err) {
         console.error(err);
         setLoading(false);
       }
     };
-    fetchAll();
-  }, [id, supporterId]);
 
-  // useEffect pour vérifier si le match est dans les favoris
+    fetchAll();
+
+    const interval = setInterval(() => {
+      fetchAll();
+    }, 15_000);
+
+    return () => clearInterval(interval);
+  }, [id, supporterId, supporterIdLoaded]);
+
   useEffect(() => {
-    // Attendre que supporterId soit chargé ET qu'il soit valide
     if (!supporterIdLoaded || !id || !supporterId || supporterId === 0) {
       setIsFavorite(false);
       return;
     }
-    
-    console.log('Checking favorite for supporterId:', supporterId, 'matchId:', id);
-    
     fetch(`http://localhost:3309/api/favorites/check?supporterId=${supporterId}&ownerId=${id}&type=Match`)
       .then(res => res.json())
-      .then(data => {
-        console.log('Is favorite:', data);
-        setIsFavorite(data);
-      })
-      .catch((err) => {
-        console.error('Error checking favorite:', err);
-        setIsFavorite(false);
-      });
+      .then(data => setIsFavorite(data))
+      .catch(() => setIsFavorite(false));
   }, [id, supporterId, supporterIdLoaded]);
 
   const fetchWeather = async (cityName) => {
@@ -112,17 +123,85 @@ export default function MatchDetail() {
       const res = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?q=${city},MA&units=metric&appid=YOUR_API_KEY`
       );
-      if (res.ok) {
-        setWeather(await res.json());
-      }
+      if (res.ok) setWeather(await res.json());
     } catch (_) {}
   };
 
-  const submitPrediction = async () => {
-    if (!supporterId || supporterId === 0) {
-      router.push('/Login');
-      return;
+  useEffect(() => {
+    if (!match || !id) return;
+    const statut = match.statut;
+    const keyT1 = `match_${id}_t1_start`;
+    const keyT1Statut = `match_${id}_t1_statut`;
+    const keyT2 = `match_${id}_t2_start`;
+    const keyT2Statut = `match_${id}_t2_statut`;
+
+    if (statut === 'fin meta 1') { setChrono(45 * 60); return; }
+    if (statut === 'termine' || statut === 'Finished') {
+      localStorage.removeItem(keyT1); localStorage.removeItem(keyT1Statut);
+      localStorage.removeItem(keyT2); localStorage.removeItem(keyT2Statut);
+      setChrono(90 * 60); return;
     }
+    if (statut !== 'commence' && statut !== 'meta 2' && statut !== 'started' && statut !== 'LIVE') {
+      setChrono(0); return;
+    }
+    if (statut === 'commence' || statut === 'started' || statut === 'LIVE') {
+      let t1 = parseInt(localStorage.getItem(keyT1) || '0');
+      const savedStatut = localStorage.getItem(keyT1Statut);
+      if (!t1 || savedStatut !== statut) {
+        t1 = Date.now();
+        localStorage.setItem(keyT1, String(t1));
+        localStorage.setItem(keyT1Statut, statut);
+      }
+      const tick = () => setChrono(Math.min(Math.floor((Date.now() - t1) / 1000), 45 * 60));
+      tick();
+      const interval = setInterval(tick, 1000);
+      return () => clearInterval(interval);
+    }
+    if (statut === 'meta 2') {
+      let t2 = parseInt(localStorage.getItem(keyT2) || '0');
+      const savedStatut2 = localStorage.getItem(keyT2Statut);
+      if (!t2 || savedStatut2 !== 'meta 2') {
+        t2 = Date.now();
+        localStorage.setItem(keyT2, String(t2));
+        localStorage.setItem(keyT2Statut, 'meta 2');
+      }
+      const tick = () => setChrono(Math.min(45 * 60 + Math.floor((Date.now() - t2) / 1000), 90 * 60));
+      tick();
+      const interval = setInterval(tick, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [match?.statut, id]);
+
+  // ── Submit review ──────────────────────────────
+  const submitReview = async () => {
+    if (!supporterId || supporterId === 0) { router.push('/Login'); return; }
+    if (!reviewText.trim() || reviewRating === 0) return;
+    setReviewSubmitting(true);
+    setReviewMessage(null);
+    try {
+      const res = await fetch('http://localhost:3309/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supporterId, matchId: parseInt(id), description: reviewText, rating: reviewRating }),
+      });
+      if (res.ok) {
+        const newReview = await res.json();
+        setReviews(prev => [newReview, ...prev]);
+        setReviewText('');
+        setReviewRating(0);
+        setReviewMessage({ type: 'success', text: 'Avis publié avec succès !' });
+        setTimeout(() => setReviewMessage(null), 3000);
+      } else {
+        setReviewMessage({ type: 'error', text: 'Erreur lors de l\'envoi.' });
+      }
+    } catch (_) {
+      setReviewMessage({ type: 'error', text: 'Erreur réseau.' });
+    }
+    setReviewSubmitting(false);
+  };
+
+  const submitPrediction = async () => {
+    if (!supporterId || supporterId === 0) { router.push('/Login'); return; }
     if (!selectedTeamId) return;
     setPredSubmitting(true);
     try {
@@ -146,20 +225,12 @@ export default function MatchDetail() {
     setPredSubmitting(false);
   };
 
-  // Fonction toggle favorite
   const toggleFavorite = async () => {
-    console.log('supporterId:', supporterId);
-    if (!supporterId || supporterId === 0) {
-      router.push('/Login');
-      return;
-    }
+    if (!supporterId || supporterId === 0) { router.push('/Login'); return; }
     setFavLoading(true);
     try {
       if (isFavorite) {
-        // Supprimer : récupérer l'id du favori d'abord
-        const res = await fetch(
-          `http://localhost:3309/api/favorites/${supporterId}/type/Match`
-        );
+        const res = await fetch(`http://localhost:3309/api/favorites/${supporterId}/type/Match`);
         const favs = await res.json();
         const fav = favs.find(f => f.ownerId === parseInt(id));
         if (fav) {
@@ -167,66 +238,75 @@ export default function MatchDetail() {
           setIsFavorite(false);
         }
       } else {
-        // Ajouter
         await fetch(
           `http://localhost:3309/api/favorites/add?supporterId=${supporterId}&ownerId=${id}&type=Match`,
           { method: 'POST' }
         );
         setIsFavorite(true);
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
     setFavLoading(false);
   };
 
   const getStatus = (s) => {
     const map = {
-      DIRECT:   { label: 'LIVE',      live: true,  minute: '74\'' },
-      started:  { label: 'LIVE',      live: true,  minute: '74\'' },
-      commence: { label: 'LIVE',      live: true,  minute: '74\'' },
-      termine:  { label: 'FT',        live: false, minute: 'FT' },
-      Finished: { label: 'FT',        live: false, minute: 'FT' },
-      upcoming: { label: 'À VENIR',   live: false, minute: '' },
+      LIVE:         { label: 'LIVE',     live: true,  half: '1ère mi-temps' },
+      started:      { label: 'LIVE',     live: true,  half: '1ère mi-temps' },
+      commence:     { label: 'LIVE',     live: true,  half: '1ère mi-temps' },
+      'fin meta 1': { label: 'MI-TEMPS', live: false, half: 'Mi-temps' },
+      'meta 2':     { label: 'LIVE',     live: true,  half: '2ème mi-temps' },
+      termine:      { label: 'FT',       live: false, half: 'Terminé' },
+      Finished:     { label: 'FT',       live: false, half: 'Terminé' },
+      upcoming:     { label: 'À VENIR',  live: false, half: '' },
     };
-    return map[s] || { label: 'PRÉVU', live: false, minute: '' };
+    return map[s] || { label: 'PRÉVU', live: false, half: '' };
   };
 
-  const isMatchActive = (s) => ['DIRECT','started','commence'].includes(s);
-  const isMatchFinished = (s) => ['termine','Finished'].includes(s);
-  const isMatchUpcoming = (s) => !isMatchActive(s) && !isMatchFinished(s);
+  const formatChrono = (totalSeconds) => {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    return `${Math.floor(s / 60)}'${(s % 60).toString().padStart(2, '0')}"`;
+  };
+
+  const isMatchActive   = (s) => ['DIRECT', 'started', 'commence', 'meta 2'].includes(s);
+  const isMatchFinished = (s) => ['termine', 'Finished'].includes(s);
+  const isMatchUpcoming = (s) => !isMatchActive(s) && !isMatchFinished(s) && s !== 'fin meta 1';
 
   const getEventIcon = (info = '') => {
     const l = info.toLowerCase();
-    if (l.includes('goal'))         return { icon: 'solar:football-linear', color: 'text-[#C1272D]', bg: 'bg-[#C1272D]/10' };
-    if (l.includes('yellow'))       return { icon: 'solar:card-linear', color: 'text-yellow-600', bg: 'bg-yellow-100' };
-    if (l.includes('red'))          return { icon: 'solar:card-linear', color: 'text-red-600', bg: 'bg-red-100' };
-    if (l.includes('substitution')) return { icon: 'solar:refresh-circle-linear', color: 'text-stone-600', bg: 'bg-stone-200' };
-    return                                 { icon: 'solar:info-circle-linear', color: 'text-stone-600', bg: 'bg-stone-100' };
+    if (l.includes('goal'))         return { icon: 'solar:football-linear',      color: 'text-[#C1272D]',  bg: 'bg-[#C1272D]/10' };
+    if (l.includes('yellow'))       return { icon: 'solar:card-linear',           color: 'text-yellow-600', bg: 'bg-yellow-100' };
+    if (l.includes('red'))          return { icon: 'solar:card-linear',           color: 'text-red-600',    bg: 'bg-red-100' };
+    if (l.includes('substitution')) return { icon: 'solar:refresh-circle-linear', color: 'text-stone-600',  bg: 'bg-stone-200' };
+    return                                 { icon: 'solar:info-circle-linear',    color: 'text-stone-600',  bg: 'bg-stone-100' };
   };
 
-  const getTeamLineup = (teamId) => lineup.filter(p => p.teamID === teamId);
-  const starters      = (arr)    => arr.filter(p =>  p.starter);
-  const substitutes   = (arr)    => arr.filter(p => !p.starter);
+  const getTeamLineup  = (teamId) => lineup.filter(p => p.teamID === teamId);
+  const starters       = (arr)    => arr.filter(p =>  p.starter);
+  const substitutes    = (arr)    => arr.filter(p => !p.starter);
+
+  const getAvgRating = () => {
+    if (reviews.length === 0) return 0;
+    return (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
+  };
+
+  const getRatingDistribution = () => {
+    const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach(r => { if (dist[r.rating] !== undefined) dist[r.rating]++; });
+    return dist;
+  };
 
   const getPredictionStats = () => {
     const team1 = match?.matchTeams?.[0];
     const team2 = match?.matchTeams?.[1];
-    
-    if (!team1 || !team2 || matchPredictions.length === 0) {
-      return { team1Percent: 0, team2Percent: 0, total: 0 };
-    }
-
+    if (!team1 || !team2 || matchPredictions.length === 0) return { team1Percent: 0, team2Percent: 0, total: 0 };
     const team1Count = matchPredictions.filter(p => p.predictedWinnerId === team1.teamId).length;
     const team2Count = matchPredictions.filter(p => p.predictedWinnerId === team2.teamId).length;
     const total = matchPredictions.length;
-
     return {
-      team1Count,
-      team2Count,
+      team1Count, team2Count,
       team1Percent: total > 0 ? Math.round((team1Count / total) * 100) : 0,
       team2Percent: total > 0 ? Math.round((team2Count / total) * 100) : 0,
-      total
+      total,
     };
   };
 
@@ -234,35 +314,31 @@ export default function MatchDetail() {
     if (lineup.length === 0) return null;
     const playersWithRatings = lineup.filter(p => p.rating && p.rating > 0);
     if (playersWithRatings.length === 0) return null;
-    return playersWithRatings.reduce((best, current) => 
-      current.rating > (best?.rating || 0) ? current : best
-    , null);
+    return playersWithRatings.reduce((best, current) =>
+      current.rating > (best?.rating || 0) ? current : best, null);
   };
 
   const PredictionPanel = () => {
-    const team1 = match?.matchTeams?.[0];
-    const team2 = match?.matchTeams?.[1];
+    const team1  = match?.matchTeams?.[0];
+    const team2  = match?.matchTeams?.[1];
     const status = match?.statut;
-    const stats = getPredictionStats();
+    const stats  = getPredictionStats();
 
     if (prediction) {
       const winnerName = prediction.predictedWinnerName || 'Inconnue';
       const st = prediction.status?.toLowerCase();
       const resultConfig = {
-        correct:   { bg: 'bg-emerald-50 border-emerald-200', icon: 'solar:check-circle-bold', iconColor: 'text-emerald-600', label: 'Correct !' },
-        incorrect: { bg: 'bg-red-50 border-red-200', icon: 'solar:close-circle-bold', iconColor: 'text-red-600', label: 'Incorrect' },
-        pending:   { bg: 'bg-amber-50 border-amber-200', icon: 'solar:clock-circle-linear', iconColor: 'text-amber-600', label: 'En attente' },
+        correct:   { bg: 'bg-emerald-50 border-emerald-200',  icon: 'solar:check-circle-bold',   iconColor: 'text-emerald-600', label: 'Correct !' },
+        incorrect: { bg: 'bg-red-50 border-red-200',          icon: 'solar:close-circle-bold',   iconColor: 'text-red-600',     label: 'Incorrect' },
+        pending:   { bg: 'bg-amber-50 border-amber-200',      icon: 'solar:clock-circle-linear', iconColor: 'text-amber-600',   label: 'En attente' },
       };
       const r = resultConfig[st] || resultConfig.pending;
-
       return (
         <div className={`rounded-2xl p-5 border ${r.bg}`}>
           <div className="flex items-center gap-2 mb-4">
             <iconify-icon icon={r.icon} class={`${r.iconColor} text-lg`}></iconify-icon>
             <h3 className="font-semibold text-stone-900 text-sm">Mon Pronostic</h3>
-            <span className={`ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded ${r.iconColor}`}>
-              {r.label}
-            </span>
+            <span className={`ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded ${r.iconColor}`}>{r.label}</span>
           </div>
           <div className="flex items-center gap-3 bg-white rounded-xl p-3 border border-stone-100">
             <img
@@ -275,12 +351,9 @@ export default function MatchDetail() {
               <p className="font-bold text-stone-900 text-sm">{winnerName}</p>
             </div>
           </div>
-
           {stats.total > 0 && (
             <div className="mt-4 space-y-2">
-              <div className="text-xs text-stone-500 text-center mb-2">
-                {stats.total} pronostic{stats.total > 1 ? 's' : ''} au total
-              </div>
+              <div className="text-xs text-stone-500 text-center mb-2">{stats.total} pronostic{stats.total > 1 ? 's' : ''} au total</div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-stone-600">{team1?.teamName}</span>
@@ -312,12 +385,9 @@ export default function MatchDetail() {
             Les pronostics ne sont plus acceptés.<br />
             Le match a {isMatchFinished(status) ? 'terminé' : 'commencé'}.
           </p>
-          
           {stats.total > 0 && (
             <div className="mt-4 pt-4 border-t border-stone-200 space-y-2">
-              <div className="text-xs text-stone-500 text-center mb-2">
-                {stats.total} pronostic{stats.total > 1 ? 's' : ''}
-              </div>
+              <div className="text-xs text-stone-500 text-center mb-2">{stats.total} pronostic{stats.total > 1 ? 's' : ''}</div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-stone-600">{team1?.teamName}</span>
@@ -343,17 +413,12 @@ export default function MatchDetail() {
         <div className="flex items-center gap-2 mb-4">
           <iconify-icon icon="solar:chart-2-linear" class="text-stone-700"></iconify-icon>
           <h3 className="font-semibold text-stone-900 text-sm">Votre Pronostic</h3>
-          <span className="ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">
-            Ouvert
-          </span>
+          <span className="ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Ouvert</span>
         </div>
         <p className="text-stone-600 text-xs mb-3">Qui remportera ce match ?</p>
-        
         {stats.total > 0 && (
           <div className="mb-3 p-3 bg-stone-50 rounded-xl">
-            <div className="text-xs text-stone-500 mb-2">
-              {stats.total} pronostic{stats.total > 1 ? 's' : ''}
-            </div>
+            <div className="text-xs text-stone-500 mb-2">{stats.total} pronostic{stats.total > 1 ? 's' : ''}</div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-stone-600">{team1?.teamName}</span>
@@ -370,44 +435,33 @@ export default function MatchDetail() {
             </div>
           </div>
         )}
-
         <div className="flex flex-col gap-2 mb-4">
           {[team1, team2].map(team => (
             <button
               key={team?.teamId}
               onClick={() => setSelectedTeamId(team?.teamId)}
               className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
-                selectedTeamId === team?.teamId
-                  ? 'bg-[#C1272D]/5 border-[#C1272D] shadow-sm'
-                  : 'bg-white border-stone-200 hover:border-stone-300'
+                selectedTeamId === team?.teamId ? 'bg-[#C1272D]/5 border-[#C1272D] shadow-sm' : 'bg-white border-stone-200 hover:border-stone-300'
               }`}
             >
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                selectedTeamId === team?.teamId ? 'border-[#C1272D]' : 'border-stone-300'
-              }`}>
-                {selectedTeamId === team?.teamId && (
-                  <div className="w-2 h-2 rounded-full bg-[#C1272D]" />
-                )}
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedTeamId === team?.teamId ? 'border-[#C1272D]' : 'border-stone-300'}`}>
+                {selectedTeamId === team?.teamId && <div className="w-2 h-2 rounded-full bg-[#C1272D]" />}
               </div>
               <img src={team?.imageUrl} className="w-8 h-8 rounded-full object-cover border border-stone-200" alt={team?.teamName} />
               <span className="font-medium text-stone-900 text-sm">{team?.teamName}</span>
             </button>
           ))}
         </div>
-        
         {predMessage && (
           <p className={`text-xs text-center mb-3 ${predMessage.includes('✓') ? 'text-emerald-600' : 'text-red-600'}`}>
             {predMessage}
           </p>
         )}
-        
         <button
           onClick={submitPrediction}
           disabled={!selectedTeamId || predSubmitting}
           className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all ${
-            selectedTeamId && !predSubmitting
-              ? 'bg-[#C1272D] hover:bg-[#A01F24] text-white shadow-sm active:scale-[0.98]'
-              : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+            selectedTeamId && !predSubmitting ? 'bg-[#C1272D] hover:bg-[#A01F24] text-white shadow-sm active:scale-[0.98]' : 'bg-stone-100 text-stone-400 cursor-not-allowed'
           }`}
         >
           {predSubmitting ? 'Envoi…' : 'Confirmer le pronostic'}
@@ -419,11 +473,7 @@ export default function MatchDetail() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
-        <img
-          src="/images/logo.png"
-          alt="Loading"
-          className="w-20 h-20 mb-4"
-        />
+        <img src="/images/logo.png" alt="Loading" className="w-20 h-20 mb-4" />
       </div>
     );
   }
@@ -436,17 +486,18 @@ export default function MatchDetail() {
     );
   }
 
-  const status = getStatus(match.statut);
-  const team1  = match.matchTeams?.[0];
-  const team2  = match.matchTeams?.[1];
-  const showScore = isMatchActive(match.statut) || isMatchFinished(match.statut);
+  const status     = getStatus(match.statut);
+  const team1      = match.matchTeams?.[0];
+  const team2      = match.matchTeams?.[1];
+  const showScore  = isMatchActive(match.statut) || isMatchFinished(match.statut) || match.statut === 'fin meta 1';
   const manOfMatch = getManOfTheMatch();
 
   const TABS = [
-    { key: 'overview', label: 'Overview',     icon: 'solar:info-circle-linear' },
-    { key: 'lineup',   label: 'Lineups',      icon: 'solar:users-group-rounded-linear' },
-    { key: 'events',   label: 'Events',       icon: 'solar:list-linear', badge: events.length },
-    { key: 'stats',    label: 'Stats',        icon: 'solar:chart-square-linear' },
+    { key: 'overview', label: 'Overview',  icon: 'solar:info-circle-linear' },
+    { key: 'lineup',   label: 'Lineups',   icon: 'solar:users-group-rounded-linear' },
+    { key: 'events',   label: 'Events',    icon: 'solar:list-linear', badge: events.length },
+    { key: 'stats',    label: 'Stats',     icon: 'solar:chart-square-linear' },
+    { key: 'reviews',  label: 'Avis',      icon: 'solar:chat-round-dots-linear', badge: reviews.length },
   ];
 
   return (
@@ -464,70 +515,55 @@ export default function MatchDetail() {
       </Head>
 
       <style jsx global>{`
-        body { 
-          font-family: 'Outfit', sans-serif; 
-          background-color: #FAFAF9; 
-          color: #1C1917; 
+        body {
+          font-family: 'Outfit', sans-serif;
+          background-color: #FAFAF9;
+          color: #1C1917;
         }
-        
-        .serif-font { 
-          font-family: 'Playfair Display', serif; 
-        }
-
+        .serif-font { font-family: 'Playfair Display', serif; }
         .glass-panel {
-          background: rgba(255, 255, 255, 0.95);
+          background: rgba(255,255,255,0.95);
           backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(231, 229, 228, 0.8);
+          border-bottom: 1px solid rgba(231,229,228,0.8);
         }
-
         .glass-dark {
-          background: rgba(28, 25, 23, 0.6);
+          background: rgba(28,25,23,0.6);
           backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255,255,255,0.1);
         }
-
         .timeline-line::before {
           content: '';
           position: absolute;
-          top: 24px;
-          bottom: 0;
-          left: 23px;
+          top: 24px; bottom: 0; left: 23px;
           width: 2px;
           background: #E7E5E4;
           z-index: 0;
         }
+        .hide-scroll::-webkit-scrollbar { display: none; }
 
-        .hide-scroll::-webkit-scrollbar {
-          display: none;
-        }
+        /* Star rating */
+        .star-btn { transition: transform 0.1s ease; }
+        .star-btn:hover { transform: scale(1.2); }
       `}</style>
 
       <Navbar />
 
-      {/* Hero Section */}
+      {/* ── Hero ──────────────────────────────────────── */}
       <header className="relative pt-32 pb-16 bg-[#1C1917] overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img
-            src={match.imageUrl || "/images/default-stadium.jpg"}
-            className="w-full h-full object-cover mix-blend-overlay"
-            alt={match.stadeName}
-          />
+          <img src={match.imageUrl || "/images/default-stadium.jpg"} className="w-full h-full object-cover mix-blend-overlay" alt={match.stadeName} />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1C1917] via-[#1C1917]/80 to-transparent" />
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-6">
-          {/* Bouton Favori */}
+          {/* Favori */}
           <div className="flex justify-end mb-2">
             <button
               onClick={toggleFavorite}
               disabled={favLoading}
-              title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-200
-                ${isFavorite
-                  ? 'bg-yellow-400/20 border-yellow-400/40 text-yellow-300 hover:bg-yellow-400/30'
-                  : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white'
-                }
-              `}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-sm border transition-all duration-200 ${
+                isFavorite ? 'bg-yellow-400/20 border-yellow-400/40 text-yellow-300 hover:bg-yellow-400/30' : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20 hover:text-white'
+              }`}
             >
               {favLoading ? (
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -535,34 +571,18 @@ export default function MatchDetail() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                 </svg>
               ) : (
-                <svg
-                  className={`w-5 h-5 transition-all duration-200 ${isFavorite ? 'scale-110' : ''}`}
-                  fill={isFavorite ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                  />
+                <svg className={`w-5 h-5 transition-all duration-200 ${isFavorite ? 'scale-110' : ''}`} fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                 </svg>
               )}
-              <span className="text-sm font-medium">
-                {isFavorite ? "Favori" : "Ajouter"}
-              </span>
+              <span className="text-sm font-medium">{isFavorite ? "Favori" : "Ajouter"}</span>
             </button>
           </div>
-          
-          {/* Match Status Pill */}
+
+          {/* Status pill */}
           <div className="flex justify-center mb-10">
             <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full backdrop-blur-sm ${
-              status.live
-                ? 'bg-[#C1272D]/10 border border-[#C1272D]/20'
-                : isMatchFinished(match.statut)
-                  ? 'bg-stone-700/40 border border-stone-600/30'
-                  : 'bg-emerald-500/10 border border-emerald-500/20'
+              status.live ? 'bg-[#C1272D]/10 border border-[#C1272D]/20' : isMatchFinished(match.statut) ? 'bg-stone-700/40 border border-stone-600/30' : 'bg-emerald-500/10 border border-emerald-500/20'
             }`}>
               {status.live && (
                 <span className="relative flex h-2 w-2">
@@ -571,16 +591,17 @@ export default function MatchDetail() {
                 </span>
               )}
               <span className={`text-xs font-bold uppercase tracking-widest ${
-                status.live ? 'text-[#C1272D]' : isMatchFinished(match.statut) ? 'text-stone-400' : 'text-emerald-400'
+                status.live ? 'text-[#C1272D]' : isMatchFinished(match.statut) ? 'text-stone-400' : match.statut === 'fin meta 1' ? 'text-amber-400' : 'text-emerald-400'
               }`}>
-                {status.label} {status.live && `• ${status.minute}`}
+                {status.label}
+                {status.live && <span className="ml-2 font-mono text-sm tracking-normal">{formatChrono(chrono)}</span>}
+                {match.statut === 'fin meta 1' && ' • Mi-temps'}
               </span>
             </div>
           </div>
 
           {/* Score Board */}
           <div className="flex items-center justify-between md:justify-center gap-4 md:gap-24">
-            {/* Home Team */}
             <div className="flex flex-col items-center gap-4 w-1/3 md:w-auto">
               <div className="relative group">
                 <div className="absolute -inset-4 bg-[#C1272D] opacity-20 blur-xl rounded-full group-hover:opacity-30 transition-opacity" />
@@ -591,7 +612,6 @@ export default function MatchDetail() {
               <h2 className="text-white text-lg md:text-2xl serif-font text-center">{team1?.teamName}</h2>
             </div>
 
-            {/* Score */}
             <div className="flex flex-col items-center justify-center">
               {showScore ? (
                 <>
@@ -600,10 +620,17 @@ export default function MatchDetail() {
                     <span className="text-stone-600 text-4xl md:text-6xl">:</span>
                     <span className="text-stone-500">{team2?.goals ?? 0}</span>
                   </div>
-                  {status.live && (
+                  {(status.live || match.statut === 'fin meta 1') && (
                     <div className="mt-4 px-4 py-1.5 rounded-lg glass-dark text-stone-400 text-xs font-medium uppercase tracking-wider flex items-center gap-2">
                       <iconify-icon icon="solar:whistle-linear"></iconify-icon>
-                      {match.statut === 'DIRECT' ? '2nd Half' : 'Live'}
+                      {match.statut === 'fin meta 1' ? (
+                        <span className="text-amber-400 font-bold">MI-TEMPS · 45'00"</span>
+                      ) : (
+                        <>
+                          <span className="text-stone-300">{status.half}</span>
+                          <span className="text-[#C1272D] font-mono font-bold text-sm">{formatChrono(chrono)}</span>
+                        </>
+                      )}
                     </div>
                   )}
                 </>
@@ -617,7 +644,6 @@ export default function MatchDetail() {
               )}
             </div>
 
-            {/* Away Team */}
             <div className="flex flex-col items-center gap-4 w-1/3 md:w-auto">
               <div className="relative group">
                 <div className="absolute -inset-4 bg-yellow-500 opacity-10 blur-xl rounded-full group-hover:opacity-20 transition-opacity" />
@@ -641,14 +667,12 @@ export default function MatchDetail() {
               <span>{match.stadeName}</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-stone-700" />
-            <div className="flex items-center gap-2">
-              <span>{match.type}</span>
-            </div>
+            <div className="flex items-center gap-2"><span>{match.type}</span></div>
           </div>
         </div>
       </header>
 
-      {/* Sticky Tabs */}
+      {/* ── Sticky Tabs ──────────────────────────────── */}
       <div className="sticky top-16 z-40 bg-[#FAFAF9]/95 backdrop-blur border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-6 overflow-x-auto hide-scroll">
           <div className="flex items-center gap-8 min-w-max">
@@ -657,17 +681,13 @@ export default function MatchDetail() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`py-4 border-b-2 transition-colors text-sm font-medium flex items-center gap-2 ${
-                  activeTab === tab.key
-                    ? 'border-[#1C1917] text-[#1C1917] font-semibold'
-                    : 'border-transparent text-stone-500 hover:text-stone-800'
+                  activeTab === tab.key ? 'border-[#1C1917] text-[#1C1917] font-semibold' : 'border-transparent text-stone-500 hover:text-stone-800'
                 }`}
               >
                 <iconify-icon icon={tab.icon} width="18"></iconify-icon>
                 {tab.label}
                 {tab.badge > 0 && (
-                  <span className="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full">
-                    {tab.badge}
-                  </span>
+                  <span className="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full">{tab.badge}</span>
                 )}
               </button>
             ))}
@@ -675,16 +695,15 @@ export default function MatchDetail() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* ── Main Content ─────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
-        
+
         {/* Left Column */}
         <div className="lg:col-span-8 space-y-10">
-          
+
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <>
-              {/* Quick Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-1">
                   <span className="text-xs text-stone-500 font-medium uppercase tracking-wider">Possession</span>
@@ -716,7 +735,7 @@ export default function MatchDetail() {
                 </div>
               </div>
 
-              {/* Match Events Timeline */}
+              {/* Events Timeline */}
               <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm">
                 <div className="flex items-center justify-between mb-8">
                   <h3 className="serif-font text-xl text-stone-900">Match Events</h3>
@@ -725,7 +744,6 @@ export default function MatchDetail() {
                     <span className="w-2 h-2 rounded-full bg-stone-800 ml-2" /> {team2?.teamName}
                   </div>
                 </div>
-
                 {events.length === 0 ? (
                   <div className="text-center py-16">
                     <iconify-icon icon="solar:football-linear" class="text-stone-300 text-5xl mb-4"></iconify-icon>
@@ -753,23 +771,14 @@ export default function MatchDetail() {
                                 <div className="text-xs text-stone-500">{ev.playerName}</div>
                               </div>
                             </div>
-                            {ev.additionalInfo?.toLowerCase().includes('goal') && (
-                              <span className="text-2xl serif-font text-stone-900">
-                                {isTeam1 ? `${team1.goals}-${team2.goals}` : `${team1.goals}-${team2.goals}`}
-                              </span>
-                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
                 )}
-                
                 {events.length > 6 && (
-                  <button
-                    onClick={() => setActiveTab('events')}
-                    className="mt-2 w-full text-sm text-[#C1272D] hover:underline font-medium text-center"
-                  >
+                  <button onClick={() => setActiveTab('events')} className="mt-2 w-full text-sm text-[#C1272D] hover:underline font-medium text-center">
                     Voir tous les événements ({events.length})
                   </button>
                 )}
@@ -779,11 +788,8 @@ export default function MatchDetail() {
               <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="serif-font text-xl text-stone-900">Lineups</h3>
-                  <button onClick={() => setActiveTab('lineup')} className="text-sm font-medium text-[#C1272D] hover:underline">
-                    View Pitch
-                  </button>
+                  <button onClick={() => setActiveTab('lineup')} className="text-sm font-medium text-[#C1272D] hover:underline">View Pitch</button>
                 </div>
-                
                 <div className="grid md:grid-cols-2 gap-8">
                   {[team1, team2].map((team, idx) => {
                     const players = starters(getTeamLineup(team?.teamId)).slice(0, 5);
@@ -797,16 +803,9 @@ export default function MatchDetail() {
                         <ul className="space-y-3">
                           {players.map((player, i) => (
                             <li key={player.id} className="flex items-center gap-3 text-sm">
-                              <span className="w-6 text-center text-xs font-bold text-stone-400">
-                                {player.jerseyNumber || i + 1}
-                              </span>
+                              <span className="w-6 text-center text-xs font-bold text-stone-400">{player.jerseyNumber || i + 1}</span>
                               <span className="text-stone-800 font-medium">{player.playerName}</span>
-                              {player.position === 'GK' && (
-                                <span className="ml-auto text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded">GK</span>
-                              )}
-                              {player.rating && player.rating > 8 && (
-                                <iconify-icon icon="solar:star-bold" class="text-[#C1272D] text-xs ml-auto"></iconify-icon>
-                              )}
+                              {player.position === 'GK' && <span className="ml-auto text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded">GK</span>}
                             </li>
                           ))}
                           {starters(getTeamLineup(team?.teamId)).length > 5 && (
@@ -836,7 +835,6 @@ export default function MatchDetail() {
                       <img src={team?.imageUrl} className="w-12 h-12 rounded-full border-2 border-stone-100 object-cover" alt={team?.teamName} />
                       <h3 className="font-bold text-lg text-stone-900">{team?.teamName}</h3>
                     </div>
-
                     <div className="mb-6">
                       <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">Titulaires</p>
                       <div className="space-y-2">
@@ -846,33 +844,26 @@ export default function MatchDetail() {
                               <div className="w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-xs" style={{ backgroundColor: accent }}>
                                 {player.jerseyNumber || i + 1}
                               </div>
-                              {player.playerImgUrl && (
-                                <img src={player.playerImgUrl} className="w-9 h-9 rounded-full object-cover border border-stone-200" alt={player.playerName} />
-                              )}
+                              {player.playerImgUrl && <img src={player.playerImgUrl} className="w-9 h-9 rounded-full object-cover border border-stone-200" alt={player.playerName} />}
                               <div>
                                 <p className="font-medium text-stone-900 text-sm">{player.playerName}</p>
                                 <p className="text-xs text-stone-400">{player.position || 'N/A'}</p>
                               </div>
                             </div>
                             {player.rating && (
-                              <span className="text-xs font-bold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: accent }}>
-                                {player.rating.toFixed(1)}
-                              </span>
+                              <span className="text-xs font-bold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: accent }}>{player.rating.toFixed(1)}</span>
                             )}
                           </div>
                         ))}
                       </div>
                     </div>
-
                     {substitutes(teamPlayers).length > 0 && (
                       <div>
                         <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">Remplaçants</p>
                         <div className="space-y-2">
                           {substitutes(teamPlayers).map((player, i) => (
                             <div key={player.id} className="flex items-center gap-3 p-3 bg-stone-50 rounded-xl opacity-60">
-                              <div className="w-8 h-8 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center font-bold text-xs">
-                                {player.jerseyNumber || i + 12}
-                              </div>
+                              <div className="w-8 h-8 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center font-bold text-xs">{player.jerseyNumber || i + 12}</div>
                               <div>
                                 <p className="font-medium text-stone-700 text-sm">{player.playerName}</p>
                                 <p className="text-xs text-stone-400">{player.position || 'N/A'}</p>
@@ -974,15 +965,189 @@ export default function MatchDetail() {
               </div>
             </div>
           )}
+
+          {/* ── Reviews Tab ─────────────────────────── */}
+          {activeTab === 'reviews' && (
+            <div className="space-y-6">
+
+              {/* Summary card */}
+              {reviews.length > 0 && (
+                <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
+                    {/* Average score */}
+                    <div className="flex flex-col items-center justify-center min-w-[120px]">
+                      <span className="text-6xl font-bold text-[#1C1917] leading-none">{getAvgRating()}</span>
+                      <div className="flex items-center gap-1 mt-2 mb-1">
+                        {[1,2,3,4,5].map(s => (
+                          <svg key={s} className={`w-5 h-5 ${parseFloat(getAvgRating()) >= s ? 'text-amber-400' : 'text-stone-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                          </svg>
+                        ))}
+                      </div>
+                      <span className="text-xs text-stone-400 font-medium">{reviews.length} avis</span>
+                    </div>
+
+                    {/* Distribution */}
+                    <div className="flex-1 w-full space-y-2">
+                      {[5,4,3,2,1].map(star => {
+                        const dist = getRatingDistribution();
+                        const count = dist[star];
+                        const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
+                        return (
+                          <div key={star} className="flex items-center gap-3">
+                            <span className="text-xs font-medium text-stone-500 w-3 text-right">{star}</span>
+                            <svg className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-amber-400 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-xs text-stone-400 w-8 text-right">{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Write a review */}
+              <div className="bg-white rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm">
+                <h3 className="serif-font text-xl text-stone-900 mb-6 flex items-center gap-3">
+                  <iconify-icon icon="solar:pen-new-square-linear" class="text-stone-400"></iconify-icon>
+                  Donnez votre avis
+                </h3>
+
+                {/* Star picker */}
+                <div className="mb-5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">Note</p>
+                  <div className="flex items-center gap-2">
+                    {[1,2,3,4,5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        className="star-btn p-1 focus:outline-none"
+                        onMouseEnter={() => setHoveredStar(star)}
+                        onMouseLeave={() => setHoveredStar(0)}
+                        onClick={() => setReviewRating(star)}
+                      >
+                        <svg
+                          className={`w-8 h-8 transition-colors ${(hoveredStar || reviewRating) >= star ? 'text-amber-400' : 'text-stone-200'}`}
+                          fill="currentColor" viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                      </button>
+                    ))}
+                    {reviewRating > 0 && (
+                      <span className="ml-2 text-sm font-semibold text-amber-500">
+                        {['', 'Mauvais', 'Passable', 'Bon', 'Très bon', 'Excellent'][reviewRating]}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Textarea */}
+                <div className="mb-5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">Commentaire</p>
+                  <textarea
+                    value={reviewText}
+                    onChange={e => setReviewText(e.target.value)}
+                    placeholder="Partagez votre ressenti sur ce match..."
+                    rows={4}
+                    className="w-full px-4 py-3 text-sm text-stone-900 placeholder:text-stone-400 bg-stone-50 border border-stone-200 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-[#C1272D]/20 focus:border-[#C1272D]/40 transition-all"
+                  />
+                  <div className="flex justify-end mt-1">
+                    <span className={`text-xs ${reviewText.length > 400 ? 'text-[#C1272D]' : 'text-stone-400'}`}>{reviewText.length}/500</span>
+                  </div>
+                </div>
+
+                {/* Feedback message */}
+                {reviewMessage && (
+                  <div className={`mb-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium ${
+                    reviewMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                  }`}>
+                    <iconify-icon icon={reviewMessage.type === 'success' ? 'solar:check-circle-bold' : 'solar:close-circle-bold'} class="text-base"></iconify-icon>
+                    {reviewMessage.text}
+                  </div>
+                )}
+
+                <button
+                  onClick={submitReview}
+                  disabled={reviewSubmitting || reviewRating === 0 || !reviewText.trim()}
+                  className={`w-full py-3 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                    !reviewSubmitting && reviewRating > 0 && reviewText.trim()
+                      ? 'bg-[#1C1917] hover:bg-[#2c2723] text-white shadow-sm active:scale-[0.98]'
+                      : 'bg-stone-100 text-stone-400 cursor-not-allowed'
+                  }`}
+                >
+                  {reviewSubmitting ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>
+                      Publication…
+                    </>
+                  ) : (
+                    <>
+                      <iconify-icon icon="solar:send-bold"></iconify-icon>
+                      Publier l'avis
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Reviews list */}
+              {reviews.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 border border-stone-200 shadow-sm text-center">
+                  <iconify-icon icon="solar:chat-round-dots-linear" class="text-stone-300 text-5xl mb-4"></iconify-icon>
+                  <h4 className="font-semibold text-stone-500 mb-1">Aucun avis pour ce match</h4>
+                  <p className="text-sm text-stone-400">Soyez le premier à partager votre point de vue !</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((review, idx) => (
+                    <div key={review.id || idx} className="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm hover:border-stone-300 hover:shadow-md transition-all">
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div className="flex items-center gap-3">
+                          {/* Avatar initiales */}
+                          <div className="w-10 h-10 rounded-full bg-[#1C1917] flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <span className="text-white text-sm font-bold">
+                              {review.supporterName ? review.supporterName.charAt(0).toUpperCase() : '?'}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-stone-900 text-sm">{review.supporterName || 'Fan anonyme'}</p>
+                            <p className="text-xs text-stone-400">
+                              {review.dateOfCreation ? new Date(review.dateOfCreation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+                            </p>
+                          </div>
+                        </div>
+                        {/* Stars */}
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          {[1,2,3,4,5].map(s => (
+                            <svg key={s} className={`w-4 h-4 ${review.rating >= s ? 'text-amber-400' : 'text-stone-200'}`} fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-stone-700 leading-relaxed">{review.description}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
 
-        {/* Right Column */}
+        {/* ── Right Column ─────────────────────────── */}
         <div className="lg:col-span-4 space-y-6">
-          
-          {/* Prediction Panel */}
+
           <PredictionPanel />
 
-          {/* Man of the Match */}
           {manOfMatch && (
             <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-sm">
               <h3 className="font-semibold text-stone-900 mb-4 flex items-center gap-2 text-sm">
@@ -991,19 +1156,13 @@ export default function MatchDetail() {
               </h3>
               <div className="flex items-center gap-4">
                 {manOfMatch.playerImgUrl && (
-                  <img 
-                    src={manOfMatch.playerImgUrl} 
-                    className="w-14 h-14 rounded-full object-cover border-2 border-[#C1272D] p-0.5" 
-                    alt={manOfMatch.playerName}
-                  />
+                  <img src={manOfMatch.playerImgUrl} className="w-14 h-14 rounded-full object-cover border-2 border-[#C1272D] p-0.5" alt={manOfMatch.playerName} />
                 )}
                 <div>
                   <div className="font-bold text-stone-900">{manOfMatch.playerName}</div>
                   <div className="text-xs text-stone-500">{manOfMatch.position || 'N/A'}</div>
                   <div className="mt-1">
-                    <span className="text-[10px] bg-stone-100 px-1.5 py-0.5 rounded text-stone-600 font-bold">
-                      {manOfMatch.rating?.toFixed(1)} Rating
-                    </span>
+                    <span className="text-[10px] bg-stone-100 px-1.5 py-0.5 rounded text-stone-600 font-bold">{manOfMatch.rating?.toFixed(1)} Rating</span>
                   </div>
                 </div>
               </div>
@@ -1011,27 +1170,23 @@ export default function MatchDetail() {
           )}
 
           {/* Weather */}
-          <div className="rounded-2xl p-6 text-white relative overflow-hidden shadow-lg group">
+          <div className="rounded-2xl p-6 text-white relative overflow-hidden shadow-lg">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600" />
             <div className="absolute top-0 right-0 p-8 opacity-20">
               <iconify-icon icon="solar:cloud-sun-bold" width="120"></iconify-icon>
             </div>
-            
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-6">
                 <iconify-icon icon="solar:map-point-bold"></iconify-icon>
                 <span className="text-sm font-medium opacity-90">{match.stadeName?.split(',')[0] || 'Casablanca'}</span>
               </div>
-              
               {weather ? (
                 <>
                   <div className="flex items-end gap-2 mb-2">
                     <span className="text-5xl font-bold">{Math.round(weather.main?.temp)}°</span>
                     <span className="text-lg mb-1 opacity-80 capitalize">{weather.weather?.[0]?.description}</span>
                   </div>
-                  
                   <div className="h-px bg-white/20 my-4" />
-                  
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="block opacity-60 text-xs">Humidité</span>
@@ -1086,6 +1241,7 @@ export default function MatchDetail() {
             </div>
           </div>
         </div>
+
       </main>
 
       <Footer />
