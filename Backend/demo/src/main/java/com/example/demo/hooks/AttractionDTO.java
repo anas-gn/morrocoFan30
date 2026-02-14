@@ -14,14 +14,16 @@ public class AttractionDTO {
     private LocalTime houreOfOpening;
     private LocalTime houreOfClosing;
     private int cityHostId;
+     private String imageUrl;
     private Double latitude;
 private Double longitude;
+
 
 
     // Constructors
     public AttractionDTO() {}
 
-    public AttractionDTO(String name, String country, String type, double priceProxim, 
+    public AttractionDTO(String name,String imageUrl, String country, String type, double priceProxim, 
                         String description, String address, LocalTime houreOfOpening, 
                         LocalTime houreOfClosing, int cityHostId , Double latitude,  Double longitude ) {
         this.name = name;
@@ -33,13 +35,14 @@ private Double longitude;
         this.houreOfOpening = houreOfOpening;
         this.houreOfClosing = houreOfClosing;
         this.latitude = latitude;
+         this.imageUrl = imageUrl;
         this. longitude =  longitude;
         this.cityHostId = cityHostId;
         
     }
 
     public AttractionDTO(int id, String name, String country, String type, double priceProxim,
-                        String description, String address, LocalTime houreOfOpening,
+                        String description, String address, LocalTime houreOfOpening, String imageUrl,
                         LocalTime houreOfClosing, int cityHostId ,Double latitude,  Double longitude ) {
         this.id = id;
         this.name = name;
@@ -51,6 +54,7 @@ private Double longitude;
         this.houreOfOpening = houreOfOpening;
         this.houreOfClosing = houreOfClosing;
            this. longitude =  longitude;
+           this.imageUrl = imageUrl;
         this.cityHostId = cityHostId;
         
         this.cityHostId = cityHostId;
@@ -140,5 +144,12 @@ private Double longitude;
     public void setLongitude(double longitude) { this.longitude = longitude; }
 public double getLatitude() { return latitude; }
     public void setLatitude(double latitude) { this.latitude= latitude; }
+      public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
 
 }

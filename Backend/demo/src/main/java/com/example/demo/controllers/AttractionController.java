@@ -55,6 +55,7 @@ public class AttractionController {
         existing.setAddress(attraction.getAddress());
         existing.setHoureOfOpening(attraction.getHoureOfOpening());
         existing.setHoureOfClosing(attraction.getHoureOfClosing());
+        existing.setImageUrl(attraction.getImageUrl()); 
 
         attractionRepository.save(existing);
         return true;
@@ -99,23 +100,24 @@ public class AttractionController {
 
     
 
-        private AttractionDTO convertToDTO(Attractions attraction) {
+       private AttractionDTO convertToDTO(Attractions attraction) {
 
-        AttractionDTO dto = new AttractionDTO();
+    AttractionDTO dto = new AttractionDTO();
 
-        dto.setId(attraction.getId());
-        dto.setName(attraction.getName());
-        dto.setType(attraction.getType());
-        dto.setPriceProxim(attraction.getPriceProxim());
-        dto.setDescription(attraction.getDescription());
-        dto.setAddress(attraction.getAddress());
-        dto.setHoureOfOpening(attraction.getHoureOfOpening());
-        dto.setHoureOfClosing(attraction.getHoureOfClosing());
-dto.setLatitude(attraction.getLatitude());
-dto.setLongitude(attraction.getLongitude());
+    dto.setId(attraction.getId());
+    dto.setName(attraction.getName());
+    dto.setType(attraction.getType());
+    dto.setPriceProxim(attraction.getPriceProxim());
+    dto.setDescription(attraction.getDescription());
+    dto.setAddress(attraction.getAddress());
+    dto.setHoureOfOpening(attraction.getHoureOfOpening());
+    dto.setHoureOfClosing(attraction.getHoureOfClosing());
+    dto.setLatitude(attraction.getLatitude());
+    dto.setLongitude(attraction.getLongitude());
+    dto.setImageUrl(attraction.getImageUrl()); // ← ligne manquante !
 
-        return dto;
-    }
+    return dto;
+}
 }
 
 

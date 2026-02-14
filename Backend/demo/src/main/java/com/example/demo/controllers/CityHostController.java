@@ -123,6 +123,7 @@ public class CityHostController {
         dto.setCountry(city.getCountry());
         dto.setDescription(city.getDescription());
         dto.setRegion(city.getRegion());
+        dto.setImageUrl(city.getImageUrl());
         return dto;
     }
 
