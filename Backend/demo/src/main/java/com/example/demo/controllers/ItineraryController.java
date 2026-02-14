@@ -57,16 +57,14 @@ private AttractionRepository attractionRepository;
 
 @GetMapping("/{id}/attractions")
 public List<AttractionDTO> getItineraryAttractions(@PathVariable int id) {
-
     Itineraries itinerary = itineraryRepository.findById(id).orElse(null);
-    if (itinerary == null) return null;
+    if (itinerary == null) return List.of(); 
 
     return itinerary.getAttractions()
             .stream()
             .map(this::convertAttractionToDTO)
             .toList();
 }
-
     // GET ITINERARY DETAILS
     @GetMapping("/{id}")
     public ItineraryDTO getItineraryById(@PathVariable int id) {

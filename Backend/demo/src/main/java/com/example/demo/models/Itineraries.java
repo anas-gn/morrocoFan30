@@ -2,6 +2,7 @@ package com.example.demo.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -36,8 +37,8 @@ public class Itineraries {
         joinColumns = @JoinColumn(name = "itineraryID"),
         inverseJoinColumns = @JoinColumn(name = "attractionID")
     )
-    private List<Attractions> attractions;
-
+    private List<Attractions> attractions = new ArrayList<>(); // ← ajoute = new ArrayList<>()
+    
     
     // CONSTRUCTEURS
    
