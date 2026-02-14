@@ -29,20 +29,21 @@ public class ItineraryController {
 private AttractionRepository attractionRepository;
 
    
-    // CREATE ITINERARY (USER)
-    
     @PostMapping("/add/{supporterId}")
-    public boolean addItinerary(@PathVariable int supporterId,
-                                @RequestBody Itineraries itinerary) {
+public boolean addItinerary(@PathVariable int supporterId,
+                            @RequestBody Itineraries itinerary) {
 
-        Supporters supporter = supporterRepository.findById(supporterId);
-        if (supporter == null || itinerary == null) return false;
+    Supporters supporter = supporterRepository.findById(supporterId);
+    if (supporter == null || itinerary == null) return false;
 
-        itinerary.setSupporter(supporter);
-        itineraryRepository.save(itinerary);
-        return true;
-    }
+    // Vérifier s'il a déjà un itinéraire
+    List<Itineraries> existing = itineraryRepository.findBySupporterId(supporterId);
+    if (!existing.isEmpty()) return false; // ← déjà un itinéraire, on bloque
 
+    itinerary.setSupporter(supporter);
+    itineraryRepository.save(itinerary);
+    return true;
+}
     
     // GET ITINERARIES OF USER
     @GetMapping("/supporter/{id}")
