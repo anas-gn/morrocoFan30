@@ -62,7 +62,7 @@ export default function Navbar() {
   const accentColor   = isResponsable ? "#006233" : "#C1272D";
 
   const NAV_LINKS = [
-    { href: "/Cities",  en: "Cities",  ar: "المدن",     color: "#006233" },
+    { href: "/cities",  en: "Cities",  ar: "المدن",     color: "#006233" },
     { href: "/Matches", en: "Matches", ar: "المباريات", color: "#C1272D" },
     { href: "/Teams",   en: "Teams",   ar: "الفرق",     color: "#C1272D" },
     { href: "/Stades",  en: "Culture", ar: "الثقافة",   color: "#006233" },

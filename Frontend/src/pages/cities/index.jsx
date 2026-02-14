@@ -4,110 +4,116 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/router';
 
+const API = 'http://localhost:3309/api';
+
+async function safeFetch(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`[safeFetch] HTTP ${res.status} — ${url}`);
+      return null;
+    }
+    const text = await res.text();
+    if (!text || text === 'null') return null;
+    return JSON.parse(text);
+  } catch (err) {
+    console.error(`[safeFetch] Erreur — ${url}`, err);
+    return null;
+  }
+}
+
 export default function Cities() {
   const router = useRouter();
-  
-  // États pour les données
-  const [cities, setCities] = useState([]);
-  const [filteredCities, setFilteredCities] = useState([]);
-  
-  // États pour les filtres
-  const [selectedRegion, setSelectedRegion] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' ou 'list'
-  
-  // États pour les statistiques
-  const [stats, setStats] = useState({
-    totalCities: 6,
-    totalHotels: 0,
-    totalAttractions: 0,
-    totalStadiums: 0
-  });
-  
-  const [loading, setLoading] = useState(true);
 
-  // Liste des régions (à adapter selon vos données)
-  const regions = [
-    { value: 'all', label: 'All Regions' },
-    { value: 'North', label: 'North' },
-    { value: 'Center', label: 'Center' },
-    { value: 'South', label: 'South' },
-    { value: 'East', label: 'East' },
-    { value: 'West', label: 'West' }
-  ];
+  const [cities, setCities]         = useState([]);
+  const [filteredCities, setFiltered] = useState([]);
+  const [counts, setCounts]         = useState({});
+  const [selectedRegion, setRegion] = useState('all');
+  const [searchQuery, setSearch]    = useState('');
+  const [viewMode, setViewMode]     = useState('grid');
+  const [loading, setLoading]       = useState(true);
+  const [globalStats, setGlobalStats] = useState({ cities: 0, hotels: 0, stades: 0 });
+  const [hoveredCity, setHovered]   = useState(null);
 
-  // Récupérer toutes les villes
+  /* ── Fetch ──────────────────────────────────────────────────────── */
   useEffect(() => {
-    fetch('http://localhost:3309/api/cities/all')
-      .then(res => res.json())
-      .then(data => {
-        setCities(data);
-        setFilteredCities(data);
-        
-        // Calculer les statistiques
-        const totalHotels = data.reduce((acc, city) => acc + (city.hotelsCount || 0), 0);
-        const totalAttractions = data.reduce((acc, city) => acc + (city.attractionsCount || 0), 0);
-        const totalStadiums = data.reduce((acc, city) => acc + (city.stadesCount || 0), 0);
-        
-        setStats({
-          totalCities: data.length,
-          totalHotels,
-          totalAttractions,
-          totalStadiums
-        });
-        
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Erreur:', err);
-        setLoading(false);
+    (async () => {
+      setLoading(true);
+
+      // ✅ Utiliser AcceuilController qui a le CORS correctement configuré
+      // /api/acceuil/CityHosts/all → retourne List<CityHostDTO> (avec imageUrl)
+      const cityList = await safeFetch(`${API}/acceuil/CityHosts/all`);
+      if (!Array.isArray(cityList)) { setLoading(false); return; }
+      setCities(cityList);
+      setFiltered(cityList);
+
+      // ✅ Hotels via HotelController (@CrossOrigin présent) → filtre par cityHostId
+      const allHotels = await safeFetch(`${API}/hotels/all`) ?? [];
+
+      // ✅ Stades via AcceuilController → filtre par cityId
+      const allStades = await safeFetch(`${API}/acceuil/stade/all`) ?? [];
+
+      // ✅ Attractions via AttractionController par ville
+      const attrResults = await Promise.all(
+        cityList.map(c => safeFetch(`${API}/attractions/city/${c.id}`))
+      );
+
+      // Construire la map des counts par cityId
+      const countsMap = {};
+      cityList.forEach((c, i) => {
+        countsMap[c.id] = {
+          hotels:      allHotels.filter(h => h.cityHostId === c.id).length,
+          stades:      allStades.filter(s => s.cityId    === c.id).length,
+          attractions: Array.isArray(attrResults[i]) ? attrResults[i].length : 0,
+        };
       });
+      setCounts(countsMap);
+
+      setGlobalStats({
+        cities: cityList.length,
+        hotels: allHotels.length,
+        stades: allStades.length,
+      });
+
+      setLoading(false);
+    })();
   }, []);
 
-  // Appliquer les filtres
+  /* ── Filtres ────────────────────────────────────────────────────── */
   useEffect(() => {
-    let filtered = [...cities];
-
-    // Filtre par région
-    if (selectedRegion !== 'all') {
-      filtered = filtered.filter(city => city.region === selectedRegion);
-    }
-
-    // Filtre par recherche
-    if (searchQuery.trim() !== '') {
-      filtered = filtered.filter(city =>
-        city.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        city.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (city.description && city.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    let f = [...cities];
+    if (selectedRegion !== 'all')
+      f = f.filter(c => c.region === selectedRegion);
+    if (searchQuery.trim())
+      f = f.filter(c =>
+        [c.name, c.country, c.description].some(v =>
+          v?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
       );
-    }
-
-    setFilteredCities(filtered);
+    setFiltered(f);
   }, [selectedRegion, searchQuery, cities]);
 
-  // Navigation vers le détail d'une ville
-  const navigateToCityDetail = (cityId) => {
-    router.push(`/cities/${cityId}`);
-  };
+  const regions = ['all', ...new Set(cities.map(c => c.region).filter(Boolean))];
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <img
-          src="/images/logo.png"
-          alt="Loading"
-          className="w-20 h-20 mb-4"
-        />
-      </div>
-    );
-  }
+  /* ── Loading ────────────────────────────────────────────────────── */
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50">
+      <img src="/images/logo.png" alt="" className="w-20 h-20 animate-pulse mb-3" />
+    </div>
+  );
 
+  /* ── Page ───────────────────────────────────────────────────────── */
   return (
     <>
       <Head>
-        <title>Host Cities | MoroccoFan2030</title>
-        <meta name="description" content="Discover the 6 host cities for the 2030 World Cup" />
+        <title>Villes Hôtes | MoroccoFan2030</title>
+        <meta name="description" content="Explorez les 6 villes hôtes de la Coupe du Monde 2030" />
+        <link rel="icon" href="/images/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" />
+         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
@@ -115,351 +121,369 @@ export default function Cities() {
       </Head>
 
       <style jsx global>{`
-        .bg-pattern {
-          background-color: #fafaf9;
-          background-image: radial-gradient(#e7e5e4 1px, transparent 1px);
-          background-size: 24px 24px;
-        }
+        body { font-family: 'DM Sans', sans-serif; background: #f8f7f5; color: #1a1a1a; }
+        .serif { font-family: 'Cormorant Garamond', serif; }
 
-        body { font-family: 'Cairo', sans-serif; }
-        h1, h2, h3, h4, .serif-font { font-family: 'Amiri', serif; }
-        .decorative-font { font-family: 'Aref Ruqaa', serif; }
-
-        .glass {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(0,0,0,0.05);
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
+        .slide-up { animation: slideUp .6s cubic-bezier(.16,1,.3,1) both; }
+        .d1 { animation-delay: .05s } .d2 { animation-delay: .12s }
+        .d3 { animation-delay: .19s } .d4 { animation-delay: .26s }
 
-        .bg-morocco-red { background: linear-gradient(135deg, #C1272D 0%, #a01e23 100%); }
-        .bg-morocco-green { background: linear-gradient(135deg, #006233 0%, #004d28 100%); }
-
-        .hover-scale {
-          transition: transform 0.3s ease;
-        }
-        .hover-scale:hover {
-          transform: scale(1.02);
-        }
-
-        .image-overlay {
-          position: relative;
-          overflow: hidden;
-        }
-        .image-overlay::after {
+        .grain::after {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 50%);
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+          pointer-events: none;
+          z-index: 2;
         }
+
+        .city-card { transition: transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s ease; }
+        .city-card:hover { transform: translateY(-6px); box-shadow: 0 32px 64px rgba(0,0,0,.12); }
+
+        .img-zoom img { transition: transform .8s cubic-bezier(.16,1,.3,1); }
+        .img-zoom:hover img { transform: scale(1.08); }
+
+        .tag-pill {
+          display: inline-flex; align-items: center; gap: 4px;
+          padding: 3px 10px; border-radius: 999px;
+          font-size: 10px; font-weight: 700;
+          letter-spacing: .06em; text-transform: uppercase;
+        }
+
+        .hero-clip { clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%); }
+
+        input:focus, select:focus { outline: none; }
+
+        .no-scroll::-webkit-scrollbar { display: none; }
+        .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
       <Navbar />
 
-      {/* Hero Section */}
-      <header className="relative pt-32 pb-12 border-b border-stone-200 overflow-hidden">
-        {/* Background Image */}
+      {/* ══ HERO ══════════════════════════════════════════════════════ */}
+      <header
+        className="relative hero-clip bg-zinc-950 overflow-hidden grain"
+        style={{ minHeight: '78vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+      >
+        {/* BG image */}
         <div className="absolute inset-0">
-         <img
-  src="/images/cities.png" 
-  alt="Background"
-  className="w-full h-full object-cover"
-/>
-          <div className="absolute inset-0 bg-black/65"></div>
+          <img
+            src="/images/cities.png"
+            alt=""
+            className="w-full h-full object-cover opacity-30"
+            onError={e => { e.target.style.display = 'none'; }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(135deg, rgba(10,10,10,.92) 0%, rgba(30,30,30,.65) 50%, rgba(10,10,10,.8) 100%)' }}
+          />
         </div>
 
-        {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-6">
-          {/* Badge */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="px-4 py-1.5 bg-white border border-stone-200 rounded-full flex items-center gap-2 shadow-sm">
-              <span className="material-icons text-[#C1272D] text-sm">location_city</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-stone-700">
-                Host Cities 2030
-              </span>
-            </div>
-          </div>
+        {/* Decorative number */}
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden xl:flex flex-col items-center gap-3 z-10">
+          <div className="w-px h-24 bg-white/10" />
+          <span
+            className="serif text-white/10 font-light"
+            style={{ fontSize: '120px', lineHeight: 1, writingMode: 'vertical-rl' }}
+          >
+            2030
+          </span>
+          <div className="w-px h-24 bg-white/10" />
+        </div>
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-            {/* Titre + description */}
-            <div>
-              <h1 className="text-5xl md:text-6xl font-medium text-white tracking-tight mb-3">
-                Discover the{" "}
-                <span className="text-[#C1272D] italic serif-font">
-                  Host Cities
+        <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24 pt-40">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-end">
+
+            {/* Left: Titre */}
+            <div className="lg:col-span-7">
+              <div className="flex items-center gap-3 mb-8 slide-up">
+                <span className="w-8 h-px bg-[#C1272D]" />
+                <span className="tag-pill bg-[#C1272D]/15 text-[#e05555] border border-[#C1272D]/30">
+                  Coupe du Monde 2030
                 </span>
+              </div>
+
+              <h1
+                className="serif font-light text-white mb-6 slide-up d1"
+                style={{ fontSize: 'clamp(52px, 8vw, 96px)', lineHeight: 1.0 }}
+              >
+                Les Villes<br />
+                <em className="font-light" style={{ color: '#e8d5b0' }}>Hôtes du Maroc</em>
               </h1>
-              <p className="text-lg text-white">
-                Explore the 6 magnificent cities hosting the 2030 World Cup.
+
+              <p
+                className="text-white/50 font-light leading-relaxed slide-up d2"
+                style={{ fontSize: '17px', maxWidth: '500px' }}
+              >
+                Six métropoles d'exception accueilleront les meilleures équipes du monde.
+                Stades monumentaux, culture riche, hospitalité légendaire.
               </p>
             </div>
 
-            {/* Statistics */}
-            <div className="flex gap-12">
-              {/* Cities - RED */}
-              <div className="text-center">
-                <div className="text-5xl font-bold text-[#C1272D] mb-1">
-                  {stats.totalCities}
-                </div>
-                <div className="text-xs font-bold text-white uppercase tracking-widest">
-                  Cities
-                </div>
-              </div>
-
-              {/* Hotels - YELLOW */}
-              <div className="text-center">
-                <div className="text-5xl font-bold text-amber-500 mb-1">
-                  {stats.totalHotels}
-                </div>
-                <div className="text-xs font-bold text-white uppercase tracking-widest">
-                  Hotels
-                </div>
-              </div>
-
-              {/* Attractions - GREEN */}
-              <div className="text-center">
-                <div className="text-5xl font-bold text-emerald-500 mb-1">
-                  {stats.totalAttractions}
-                </div>
-                <div className="text-xs font-bold text-white uppercase tracking-widest">
-                  Attractions
-                </div>
+            {/* Right: Stats */}
+            <div className="lg:col-span-5 slide-up d3">
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { val: globalStats.cities, label: 'Villes',  accent: '#e05555' },
+                  { val: globalStats.hotels, label: 'Hôtels',  accent: '#d4a847' },
+                  { val: globalStats.stades, label: 'Stades',  accent: '#4caf7d' },
+                ].map((s, i) => (
+                  <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm text-center">
+                    <div
+                      className="serif font-light mb-1"
+                      style={{ fontSize: '52px', lineHeight: 1, color: s.accent }}
+                    >
+                      {s.val}
+                    </div>
+                    <div className="text-white/40 text-xs font-medium uppercase tracking-widest">{s.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
+
           </div>
         </div>
       </header>
 
-      {/* Filters Section */}
-      <section className="sticky top-20 bg-white border-b border-stone-200 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Search Bar */}
-            <div className="relative flex-1 min-w-[300px]">
-              <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 text-sm">
-                search
-              </span>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search cities, country, or description..."
-                className="w-full pl-12 pr-4 py-2 bg-white border-2 border-stone-200 rounded-xl focus:border-[#C1272D] focus:outline-none text-sm"
-              />
-            </div>
+      {/* ══ FILTERS ═══════════════════════════════════════════════════ */}
+      <div className="sticky top-16 z-40 bg-[#f8f7f5]/95 backdrop-blur-xl border-b border-zinc-200">
+        <div className="max-w-7xl mx-auto px-6 py-3.5 flex flex-wrap items-center gap-3">
 
-            {/* Region Filter */}
-            <div className="relative">
-              <button className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-stone-200 rounded-xl hover:border-[#006233] transition-all group">
-                <span className="material-icons text-stone-500 group-hover:text-[#006233] text-sm">
-                  public
-                </span>
-                <span className="text-sm font-medium text-stone-700">
-                  {regions.find(r => r.value === selectedRegion)?.label || 'All Regions'}
-                </span>
-                <span className="material-icons text-stone-400 text-sm">expand_more</span>
-              </button>
-              <select
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className="absolute inset-0 opacity-0 cursor-pointer w-full"
-              >
-                {regions.map(region => (
-                  <option key={region.value} value={region.value}>{region.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex-1"></div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-2 bg-stone-100 rounded-xl p-1">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  viewMode === 'grid'
-                    ? 'bg-white text-[#C1272D] shadow-sm'
-                    : 'text-stone-500 hover:text-stone-700'
-                }`}
-              >
-                <span className="material-icons text-sm">grid_view</span>
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  viewMode === 'list'
-                    ? 'bg-white text-[#006233] shadow-sm'
-                    : 'text-stone-500 hover:text-stone-700'
-                }`}
-              >
-                <span className="material-icons text-sm">view_list</span>
-              </button>
-            </div>
+          {/* Search */}
+          <div className="relative flex-1 min-w-[240px]">
+            
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher une ville…"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm text-zinc-800 placeholder-zinc-400 focus:border-zinc-400 transition"
+            />
           </div>
-        </div>
-      </section>
 
-      {/* Cities Section */}
-      <section className="py-12 bg-gradient-to-br from-stone-50 to-white min-h-screen">
-        <div className="max-w-7xl mx-auto px-6">
-          {filteredCities.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="material-icons text-stone-400 text-4xl">search_off</span>
-              </div>
-              <h3 className="text-xl font-medium text-stone-700 mb-2">No cities found</h3>
-              <p className="text-stone-500">Try adjusting your search or filters</p>
+          {/* Region pills — extraites dynamiquement des données réelles */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {regions.map(r => (
+              <button
+                key={r}
+                onClick={() => setRegion(r)}
+                className={`px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all
+                  ${selectedRegion === r
+                    ? 'bg-zinc-900 text-white shadow-md'
+                    : 'bg-white border border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-800'
+                  }`}
+              >
+                {r === 'all' ? 'Toutes' : r}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1" />
+
+          {/* Compteur */}
+          <span className="text-xs text-zinc-400 font-medium hidden md:block">
+            {filteredCities.length} ville{filteredCities.length !== 1 ? 's' : ''}
+          </span>
+
+          {/* View toggle */}
+          <div className="flex items-center bg-zinc-100 rounded-xl p-1 gap-1">
+            {[
+              { mode: 'grid', icon: 'solar:grid-bold' },
+              { mode: 'list', icon: 'solar:list-bold' },
+            ].map(({ mode, icon }) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all
+                  ${viewMode === mode ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-700'}`}
+              >
+                <iconify-icon icon={icon} class="text-base" />
+              </button>
+            ))}
+          </div>
+
+        </div>
+      </div>
+
+      {/* ══ CITIES ════════════════════════════════════════════════════ */}
+      <main className="max-w-7xl mx-auto px-6 py-14">
+
+        {filteredCities.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center mb-5">
+              <iconify-icon icon="solar:city-linear" class="text-zinc-300 text-4xl" />
             </div>
-          ) : (
-            <>
-              {viewMode === 'grid' ? (
-                /* Grid View */
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCities.map((city) => (
-                    <div
-                      key={city.id}
-                      onClick={() => navigateToCityDetail(city.id)}
-                      className="bg-white rounded-2xl border-2 border-stone-200 hover:border-[#C1272D] hover:shadow-2xl hover:shadow-red-500/10 transition-all duration-300 overflow-hidden cursor-pointer hover-scale group"
-                    >
-                      {/* City Image */}
-                      <div className="relative h-48 overflow-hidden image-overlay">
-                        <img
-                          src={city.imageUrl || '/images/city-placeholder.jpg'}
-                          alt={city.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-                          <div className="flex items-center gap-2 text-white">
-                            <span className="material-icons text-sm">location_on</span>
-                            <span className="text-xs font-medium">{city.country}</span>
-                          </div>
-                        </div>
+            <h3 className="serif text-3xl font-light text-zinc-700 mb-2">Aucune ville trouvée</h3>
+            <p className="text-zinc-400 text-sm">Essayez de modifier votre recherche ou vos filtres</p>
+          </div>
+
+        ) : viewMode === 'grid' ? (
+
+          /* ── GRID VIEW ─────────────────────────────────────────────── */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
+            {filteredCities.map((city, i) => {
+              const c = counts[city.id] ?? { hotels: 0, stades: 0, attractions: 0 };
+              return (
+                <article
+                  key={city.id}
+                  onClick={() => router.push(`/cities/${city.id}`)}
+                  onMouseEnter={() => setHovered(city.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  className="city-card bg-white rounded-3xl overflow-hidden cursor-pointer border border-zinc-100 slide-up"
+                  style={{ animationDelay: `${i * 0.07}s` }}
+                >
+                  {/* Image */}
+                  <div className="img-zoom relative h-60 bg-zinc-200 overflow-hidden">
+                    {city.imageUrl ? (
+                      <img
+                        src={city.imageUrl}
+                        alt={city.name}
+                        className="w-full h-full object-cover"
+                        onError={e => { e.target.style.display = 'none'; e.target.parentElement.style.background = '#d4d4d8'; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-200">
+                        <iconify-icon icon="solar:city-linear" class="text-zinc-400 text-5xl" />
                       </div>
+                    )}
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to top, rgba(0,0,0,.65) 0%, rgba(0,0,0,0) 55%)' }}
+                    />
 
-                      {/* City Info */}
-                      <div className="p-6">
-                        <h3 className="text-2xl font-bold text-stone-900 mb-2 serif-font">
-                          {city.name}
-                        </h3>
-                        
-                        {city.region && (
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="px-3 py-1 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white text-xs font-bold rounded-full">
-                              {city.region}
-                            </span>
-                          </div>
-                        )}
+                    {/* Region pill */}
+                    {city.region && (
+                      <div className="absolute top-4 left-4">
+                        <span className="tag-pill bg-black/30 text-white border border-white/20 backdrop-blur-sm">
+                          {city.region}
+                        </span>
+                      </div>
+                    )}
 
-                        <p className="text-sm text-stone-600 mb-4 line-clamp-3">
-                          {city.description || 'Discover this amazing host city...'}
-                        </p>
-
-                        {/* Quick Stats */}
-                        <div className="flex items-center gap-4 pt-4 border-t border-stone-100">
-                          <div className="flex items-center gap-1 text-xs text-stone-500">
-                            <span className="material-icons text-amber-500" style={{fontSize: '16px'}}>hotel</span>
-                            <span>{city.hotelsCount || 0} Hotels</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-stone-500">
-                            <span className="material-icons text-emerald-500" style={{fontSize: '16px'}}>place</span>
-                            <span>{city.attractionsCount || 0} Sites</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-stone-500">
-                            <span className="material-icons text-[#C1272D]" style={{fontSize: '16px'}}>stadium</span>
-                            <span>{city.stadesCount || 0} Stadiums</span>
-                          </div>
-                        </div>
-
-                        {/* Explore Button */}
-                        <button className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-stone-50 to-white border-2 border-stone-200 rounded-xl font-medium text-stone-700 hover:border-[#C1272D] hover:text-[#C1272D] transition-all group-hover:border-[#C1272D]">
-                          <span className="flex items-center justify-center gap-2">
-                            Explore City
-                            <span className="material-icons text-sm">arrow_forward</span>
-                          </span>
-                        </button>
+                    {/* Country + arrow */}
+                    <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
+                      <div className="text-white/80 text-xs font-medium flex items-center gap-1.5">
+                        <iconify-icon icon="solar:map-point-linear" />
+                        {city.country}
+                      </div>
+                      <div
+                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300
+                          ${hoveredCity === city.id ? 'bg-white text-zinc-900 scale-110' : 'bg-white/20 text-white'}`}
+                      >
+                        <iconify-icon icon="solar:arrow-right-up-linear" class="text-sm" />
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                /* List View */
-                <div className="space-y-4">
-                  {filteredCities.map((city) => (
-                    <div
-                      key={city.id}
-                      onClick={() => navigateToCityDetail(city.id)}
-                      className="bg-white rounded-xl border border-stone-200 hover:border-[#C1272D] hover:shadow-lg transition-all p-6 cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-6">
-                        {/* City Image */}
-                        <div className="relative w-32 h-32 rounded-xl overflow-hidden flex-shrink-0">
-                          <img
-                            src={city.imageUrl || '/images/city-placeholder.jpg'}
-                            alt={city.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-6">
+                    <h2 className="serif text-3xl font-light text-zinc-900 mb-2 leading-none">
+                      {city.name}
+                    </h2>
+
+                    {city.description && (
+                      <p className="text-zinc-500 text-sm leading-relaxed line-clamp-2 mb-5 font-light">
+                        {city.description}
+                      </p>
+                    )}
+
+                    {/* Stats bar */}
+                    <div className="grid grid-cols-3 gap-2 pt-4 border-t border-zinc-100">
+                      {[
+                        { icon: 'solar:bed-linear',                val: c.hotels,      label: 'Hôtels',      color: 'text-amber-500'  },
+                        { icon: 'solar:map-point-school-linear',   val: c.attractions, label: 'Attractions', color: 'text-emerald-500'},
+                        { icon: 'solar:structure-linear',          val: c.stades,      label: 'Stades',      color: 'text-rose-500'   },
+                      ].map((s, j) => (
+                        <div key={j} className="flex flex-col items-center gap-1 py-2 rounded-xl bg-zinc-50">
+                          <iconify-icon icon={s.icon} class={`text-lg ${s.color}`} />
+                          <span className="text-base font-semibold text-zinc-800">{s.val}</span>
+                          <span className="text-[10px] text-zinc-400 font-medium">{s.label}</span>
                         </div>
-
-                        {/* City Info */}
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h3 className="text-2xl font-bold text-stone-900 mb-1 serif-font">
-                                {city.name}
-                              </h3>
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1 text-sm text-stone-500">
-                                  <span className="material-icons text-xs">location_on</span>
-                                  <span>{city.country}</span>
-                                </div>
-                                {city.region && (
-                                  <span className="px-2 py-0.5 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white text-xs font-bold rounded-full">
-                                    {city.region}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          <p className="text-sm text-stone-600 mb-3 line-clamp-2">
-                            {city.description || 'Discover this amazing host city...'}
-                          </p>
-
-                          {/* Stats Row */}
-                          <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="material-icons text-amber-500" style={{fontSize: '18px'}}>hotel</span>
-                              <span className="text-stone-700 font-medium">{city.hotelsCount || 0}</span>
-                              <span className="text-stone-500">Hotels</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="material-icons text-emerald-500" style={{fontSize: '18px'}}>place</span>
-                              <span className="text-stone-700 font-medium">{city.attractionsCount || 0}</span>
-                              <span className="text-stone-500">Attractions</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="material-icons text-[#C1272D]" style={{fontSize: '18px'}}>stadium</span>
-                              <span className="text-stone-700 font-medium">{city.stadesCount || 0}</span>
-                              <span className="text-stone-500">Stadiums</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Arrow */}
-                        <div className="flex-shrink-0">
-                          <span className="material-icons text-stone-400 group-hover:text-[#C1272D] group-hover:translate-x-1 transition-all">
-                            arrow_forward
-                          </span>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+        ) : (
+
+          /* ── LIST VIEW ─────────────────────────────────────────────── */
+          <div className="space-y-3">
+            {filteredCities.map((city, i) => {
+              const c = counts[city.id] ?? { hotels: 0, stades: 0, attractions: 0 };
+              return (
+                <div
+                  key={city.id}
+                  onClick={() => router.push(`/cities/${city.id}`)}
+                  className="group bg-white border border-zinc-100 rounded-2xl p-5 flex items-center gap-6 cursor-pointer hover:border-zinc-300 hover:shadow-lg transition-all slide-up"
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                >
+                  {/* Image */}
+                  <div className="img-zoom w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-zinc-100">
+                    {city.imageUrl ? (
+                      <img
+                        src={city.imageUrl}
+                        alt={city.name}
+                        className="w-full h-full object-cover"
+                        onError={e => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-200">
+                        <iconify-icon icon="solar:city-linear" class="text-zinc-400 text-2xl" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-3 mb-1.5">
+                      <h2 className="serif text-2xl font-light text-zinc-900 leading-none">{city.name}</h2>
+                      {city.region && (
+                        <span className="tag-pill bg-zinc-100 text-zinc-500 mt-1 flex-shrink-0">{city.region}</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-400 mb-2 flex items-center gap-1">
+                      <iconify-icon icon="solar:map-point-linear" />
+                      {city.country}
+                    </p>
+                    {city.description && (
+                      <p className="text-sm text-zinc-500 font-light line-clamp-1">{city.description}</p>
+                    )}
+                  </div>
+
+                  {/* Counts */}
+                  <div className="hidden md:flex items-center gap-6 flex-shrink-0">
+                    {[
+                      { icon: 'solar:bed-linear',                val: c.hotels,      label: 'Hôtels',  color: 'text-amber-500'  },
+                      { icon: 'solar:map-point-school-linear',   val: c.attractions, label: 'Sites',   color: 'text-emerald-500'},
+                      { icon: 'solar:structure-linear',          val: c.stades,      label: 'Stades',  color: 'text-rose-500'   },
+                    ].map((s, j) => (
+                      <div key={j} className="flex flex-col items-center gap-0.5 text-center">
+                        <iconify-icon icon={s.icon} class={`text-xl ${s.color}`} />
+                        <span className="text-base font-semibold text-zinc-800">{s.val}</span>
+                        <span className="text-[10px] text-zinc-400">{s.label}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Arrow */}
+                  <iconify-icon
+                    icon="solar:arrow-right-linear"
+                    class="text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-1 transition-all text-xl flex-shrink-0"
+                  />
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+
+        )}
+      </main>
 
       <Footer />
     </>
