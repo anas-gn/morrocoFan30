@@ -7,23 +7,30 @@ import Footer from '@/components/Footer';
 export default function Itineraries() {
   const router = useRouter();
 
-  const [itineraries, setItineraries] = useState([]);
+  const [itinerary, setItinerary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredItineraries, setFilteredItineraries] = useState([]);
+  const [creating, setCreating] = useState(false);
+  const [notification, setNotification] = useState(null);
 
-  // TODO: remplacer par l'ID du supporter connecté (via session/auth)
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    dateToGo: ''
+  });
+
+  // TODO: remplacer par l'ID du supporter connecté
   const supporterId = 1;
 
-  // Récupérer les itinéraires du supporter
+  // Vérifier si le supporter a déjà un itinéraire
   useEffect(() => {
     setLoading(true);
     fetch(`http://localhost:3309/api/itineraries/supporter/${supporterId}`)
       .then(res => res.json())
       .then(data => {
-        const list = Array.isArray(data) ? data : data.content || data.itineraries || [];
-        setItineraries(list);
-        setFilteredItineraries(list);
+        const list = Array.isArray(data) ? data : data.content || [];
+        if (list.length > 0) {
+          setItinerary(list[0]); // un seul itinéraire par supporter
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -32,26 +39,49 @@ export default function Itineraries() {
       });
   }, [supporterId]);
 
-  // Filtre par recherche
-  useEffect(() => {
-    let filtered = [...itineraries];
-    if (searchQuery.trim() !== '') {
-      filtered = filtered.filter(it =>
-        it.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        it.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    setFilteredItineraries(filtered);
-  }, [searchQuery, itineraries]);
+  const showNotif = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
-  const navigateToDetail = (id) => {
-    router.push(`/itineraries/${id}`);
+  const handleCreate = () => {
+    if (!form.title.trim()) {
+      showNotif('error', 'Please enter a title.');
+      return;
+    }
+    setCreating(true);
+    fetch(`http://localhost:3309/api/itineraries/add/${supporterId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form)
+    })
+      .then(res => res.json())
+      .then(success => {
+        if (success) {
+          showNotif('success', 'Itinerary created!');
+          return fetch(`http://localhost:3309/api/itineraries/supporter/${supporterId}`)
+            .then(r => r.json())
+            .then(data => {
+              const list = Array.isArray(data) ? data : data.content || [];
+              if (list.length > 0) setItinerary(list[0]);
+              setCreating(false);
+            });
+        } else {
+          showNotif('error', 'Could not create itinerary.');
+          setCreating(false);
+        }
+      })
+      .catch(() => {
+        showNotif('error', 'Server error.');
+        setCreating(false);
+      });
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Date(dateStr).toLocaleDateString('en-GB', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    });
   };
 
   if (loading) {
@@ -65,8 +95,8 @@ export default function Itineraries() {
   return (
     <>
       <Head>
-        <title>My Itineraries | MoroccoFan2030</title>
-        <meta name="description" content="Manage your travel itineraries for the 2030 World Cup" />
+        <title>My Itinerary | MoroccoFan2030</title>
+        <meta name="description" content="Plan your World Cup 2030 trip" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
@@ -75,20 +105,9 @@ export default function Itineraries() {
       </Head>
 
       <style jsx global>{`
-        .bg-pattern {
-          background-color: #fafaf9;
-          background-image: radial-gradient(#e7e5e4 1px, transparent 1px);
-          background-size: 24px 24px;
-        }
         body { font-family: 'Cairo', sans-serif; }
         h1, h2, h3, h4, .serif-font { font-family: 'Amiri', serif; }
         .decorative-font { font-family: 'Aref Ruqaa', serif; }
-        .glass {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
         .bg-morocco-red { background: linear-gradient(135deg, #C1272D 0%, #a01e23 100%); }
         .bg-morocco-green { background: linear-gradient(135deg, #006233 0%, #004d28 100%); }
         .image-overlay { position: relative; overflow: hidden; }
@@ -96,144 +115,204 @@ export default function Itineraries() {
           content: '';
           position: absolute;
           inset: 0;
-          background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 50%);
+          background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%);
         }
       `}</style>
 
       <Navbar />
 
-      {/* Hero Section */}
-      <header className="relative pt-32 pb-12 border-b border-stone-200 overflow-hidden">
+      {/* Toast */}
+      {notification && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-white text-sm font-medium ${
+          notification.type === 'success' ? 'bg-[#006233]' : 'bg-[#C1272D]'
+        }`}>
+          <span className="material-icons text-sm">
+            {notification.type === 'success' ? 'check_circle' : 'error'}
+          </span>
+          {notification.message}
+        </div>
+      )}
+
+      {/* Hero */}
+      <header className="relative pt-32 pb-12 overflow-hidden">
         <div className="absolute inset-0">
           <img src="/images/cities-bg.jpg" alt="Background" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/65"></div>
         </div>
-
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="px-4 py-1.5 bg-white border border-stone-200 rounded-full flex items-center gap-2 shadow-sm">
               <span className="material-icons text-[#006233] text-sm">map</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-stone-700">My Itineraries</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-stone-700">My Itinerary</span>
             </div>
           </div>
-
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-            <div>
-              <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 serif-font">
-                My Travel Plans
-              </h1>
-              <p className="text-lg text-white/80 max-w-xl">
-                Organize your World Cup 2030 adventure — plan your visits, add attractions and make unforgettable memories.
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className="flex gap-4">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-6 py-4 text-center">
-                <div className="text-3xl font-bold text-white">{itineraries.length}</div>
-                <div className="text-xs text-white/70 uppercase tracking-wider mt-1">Itineraries</div>
-              </div>
-            </div>
-          </div>
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 serif-font">
+            {itinerary ? itinerary.title : 'Plan Your Trip'}
+          </h1>
+          <p className="text-lg text-white/80 max-w-xl">
+            {itinerary
+              ? 'Manage your World Cup 2030 adventure — add and explore attractions across Morocco.'
+              : 'Create your personal itinerary to organize your World Cup 2030 adventure.'}
+          </p>
         </div>
       </header>
 
-      {/* Filters Bar */}
-      <section className="sticky top-0 z-30 glass border-b border-stone-200 bg-pattern">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <span className="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">search</span>
-              <input
-                type="text"
-                placeholder="Search itineraries..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm text-stone-700 placeholder-stone-400 focus:outline-none focus:border-[#006233] focus:ring-2 focus:ring-[#006233]/10 transition-all"
-              />
-            </div>
+      <section className="py-16 bg-gradient-to-br from-stone-50 to-white min-h-screen">
+        <div className="max-w-3xl mx-auto px-6">
 
-            {/* Create new Itinerary button */}
-            <button
-              onClick={() => router.push('/itineraries/create')}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#006233] to-[#004d28] text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/20 transition-all text-sm"
-            >
-              <span className="material-icons text-sm">add</span>
-              New Itinerary
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Itineraries Grid */}
-      <section className="py-12 bg-gradient-to-br from-stone-50 to-white min-h-screen">
-        <div className="max-w-7xl mx-auto px-6">
-          {filteredItineraries.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="material-icons text-stone-400 text-4xl">map</span>
-              </div>
-              <h3 className="text-xl font-medium text-stone-700 mb-2">No itineraries found</h3>
-              <p className="text-stone-500 mb-6">Start planning your World Cup adventure!</p>
-              <button
-                onClick={() => router.push('/itineraries/create')}
-                className="px-6 py-3 bg-gradient-to-r from-[#006233] to-[#004d28] text-white rounded-xl font-medium hover:shadow-lg transition-all"
-              >
-                Create My First Itinerary
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItineraries.map((it) => (
-                <div
-                  key={it.id}
-                  onClick={() => navigateToDetail(it.id)}
-                  className="bg-white rounded-2xl border-2 border-stone-200 hover:border-[#006233] hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 overflow-hidden group cursor-pointer"
-                >
-                  {/* Header Card */}
-                  <div className="bg-gradient-to-br from-[#006233] to-[#004d28] p-6 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                    <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="material-icons text-white/60 text-sm">map</span>
-                        <span className="text-white/60 text-xs uppercase tracking-wider font-bold">Itinerary</span>
+          {itinerary ? (
+            /* ── A déjà un itinéraire ── */
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl border-2 border-[#006233] shadow-xl overflow-hidden">
+                {/* Card header */}
+                <div className="bg-gradient-to-br from-[#006233] to-[#004d28] p-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="material-icons text-white/60 text-sm">map</span>
+                      <span className="text-white/60 text-xs uppercase tracking-wider font-bold">My Itinerary</span>
+                    </div>
+                    <h2 className="text-3xl font-bold text-white serif-font mb-2">{itinerary.title}</h2>
+                    {itinerary.dateToGo && (
+                      <div className="flex items-center gap-2 text-white/80 text-sm">
+                        <span className="material-icons text-sm">event</span>
+                        <span>{formatDate(itinerary.dateToGo)}</span>
                       </div>
-                      <h3 className="text-2xl font-bold text-white serif-font line-clamp-2">
-                        {it.title}
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    {it.description && (
-                      <p className="text-sm text-stone-600 mb-4 line-clamp-3">
-                        {it.description}
-                      </p>
                     )}
-
-                    <div className="space-y-2 mb-4">
-                      {it.dateToGo && (
-                        <div className="flex items-center gap-2 text-xs text-stone-500">
-                          <span className="material-icons text-[#006233]" style={{ fontSize: '16px' }}>event</span>
-                          <span className="font-medium">{formatDate(it.dateToGo)}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <button className="w-full px-4 py-2 bg-gradient-to-r from-[#006233] to-[#004d28] text-white rounded-xl font-medium hover:shadow-lg hover:shadow-emerald-500/20 transition-all group-hover:shadow-lg">
-                      <span className="flex items-center justify-center gap-2">
-                        View Itinerary
-                        <span className="material-icons text-sm">arrow_forward</span>
-                      </span>
-                    </button>
                   </div>
                 </div>
-              ))}
+
+                {/* Card body */}
+                <div className="p-8">
+                  {itinerary.description && (
+                    <p className="text-stone-600 mb-6 leading-relaxed">{itinerary.description}</p>
+                  )}
+                  <button
+                    onClick={() => router.push(`/itineraries/${itinerary.id}`)}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-[#006233] to-[#004d28] text-white rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-3"
+                  >
+                    <span className="material-icons">place</span>
+                    View & Manage My Attractions
+                    <span className="material-icons">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+
+
+            </div>
+
+          ) : (
+            /* ── Pas encore d'itinéraire → formulaire ── */
+            <div className="space-y-6">
+              {/* Intro */}
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-[#006233] to-[#004d28] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <span className="material-icons text-white text-4xl">map</span>
+                </div>
+                <h2 className="text-3xl font-bold text-stone-900 serif-font mb-2">Create Your Itinerary</h2>
+                <p className="text-stone-500">Plan your perfect World Cup 2030 adventure in Morocco</p>
+              </div>
+
+              {/* Form */}
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-lg p-8 space-y-6">
+
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-bold text-stone-700 mb-2">
+                    <span className="flex items-center gap-2">
+                      <span className="material-icons text-[#006233] text-sm">title</span>
+                      Itinerary Title *
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. My World Cup 2030 Adventure"
+                    value={form.title}
+                    onChange={e => setForm({ ...form, title: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl text-stone-700 placeholder-stone-400 focus:outline-none focus:border-[#006233] focus:ring-2 focus:ring-[#006233]/10 transition-all"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-bold text-stone-700 mb-2">
+                    <span className="flex items-center gap-2">
+                      <span className="material-icons text-[#006233] text-sm">notes</span>
+                      Description
+                    </span>
+                  </label>
+                  <textarea
+                    placeholder="Describe your trip plans..."
+                    value={form.description}
+                    onChange={e => setForm({ ...form, description: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl text-stone-700 placeholder-stone-400 focus:outline-none focus:border-[#006233] focus:ring-2 focus:ring-[#006233]/10 transition-all resize-none"
+                  />
+                </div>
+
+                {/* Date */}
+                <div>
+                  <label className="block text-sm font-bold text-stone-700 mb-2">
+                    <span className="flex items-center gap-2">
+                      <span className="material-icons text-[#006233] text-sm">event</span>
+                      Date of Travel
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={form.dateToGo}
+                    onChange={e => setForm({ ...form, dateToGo: e.target.value })}
+                    min="2030-01-01"
+                    max="2030-12-31"
+                    className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl text-stone-700 focus:outline-none focus:border-[#006233] focus:ring-2 focus:ring-[#006233]/10 transition-all"
+                  />
+                </div>
+
+                {/* Submit */}
+                <button
+                  onClick={handleCreate}
+                  disabled={creating}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-[#006233] to-[#004d28] text-white rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {creating ? (
+                    <>
+                      <span className="material-icons animate-spin text-sm">autorenew</span>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-icons">add_circle</span>
+                      Create My Itinerary
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Tips */}
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="material-icons text-amber-600">lightbulb</span>
+                  <h3 className="font-bold text-stone-900">Good to know</h3>
+                </div>
+                <ul className="space-y-2 text-sm text-stone-700">
+                  <li className="flex items-start gap-2">
+                    <span className="material-icons text-amber-500 text-sm mt-0.5">check_circle</span>
+                    <span>You can only have one itinerary per account</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="material-icons text-amber-500 text-sm mt-0.5">check_circle</span>
+                    <span>Add unlimited attractions to your itinerary</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="material-icons text-amber-500 text-sm mt-0.5">check_circle</span>
+                    <span>Browse cities and attractions to build your plan</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           )}
+
         </div>
       </section>
 

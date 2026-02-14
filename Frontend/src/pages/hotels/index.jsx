@@ -113,7 +113,7 @@ export default function Hotels() {
       {/* Hero Section */}
       <header className="relative pt-32 pb-12 border-b border-stone-200 overflow-hidden">
         <div className="absolute inset-0">
-          <img src="/images/cities-bg.jpg" alt="Background" className="w-full h-full object-cover" />
+          <img src="/images/hotels.png" alt="Background" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/65"></div>
         </div>
         <div className="relative max-w-7xl mx-auto px-6">

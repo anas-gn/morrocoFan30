@@ -16,6 +16,24 @@ export default function ItineraryDetail() {
   const [searchAdd, setSearchAdd] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [notification, setNotification] = useState(null); // { type: 'success' | 'error', message }
+  const [editingDate, setEditingDate] = useState(false);
+  const [newDate, setNewDate] = useState('');
+
+  // Mettre à jour la date de l'itinéraire
+  const updateDate = () => {
+    if (!newDate) return;
+    fetch(`http://localhost:3309/api/itineraries/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...itinerary, dateToGo: newDate })
+    })
+      .then(() => {
+        setItinerary({ ...itinerary, dateToGo: newDate });
+        setEditingDate(false);
+        showNotif('success', 'Date updated!');
+      })
+      .catch(() => showNotif('error', 'Could not update date.'));
+  };
 
   // Charger l'itinéraire et ses attractions
   const fetchItinerary = () => {
@@ -385,75 +403,83 @@ export default function ItineraryDetail() {
 
             {/* Right: Sidebar */}
             <div className="space-y-6">
-              {/* Itinerary Info Card */}
-              <div className="bg-gradient-to-br from-[#006233] to-[#004d28] rounded-2xl p-8 text-white sticky top-24">
-                <h3 className="text-2xl font-bold mb-6 serif-font">Plan Summary</h3>
+              {/* Sidebar Card */}
+              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden sticky top-24">
 
-                <div className="space-y-4">
-                  {itinerary.dateToGo && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                        <span className="material-icons text-white text-sm">event</span>
-                      </div>
-                      <div>
-                        <div className="text-white/70 text-xs uppercase tracking-wider">Date</div>
-                        <div className="font-bold text-sm">{formatDate(itinerary.dateToGo)}</div>
-                      </div>
-                    </div>
-                  )}
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-stone-100 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <span className="material-icons text-[#006233] text-sm">map</span>
+                  </div>
+                  <h3 className="font-bold text-stone-900">Trip Details</h3>
+                </div>
 
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                      <span className="material-icons text-white text-sm">place</span>
+                <div className="p-6 space-y-4">
+
+                  {/* Attractions count */}
+                  <div className="flex items-center justify-between bg-stone-50 rounded-xl px-4 py-3 border border-stone-200">
+                    <div className="flex items-center gap-2">
+                      <span className="material-icons text-[#006233] text-sm">place</span>
+                      <span className="text-sm text-stone-600">Attractions</span>
                     </div>
-                    <div>
-                      <div className="text-white/70 text-xs uppercase tracking-wider">Attractions</div>
-                      <div className="font-bold text-sm">{itineraryAttractions.length} planned</div>
-                    </div>
+                    <span className="font-bold text-stone-900">{itineraryAttractions.length} planned</span>
                   </div>
 
-                  {itinerary.description && (
-                    <div className="pt-4 border-t border-white/20">
-                      <p className="text-white/80 text-sm leading-relaxed">{itinerary.description}</p>
+                  {/* Date — modifiable */}
+                  <div className="bg-stone-50 rounded-xl px-4 py-3 border border-stone-200">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="material-icons text-[#006233] text-sm">event</span>
+                        <span className="text-sm text-stone-600">Travel Date</span>
+                      </div>
+                      <button
+                        onClick={() => { setEditingDate(!editingDate); setNewDate(itinerary.dateToGo || ''); }}
+                        className="text-xs text-[#006233] hover:underline font-medium flex items-center gap-1"
+                      >
+                        <span className="material-icons" style={{fontSize:'14px'}}>edit</span>
+                        {editingDate ? 'Cancel' : 'Edit'}
+                      </button>
                     </div>
-                  )}
-                </div>
+                    {editingDate ? (
+                      <div className="mt-2 space-y-2">
+                        <input
+                          type="date"
+                          value={newDate}
+                          onChange={e => setNewDate(e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-[#006233] rounded-lg text-sm text-stone-700 focus:outline-none"
+                        />
+                        <button
+                          onClick={updateDate}
+                          className="w-full py-2 bg-[#006233] text-white rounded-lg text-sm font-bold hover:bg-[#004d28] transition-all"
+                        >
+                          Save Date
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="font-bold text-stone-900 text-sm mt-1">
+                        {itinerary.dateToGo ? formatDate(itinerary.dateToGo) : 'Not set'}
+                      </div>
+                    )}
+                  </div>
 
-                <div className="mt-6 space-y-3">
+                  {/* Description */}
+                  {itinerary.description && (
+                    <p className="text-stone-500 text-sm leading-relaxed px-1">{itinerary.description}</p>
+                  )}
+
+                  {/* Séparateur */}
+                  <div className="h-px bg-stone-100"></div>
+
+                  {/* Add Attraction */}
                   <button
                     onClick={() => setShowAddModal(true)}
-                    className="w-full px-5 py-3 bg-white text-[#006233] rounded-xl font-bold hover:bg-stone-50 transition-all flex items-center justify-center gap-2 shadow-lg"
+                    className="w-full py-3 bg-gradient-to-r from-[#006233] to-[#004d28] text-white rounded-xl font-bold hover:shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 text-sm"
                   >
-                    <span className="material-icons">add_circle</span>
+                    <span className="material-icons text-sm">add_circle</span>
                     Add Attraction
                   </button>
-                </div>
-              </div>
 
-              {/* Tips Card */}
-              <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="material-icons text-amber-600 text-3xl">lightbulb</span>
-                  <h3 className="text-xl font-bold text-stone-900">Planning Tips</h3>
                 </div>
-                <ul className="space-y-3 text-sm text-stone-700">
-                  <li className="flex items-start gap-2">
-                    <span className="material-icons text-amber-500 text-sm mt-0.5">check_circle</span>
-                    <span>Group nearby attractions to save travel time</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="material-icons text-amber-500 text-sm mt-0.5">check_circle</span>
-                    <span>Check opening hours before visiting</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="material-icons text-amber-500 text-sm mt-0.5">check_circle</span>
-                    <span>Book popular attractions in advance</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="material-icons text-amber-500 text-sm mt-0.5">check_circle</span>
-                    <span>Allow buffer time between visits</span>
-                  </li>
-                </ul>
               </div>
             </div>
           </div>

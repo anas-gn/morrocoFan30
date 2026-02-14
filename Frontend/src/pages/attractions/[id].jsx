@@ -328,58 +328,90 @@ export default function AttractionDetail() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-8 text-white sticky top-24">
-                <h3 className="text-2xl font-bold mb-6 serif-font">Plan Your Visit</h3>
-                <div className="space-y-4">
 
-                  {/* ✅ Bouton Add to Itinerary fonctionnel */}
+              {/* ── Plan Your Visit Card ── */}
+              <div className="bg-white rounded-2xl border-2 border-stone-200 overflow-hidden sticky top-24 shadow-sm">
+
+                {/* Header */}
+                <div className="px-6 py-5 border-b border-stone-100 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
+                    <span className="material-icons text-[#006233] text-sm">explore</span>
+                  </div>
+                  <h3 className="text-base font-bold text-stone-900 uppercase tracking-wider">Plan Your Visit</h3>
+                </div>
+
+                <div className="p-6 space-y-4">
+
+                  {/* Stats rapides */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-center">
+                      <div className="text-2xl font-bold text-[#006233] mb-0.5">
+                        {attraction.priceProxim === 0 ? 'FREE' : `${attraction.priceProxim}`}
+                      </div>
+                      <div className="text-stone-400 text-xs uppercase tracking-wider">
+                        {attraction.priceProxim > 0 ? 'MAD' : 'Entry'}
+                      </div>
+                    </div>
+                    <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-center">
+                      <div className="text-xs font-bold text-[#006233] mb-0.5">
+                        {attraction.houreOfOpening && attraction.houreOfClosing
+                          ? `${attraction.houreOfOpening?.substring(0,5)} – ${attraction.houreOfClosing?.substring(0,5)}`
+                          : 'Open'}
+                      </div>
+                      <div className="text-stone-400 text-xs uppercase tracking-wider">Hours</div>
+                    </div>
+                  </div>
+
+                  {/* Type badge */}
+                  {attraction.type && (
+                    <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5">
+                      <span className="material-icons text-[#006233] text-sm">
+                        {attraction.type === 'Market' ? 'shopping_bag' : 'place'}
+                      </span>
+                      <span className="text-stone-500 text-xs uppercase tracking-wider">Category</span>
+                      <span className="ml-auto text-stone-900 font-bold text-sm">{attraction.type}</span>
+                    </div>
+                  )}
+
+                  {/* Adresse */}
+                  {attraction.address && (
+                    <div className="flex items-start gap-2 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
+                      <span className="material-icons text-[#C1272D] text-sm mt-0.5">location_on</span>
+                      <p className="text-stone-600 text-xs leading-relaxed">{attraction.address}</p>
+                    </div>
+                  )}
+
+                  {/* Séparateur */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-stone-100"></div>
+                    <span className="text-stone-300 text-xs">✦</span>
+                    <div className="flex-1 h-px bg-stone-100"></div>
+                  </div>
+
+                  {/* Bouton Add to Itinerary */}
                   <button
                     onClick={openItineraryModal}
-                    className="w-full px-6 py-3 bg-white text-emerald-600 rounded-xl font-bold hover:bg-stone-50 transition-all flex items-center justify-center gap-2 shadow-lg"
+                    className="w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-[#006233] to-[#004d28] text-white hover:shadow-lg hover:shadow-emerald-500/20"
                   >
-                    <span className="material-icons">add_circle</span>
+                    <span className="material-icons text-sm">bookmark_add</span>
                     Add to My Itinerary
                   </button>
 
-                  <button className="w-full px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-xl font-medium hover:bg-white/20 transition-all flex items-center justify-center gap-2">
-                    <span className="material-icons">share</span>
-                    Share
-                  </button>
-
+                  {/* Get Directions */}
                   {attraction.latitude && attraction.longitude && (
                     <button
                       onClick={openInMaps}
-                      className="w-full px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/30 text-white rounded-xl font-medium hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-3 rounded-xl font-medium text-sm border-2 border-stone-200 text-stone-700 hover:border-[#006233] hover:text-[#006233] transition-all flex items-center justify-center gap-2"
                     >
-                      <span className="material-icons">directions</span>
+                      <span className="material-icons text-sm">near_me</span>
                       Get Directions
                     </button>
                   )}
-                </div>
 
-                <div className="mt-8 pt-8 border-t border-white/20 space-y-3">
-                  {attraction.houreOfOpening && attraction.houreOfClosing && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-white/80 text-sm">Hours</span>
-                      <span className="font-bold text-sm">{formatTime(attraction.houreOfOpening)} - {formatTime(attraction.houreOfClosing)}</span>
-                    </div>
-                  )}
-                  {attraction.priceProxim !== undefined && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-white/80 text-sm">Price</span>
-                      <span className="font-bold text-sm">{attraction.priceProxim === 0 ? 'FREE' : `${attraction.priceProxim} MAD`}</span>
-                    </div>
-                  )}
-                  {attraction.type && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-white/80 text-sm">Type</span>
-                      <span className="font-bold text-sm">{attraction.type}</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Tips Card */}
+              {/* ── Visitor Tips Card ── */}
               <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="material-icons text-amber-600 text-3xl">lightbulb</span>
@@ -404,6 +436,7 @@ export default function AttractionDetail() {
                   </li>
                 </ul>
               </div>
+
             </div>
           </div>
         </div>

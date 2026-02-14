@@ -160,11 +160,11 @@ export default function Cities() {
       <header className="relative pt-32 pb-12 border-b border-stone-200 overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <img
-            src="/images/cities-bg.jpg"
-            alt="Background"
-            className="w-full h-full object-cover"
-          />
+         <img
+  src="/images/cities.png" 
+  alt="Background"
+  className="w-full h-full object-cover"
+/>
           <div className="absolute inset-0 bg-black/65"></div>
         </div>
 

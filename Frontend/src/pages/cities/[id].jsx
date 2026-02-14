@@ -516,6 +516,7 @@ export default function CityDetail() {
                             )}
 
                             {attraction.latitude && attraction.longitude && (
+                              
                               <div className="flex items-center gap-2 text-emerald-600 font-medium cursor-pointer hover:text-emerald-700">
                                 <span className="material-icons text-xs">map</span>
                                 <span>View on Map</span>
