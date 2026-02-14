@@ -14,7 +14,7 @@ export default function Footer() {
             <div className="col-span-1 md:col-span-1">
               <a href="#" className="flex items-center gap-2 mb-6 text-white group">
                 <img 
-                  src="images/logo.png" 
+                  src="/images/logo.png" 
                   alt="MoroccoFan2030 Logo" 
                   className="w-12 h-12 object-contain"
                 />

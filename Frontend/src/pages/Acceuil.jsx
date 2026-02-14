@@ -268,10 +268,10 @@ export default function Acceuil() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#C1272D]/20 via-transparent to-[#006233]/20 animate-pulse" style={{animationDuration: '4s'}}></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <div className="max-w-7xl mx-auto px-3 relative z-10">
           <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
             <div className="mb-8 animate-fade-in-down">
-              <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl backdrop-blur-md border border-[#006233]/30 shadow-2xl">
+              <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl  ">
                 <span className="text-xs font-bold text-green-200 uppercase tracking-widest decorative-font">First Match Begins In</span>
                 <div className="flex items-center gap-3" id="countdown">
                   <div className="flex flex-col items-center">
