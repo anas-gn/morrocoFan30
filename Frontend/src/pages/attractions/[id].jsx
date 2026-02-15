@@ -27,7 +27,7 @@ export default function AttractionDetail() {
       .catch(() => setLoading(false));
   }, [id]);
 
-  /* ── Open modal ───────────────────────────────────────────────── */
+  /* ── Open modal ──────────────────────────────────────────────── */
   const openModal = () => {
     setShowModal(true);
     setLoadingItins(true);

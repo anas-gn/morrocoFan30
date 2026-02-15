@@ -295,6 +295,16 @@ export default function Profile() {
                   </div>
                   <span className="material-icons text-sm opacity-0 group-hover:opacity-100 transition-opacity text-stone-400">arrow_forward</span>
                 </button>
+                  <button
+                  onClick={() => router.push('/itineraries')}
+                  className="flex items-center justify-between px-3 py-2.5 text-sm font-medium text-stone-500 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="material-icons text-base">calendar_today</span>
+                    Itineraries
+                  </div>
+                  <span className="material-icons text-sm opacity-0 group-hover:opacity-100 transition-opacity text-stone-400">arrow_forward</span>
+                </button>
               </nav>
 
               {/* Info summary card */}
