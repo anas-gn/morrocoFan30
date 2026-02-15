@@ -17,7 +17,7 @@ async function safeFetch(url) {
     if (!text || text === 'null') return null;
     return JSON.parse(text);
   } catch (err) {
-    console.error(`[safeFetch] Erreur — ${url}`, err);
+    console.error(`[safeFetch] Error — ${url}`, err);
     return null;
   }
 }
@@ -42,35 +42,27 @@ export default function CityDetail() {
     (async () => {
       setLoading(true);
       try {
-
-        // ✅ City info — AcceuilController a le CORS configuré.
-        // CityHostController (/api/cities/{id}) n'a pas @CrossOrigin → bloque en browser.
-        // On fetch toutes les villes et on filtre par id.
         const allCities = await safeFetch(`${API}/acceuil/CityHosts/all`);
         const cityData  = Array.isArray(allCities)
           ? allCities.find(c => c.id === cityId) ?? null
           : null;
         setCity(cityData);
 
-        // ✅ Attractions — AttractionController fonctionne correctement
         const attrData = await safeFetch(`${API}/attractions/city/${id}`);
         setAttractions(Array.isArray(attrData) ? attrData : []);
 
-        // ✅ Hotels — HotelController a @CrossOrigin(origins="*") → filtre par cityHostId
         const allHotels = await safeFetch(`${API}/hotels/all`);
         const cityHotels = Array.isArray(allHotels)
           ? allHotels.filter(h => h.cityHostId === cityId)
           : [];
         setHotels(cityHotels);
 
-        // ✅ Stades — AcceuilController fonctionne → filtre par cityId
         const allStades  = await safeFetch(`${API}/acceuil/stade/all`);
         const cityStades = Array.isArray(allStades)
           ? allStades.filter(s => s.cityId === cityId)
           : [];
         setStadiums(cityStades);
 
-        // ✅ Matches — MatchesController fonctionne pour chaque stade
         if (cityStades.length > 0) {
           const mResults = await Promise.all(
             cityStades.map(st => safeFetch(`${API}/matches/matches/stade/${st.id}`))
@@ -78,13 +70,11 @@ export default function CityDetail() {
           setMatches(mResults.flat().filter(Boolean));
         }
 
-        // ℹ️ Images — nécessite CorsConfig.java côté Spring Boot pour fonctionner
-        // Sans ça, la galerie sera vide (pas d'erreur bloquante)
         const imgs = await safeFetch(`${API}/cities/images/city/${id}`);
         setImages(Array.isArray(imgs) ? imgs : []);
 
       } catch (err) {
-        console.error('Erreur chargement ville:', err);
+        console.error('Error loading city:', err);
       } finally {
         setLoading(false);
       }
@@ -92,23 +82,23 @@ export default function CityDetail() {
   }, [id]);
 
   const getStatus = (s) => ({
-    'LIVE':     { label: 'En Direct', cls: 'bg-red-500/10 text-red-600 border-red-200' },
-    'started':  { label: 'En Direct', cls: 'bg-red-500/10 text-red-600 border-red-200' },
-    'commence': { label: 'En Direct', cls: 'bg-red-500/10 text-red-600 border-red-200' },
-    'termine':  { label: 'Terminé',   cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' },
-    'Finished': { label: 'Terminé',   cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' },
-    'upcoming': { label: 'À Venir',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  }[s] || { label: 'Prévu', cls: 'bg-zinc-50 text-zinc-500 border-zinc-200' });
+    'LIVE':     { label: 'Live', cls: 'bg-red-500/10 text-red-600 border-red-200' },
+    'started':  { label: 'Live', cls: 'bg-red-500/10 text-red-600 border-red-200' },
+    'commence': { label: 'Live', cls: 'bg-red-500/10 text-red-600 border-red-200' },
+    'termine':  { label: 'Finished',   cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' },
+    'Finished': { label: 'Finished',   cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' },
+    'upcoming': { label: 'Upcoming',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  }[s] || { label: 'Scheduled', cls: 'bg-zinc-50 text-zinc-500 border-zinc-200' });
 
   const isLive = (s) => ['LIVE', 'started', 'commence'].includes(s);
 
   const TABS = [
-    { key: 'overview',    label: 'Aperçu',      icon: 'solar:widget-linear',               badge: null              },
-    { key: 'hotels',      label: 'Séjour',       icon: 'solar:bed-linear',                  badge: hotels.length     },
-    { key: 'attractions', label: 'À Découvrir',  icon: 'solar:map-point-school-linear',     badge: attractions.length},
-    { key: 'stadiums',    label: 'Stades',       icon: 'solar:structure-linear',            badge: stadiums.length   },
-    { key: 'matches',     label: 'Matchs',       icon: 'solar:calendar-linear',             badge: matches.length    },
-    { key: 'gallery',     label: 'Galerie',      icon: 'solar:gallery-minimalistic-linear', badge: images.length     },
+    { key: 'overview',    label: 'Overview',      icon: 'solar:widget-linear',               badge: null              },
+    { key: 'hotels',      label: 'Stay',          icon: 'solar:bed-linear',                  badge: hotels.length     },
+    { key: 'attractions', label: 'Discover',      icon: 'solar:map-point-school-linear',     badge: attractions.length},
+    { key: 'stadiums',    label: 'Stadiums',      icon: 'solar:structure-linear',            badge: stadiums.length   },
+    { key: 'matches',     label: 'Matches',       icon: 'solar:calendar-linear',             badge: matches.length    },
+    { key: 'gallery',     label: 'Gallery',       icon: 'solar:gallery-minimalistic-linear', badge: images.length     },
   ];
 
   /* ── Loading ── */
@@ -120,10 +110,10 @@ export default function CityDetail() {
 
   if (!city) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50">
-      <h2 className="text-2xl font-bold text-zinc-700 mb-4">Ville non trouvée</h2>
+      <h2 className="text-2xl font-bold text-zinc-700 mb-4">City not found</h2>
       <button onClick={() => router.push('/cities')}
         className="px-6 py-2 bg-zinc-900 text-white rounded-xl hover:bg-zinc-700 transition">
-        Retour aux villes
+        Back to cities
       </button>
     </div>
   );
@@ -132,18 +122,15 @@ export default function CityDetail() {
   return (
     <>
       <Head>
-        <title>{city.name} — Ville Hôte | MoroccoFan2030</title>
-        <meta name="description" content={city.description || `Découvrez ${city.name}`} />
+        <title>{city.name} — Host City | MoroccoFan2030</title>
+        <meta name="description" content={city.description || `Discover ${city.name}`} />
         <link rel="icon" href="/images/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" />
-         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-        <link rel="icon" href="/images/logo.png" />
       </Head>
 
       <style jsx global>{`
@@ -165,6 +152,40 @@ export default function CityDetail() {
 
         .card-lift { transition: transform .25s ease, box-shadow .25s ease; }
         .card-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,.08); }
+        
+        .stadium-card-bg {
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+        }
+        
+        .stadium-card-overlay {
+          background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.4) 100%);
+        }
+        
+        @media (max-width: 1024px) {
+          .stadium-card-overlay {
+            background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 60%);
+          }
+        }
+
+        /* Overview card backgrounds */
+        .overview-card-bg {
+          position: absolute;
+          inset: 0;
+          background-size: cover;
+          background-position: center;
+          transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .overview-card-bg::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: inherit;
+          filter: blur(20px);
+          opacity: 0.3;
+        }
       `}</style>
 
       <Navbar />
@@ -185,14 +206,14 @@ export default function CityDetail() {
             <span className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white/50 transition">
               <iconify-icon icon="solar:arrow-left-linear" class="text-lg" />
             </span>
-            <span className="text-sm font-medium">Retour aux villes</span>
+            <span className="text-sm font-medium">Back to cities</span>
           </button>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-end">
             <div>
               <div className="flex items-center gap-3 mb-5 fade-up d1">
                 <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider text-white/90">
-                  Ville Hôte
+                  Host City
                 </span>
                 {city.region && (
                   <span className="flex items-center gap-1.5 text-white/60 text-sm">
@@ -212,13 +233,12 @@ export default function CityDetail() {
               </div>
             </div>
 
-            {/* Updated Statistics Section */}
             <div className="fade-up d4">
               <div className="flex items-end justify-end gap-8">
                 {[
                   { val: hotels.length,      label:'HOTELS',      color:'text-red-500'     },
                   { val: attractions.length, label:'ATTRACTIONS', color:'text-amber-500'   },
-                  { val: stadiums.length,    label:'Staduims',      color:'text-emerald-500' },
+                  { val: stadiums.length,    label:'STADIUMS',    color:'text-emerald-500' },
                 ].map((s, i) => (
                   <div key={i} className="text-right">
                     <div className={`text-6xl lg:text-7xl font-bold ${s.color} mb-1`}>
@@ -267,16 +287,16 @@ export default function CityDetail() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-5 fade-up">
             <div className="md:col-span-8 bg-zinc-50 border border-zinc-100 rounded-[28px] p-8 lg:p-12">
               <h2 className="font-serif text-3xl font-semibold text-zinc-900 mb-5">
-                À propos de {city.name}
+                About {city.name}
               </h2>
               <p className="text-zinc-600 text-lg leading-relaxed font-light">
-                {city.description || `${city.name} est l'une des magnifiques villes hôtes de la Coupe du Monde 2030. Découvrez sa culture, ses infrastructures et son hospitalité chaleureuse.`}
+                {city.description || `${city.name} is one of the magnificent host cities for the 2030 World Cup. Discover its culture, infrastructure, and warm hospitality.`}
               </p>
               <div className="mt-8 pt-8 border-t border-zinc-200 grid grid-cols-2 md:grid-cols-3 gap-6">
                 {[
-                  { l:'Région', v: city.region  || '—'              },
-                  { l:'Pays',   v: city.country  || '—'             },
-                  { l:'Matchs', v: `${matches.length} prévus`       },
+                  { l:'Region', v: city.region  || '—'              },
+                  { l:'Country',   v: city.country  || '—'          },
+                  { l:'Matches', v: `${matches.length} scheduled`   },
                 ].map((s, i) => (
                   <div key={i}>
                     <div className="text-[11px] text-zinc-400 uppercase tracking-widest font-semibold mb-1">{s.l}</div>
@@ -288,10 +308,10 @@ export default function CityDetail() {
 
             <div className="md:col-span-4 grid grid-cols-2 gap-4">
               {[
-                { icon:'solar:bed-linear',                val: hotels.length,      label:'Hôtels',      ring:'ring-amber-100',   bg:'bg-amber-50',   ic:'text-amber-500',   tab:'hotels'      },
+                { icon:'solar:bed-linear',                val: hotels.length,      label:'Hotels',      ring:'ring-amber-100',   bg:'bg-amber-50',   ic:'text-amber-500',   tab:'hotels'      },
                 { icon:'solar:map-point-school-linear',   val: attractions.length, label:'Attractions', ring:'ring-emerald-100', bg:'bg-emerald-50', ic:'text-emerald-500', tab:'attractions' },
-                { icon:'solar:structure-linear',          val: stadiums.length,    label:'Stades',      ring:'ring-rose-100',    bg:'bg-rose-50',    ic:'text-rose-500',    tab:'stadiums'    },
-                { icon:'solar:calendar-linear',           val: matches.length,     label:'Matchs',      ring:'ring-blue-100',    bg:'bg-blue-50',    ic:'text-blue-500',    tab:'matches'     },
+                { icon:'solar:structure-linear',          val: stadiums.length,    label:'Stadiums',    ring:'ring-rose-100',    bg:'bg-rose-50',    ic:'text-rose-500',    tab:'stadiums'    },
+                { icon:'solar:calendar-linear',           val: matches.length,     label:'Matches',     ring:'ring-blue-100',    bg:'bg-blue-50',    ic:'text-blue-500',    tab:'matches'     },
               ].map((s, i) => (
                 <div key={i}
                   className={`bg-white border border-zinc-200 rounded-2xl p-5 hover:ring-2 ${s.ring} transition group card-lift cursor-pointer`}
@@ -305,30 +325,63 @@ export default function CityDetail() {
               ))}
             </div>
 
+            {/* Explore Stadiums Card with Background */}
             <div onClick={() => setActiveTab('stadiums')}
-              className="md:col-span-6 bg-zinc-950 text-white rounded-[28px] p-8 cursor-pointer group overflow-hidden relative card-lift">
+              className="md:col-span-6 text-white rounded-[28px] p-8 cursor-pointer group overflow-hidden relative card-lift"
+              style={{ minHeight: '200px' }}>
+              {/* Background Image */}
+              {stadiums[0]?.imageUrl && (
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                  style={{ backgroundImage: `url(${stadiums[0].imageUrl})` }}
+                />
+              )}
+              {/* Dark Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-zinc-950/90 via-zinc-900/85 to-zinc-800/80" />
+              
               <div className="relative z-10 flex flex-col justify-between min-h-[160px]">
-                <div className="w-11 h-11 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-white group-hover:text-zinc-900 transition-all">
+                <div className="w-11 h-11 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white group-hover:text-zinc-900 transition-all">
                   <iconify-icon icon="solar:arrow-right-up-linear" class="text-xl" />
                 </div>
                 <div>
-                  <h4 className="text-2xl font-semibold mb-1.5">Explorer les stades</h4>
-                  <p className="text-zinc-400 text-sm font-light">Infrastructures de classe mondiale pour la Coupe du Monde 2030</p>
+                  <h4 className="text-2xl font-semibold mb-1.5">Explore stadiums</h4>
+                  <p className="text-white/70 text-sm font-light">World-class infrastructure for the 2030 World Cup</p>
                 </div>
               </div>
-              <div className="absolute -right-12 -bottom-12 w-56 h-56 bg-zinc-800/40 rounded-full blur-3xl" />
+              <div className="absolute -right-12 -bottom-12 w-56 h-56 bg-white/5 rounded-full blur-3xl" />
             </div>
 
+            {/* Match Schedule Card with Background */}
             <div onClick={() => setActiveTab('matches')}
-              className="md:col-span-6 bg-white border border-zinc-200 rounded-[28px] p-8 cursor-pointer group card-lift hover:border-zinc-300">
-              <div className="flex justify-between items-start mb-6">
-                <div className="w-11 h-11 bg-zinc-50 border border-zinc-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <iconify-icon icon="solar:calendar-mark-linear" class="text-xl text-zinc-900" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-zinc-100 text-zinc-500 rounded-lg">Agenda</span>
+              className="md:col-span-6 bg-white border border-zinc-200 rounded-[28px] p-8 cursor-pointer group card-lift hover:border-zinc-300 hover:shadow-lg overflow-hidden relative"
+              style={{ minHeight: '200px' }}>
+              {/* Subtle Football/Soccer Pattern Background */}
+              <div className="absolute inset-0 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity pointer-events-none">
+                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <pattern id="soccer-pattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                      <circle cx="40" cy="40" r="25" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M 40 15 L 40 20 M 40 60 L 40 65 M 15 40 L 20 40 M 60 40 L 65 40" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M 25 25 L 29 29 M 51 51 L 55 55 M 55 25 L 51 29 M 29 51 L 25 55" stroke="currentColor" strokeWidth="1.5"/>
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#soccer-pattern)" className="text-zinc-900"/>
+                </svg>
               </div>
-              <h4 className="text-2xl font-semibold text-zinc-900 mb-1.5">Programme des matchs</h4>
-              <p className="text-zinc-500 text-sm font-light">Calendrier complet des rencontres prévues à {city.name}</p>
+              
+              {/* Optional: Add a gradient overlay from corner */}
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5 pointer-events-none" />
+              
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="w-11 h-11 bg-zinc-50 border border-zinc-100 rounded-full flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-all">
+                    <iconify-icon icon="solar:calendar-mark-linear" class="text-xl text-zinc-900 group-hover:text-emerald-600 transition-colors" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-zinc-100 text-zinc-500 rounded-lg group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">Schedule</span>
+                </div>
+                <h4 className="text-2xl font-semibold text-zinc-900 mb-1.5 group-hover:text-emerald-900 transition-colors">Match schedule</h4>
+                <p className="text-zinc-500 text-sm font-light">Complete calendar of matches scheduled in {city.name}</p>
+              </div>
             </div>
           </div>
         )}
@@ -336,9 +389,9 @@ export default function CityDetail() {
         {/* ── HOTELS ── */}
         {activeTab === 'hotels' && (
           <div className="fade-up">
-            <SectionHeader title={`Séjour à ${city.name}`} subtitle="Hébergements sélectionnés pour votre confort" />
+            <SectionHeader title={`Stay in ${city.name}`} subtitle="Selected accommodations for your comfort" />
             {hotels.length === 0
-              ? <EmptyState icon="solar:bed-linear" msg="Aucun hébergement disponible" />
+              ? <EmptyState icon="solar:bed-linear" msg="No accommodations available" />
               : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {hotels.map((h, i) => (
                     <div key={h.id}
@@ -381,7 +434,7 @@ export default function CityDetail() {
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 hover:text-zinc-600 transition mt-1">
                               <iconify-icon icon="solar:link-linear" />
-                              Réserver maintenant
+                              Book now
                               <iconify-icon icon="solar:arrow-right-up-linear" />
                             </a>
                           )}
@@ -397,13 +450,13 @@ export default function CityDetail() {
         {/* ── ATTRACTIONS ── */}
         {activeTab === 'attractions' && (
           <div className="fade-up">
-            <SectionHeader title={`À Découvrir à ${city.name}`} subtitle="Sites culturels, naturels et touristiques" />
+            <SectionHeader title={`Discover ${city.name}`} subtitle="Cultural, natural, and tourist sites" />
             {attractions.length === 0
-              ? <EmptyState icon="solar:map-point-school-linear" msg="Aucune attraction disponible" />
+              ? <EmptyState icon="solar:map-point-school-linear" msg="No attractions available" />
               : <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {attractions.map((a, i) => (
                     <div key={a.id}
-                      onClick={() => router.push(`/attraction/${a.id}`)}
+                      onClick={() => router.push(`/attractions/${a.id}`)}
                       className="bg-white border border-zinc-200 rounded-2xl overflow-hidden card-lift group fade-up md:flex cursor-pointer"
                       style={{ animationDelay: `${i * 0.07}s` }}>
                       <div className="relative md:w-[42%] h-56 md:h-auto bg-zinc-100 flex-shrink-0 overflow-hidden">
@@ -449,7 +502,7 @@ export default function CityDetail() {
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1.5 font-semibold text-zinc-900 hover:text-zinc-600 transition mt-1">
                               <iconify-icon icon="solar:map-linear" />
-                              Voir sur la carte
+                              View on map
                             </a>
                           )}
                         </div>
@@ -461,87 +514,104 @@ export default function CityDetail() {
           </div>
         )}
 
-        {/* ── STADIUMS ── */}
+        {/* ── STADIUMS ── WITH BACKGROUND IMAGES */}
         {activeTab === 'stadiums' && (
-  <div className="fade-up">
-    <SectionHeader title={`Stades de ${city.name}`} subtitle="Infrastructures sportives de classe mondiale" />
-    {stadiums.length === 0
-      ? <EmptyState icon="solar:structure-linear" msg="Aucun stade disponible" />
-      : <div className="space-y-6">
-          {stadiums.map((st, i) => (
-            <div
-              key={st.id}
-              onClick={() => router.push(`/stade/${st.id}`)}
-              className="bg-zinc-950 text-white rounded-[28px] overflow-hidden group card-lift fade-up cursor-pointer"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2">
-                <div className="p-8 lg:p-12 flex flex-col justify-center">
-                  <div className="flex items-center gap-2 text-zinc-400 text-xs uppercase tracking-widest font-semibold mb-4">
-                    <iconify-icon icon="solar:structure-linear" />
-                    Infrastructure — {city.name}
-                  </div>
-                  <h3 className="font-serif text-3xl lg:text-4xl font-bold mb-4 text-white">{st.name}</h3>
-                  {st.description && (
-                    <p className="text-zinc-400 font-light leading-relaxed mb-8 max-w-md">{st.description}</p>
-                  )}
-                  <div className="grid grid-cols-2 gap-6 border-t border-zinc-800 pt-6">
-                    {st.capacity && (
-                      <div>
-                        <div className="text-zinc-500 text-[11px] uppercase tracking-widest font-semibold mb-1">Capacité</div>
-                        <div className="text-3xl font-mono text-white">{Number(st.capacity).toLocaleString()}</div>
+          <div className="fade-up">
+            <SectionHeader title={`${city.name} Stadiums`} subtitle="World-class sports infrastructure" />
+            {stadiums.length === 0
+              ? <EmptyState icon="solar:structure-linear" msg="No stadiums available" />
+              : <div className="space-y-6">
+                  {stadiums.map((st, i) => (
+                    <div
+                      key={st.id}
+                      onClick={() => router.push(`/stade/${st.id}`)}
+                      className="rounded-[28px] overflow-hidden group card-lift fade-up cursor-pointer relative"
+                      style={{ 
+                        animationDelay: `${i * 0.1}s`,
+                        minHeight: '400px'
+                      }}
+                    >
+                      {/* Background Image */}
+                      <div 
+                        className="absolute inset-0 stadium-card-bg"
+                        style={{
+                          backgroundImage: `url(${st.imageUrl || '/images/stadium-placeholder.jpg'})`
+                        }}
+                      />
+                      
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 stadium-card-overlay" />
+                      
+                      {/* Content */}
+                      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 min-h-[400px]">
+                        <div className="p-8 lg:p-12 flex flex-col justify-center">
+                          <div className="flex items-center gap-2 text-white/70 text-xs uppercase tracking-widest font-semibold mb-4">
+                            <iconify-icon icon="solar:structure-linear" />
+                            Infrastructure — {city.name}
+                          </div>
+                          
+                          <h3 className="font-serif text-3xl lg:text-5xl font-bold mb-4 text-white leading-tight">
+                            {st.name}
+                          </h3>
+                          
+                          {st.description && (
+                            <p className="text-white/80 font-light leading-relaxed mb-8 max-w-md text-lg">
+                              {st.description}
+                            </p>
+                          )}
+                          
+                          <div className="grid grid-cols-2 gap-6 border-t border-white/20 pt-6 mb-6">
+                            {st.capacity && (
+                              <div>
+                                <div className="text-white/60 text-[11px] uppercase tracking-widest font-semibold mb-2">Capacity</div>
+                                <div className="text-4xl font-bold text-white">{Number(st.capacity).toLocaleString()}</div>
+                              </div>
+                            )}
+                            {st.dateOfConstruction && (
+                              <div>
+                                <div className="text-white/60 text-[11px] uppercase tracking-widest font-semibold mb-2">Built</div>
+                                <div className="text-4xl font-bold text-white">{new Date(st.dateOfConstruction).getFullYear()}</div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {st.adresse && (
+                            <p className="flex items-start gap-2 text-sm text-white/70 mb-6">
+                              <iconify-icon icon="solar:map-point-linear" class="mt-0.5 flex-shrink-0" />
+                              {st.adresse}
+                            </p>
+                          )}
+                          
+                          <button
+                            onClick={e => { e.stopPropagation(); router.push(`/stade/${st.id}`); }}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-zinc-900 rounded-xl text-sm font-semibold hover:bg-zinc-100 transition w-max group-hover:scale-105"
+                          >
+                            <iconify-icon icon="solar:arrow-right-up-linear" class="text-lg" />
+                            View stadium
+                          </button>
+                        </div>
+                        
+                        {/* Right side - Let background show through */}
+                        <div className="hidden lg:flex items-center justify-center p-8">
+                          <div className="w-16 h-16 bg-white/10 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110">
+                            <iconify-icon icon="solar:arrow-right-up-linear" class="text-white text-3xl" />
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    {st.dateOfConstruction && (
-                      <div>
-                        <div className="text-zinc-500 text-[11px] uppercase tracking-widest font-semibold mb-1">Construction</div>
-                        <div className="text-3xl font-mono text-white">{new Date(st.dateOfConstruction).getFullYear()}</div>
-                      </div>
-                    )}
-                  </div>
-                  {st.adresse && (
-                    <p className="mt-5 flex items-start gap-2 text-sm text-zinc-500">
-                      <iconify-icon icon="solar:map-point-linear" class="mt-0.5 flex-shrink-0" />
-                      {st.adresse}
-                    </p>
-                  )}
-                  {/* Bouton "Voir le stade" — stopPropagation pour éviter double navigation */}
-                  <button
-                    onClick={e => { e.stopPropagation(); router.push(`/stade/${st.id}`); }}
-                    className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-white text-zinc-900 rounded-xl text-sm font-semibold hover:bg-zinc-200 transition w-max group-hover:bg-[#C1272D] group-hover:text-white"
-                  >
-                    <iconify-icon icon="solar:arrow-right-up-linear" class="text-lg" />
-                    Voir le stade
-                  </button>
-                  
+                    </div>
+                  ))}
                 </div>
-                <div className="relative h-64 lg:h-auto overflow-hidden">
-                  <img
-                    src={st.imageUrl || '/images/stadium-placeholder.jpg'}
-                    alt={st.name}
-                    className="absolute inset-0 w-full h-full object-cover opacity-100 group-hover:scale-105 transition-transform duration-700"
-                    onError={e => { e.target.style.display = 'none'; }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/60 to-transparent lg:bg-gradient-to-l lg:from-transparent lg:to-zinc-950" />
-                  {/* Indicateur de navigation au hover */}
-                  <div className="absolute top-4 right-4 w-10 h-10 bg-white/10 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:translate-x-0 translate-x-2">
-                    <iconify-icon icon="solar:arrow-right-up-linear" class="text-white text-lg" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-    }
-  </div>
-)}
-        {/* ── MATCHES ── */}
+            }
+          </div>
+        )}
+
+        {/* ── MATCHES ── MOBILE-OPTIMIZED STRUCTURE */}
         {activeTab === 'matches' && (
           <div className="fade-up">
-            <SectionHeader title={`Matchs à ${city.name}`} subtitle="Calendrier des rencontres dans cette ville" />
+            <SectionHeader title={`Matches in ${city.name}`} subtitle="Complete schedule of matches in this city" />
             {matches.length === 0
-              ? <EmptyState icon="solar:calendar-linear" msg="Aucun match programmé" />
-              : <div className="max-w-3xl mx-auto space-y-4">
+              ? <EmptyState icon="solar:calendar-linear" msg="No matches scheduled" />
+              : <div className="max-w-4xl mx-auto space-y-3">
                   {[...matches]
                     .sort((a, b) => new Date(a.dateOfMatch) - new Date(b.dateOfMatch))
                     .map((m, i) => {
@@ -550,45 +620,161 @@ export default function CityDetail() {
                       const team1  = m.matchTeams?.[0];
                       const team2  = m.matchTeams?.[1];
                       const date   = new Date(m.dateOfMatch);
+                      
                       return (
-                        <div key={m.id}
+                        <div 
+                          key={m.id}
                           onClick={() => router.push(`/match/${m.id}`)}
-                          className="bg-white border border-zinc-100 hover:border-zinc-300 hover:shadow-md rounded-2xl p-6 cursor-pointer transition group fade-up"
-                          style={{ animationDelay: `${i * 0.05}s` }}>
-                          <div className="flex flex-col md:flex-row items-center gap-6">
-                            <div className="flex-shrink-0 text-center md:text-left md:border-r border-zinc-100 md:pr-6">
-                              <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">
-                                {date.toLocaleDateString('fr-FR', { day:'2-digit', month:'short' })}
-                              </div>
-                              <div className="text-2xl font-bold text-zinc-900">
-                                {date.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })}
-                              </div>
-                              <div className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[10px] font-bold border ${status.cls}`}>
-                                {live && <span className="w-1.5 h-1.5 rounded-full bg-red-500 live-dot" />}
-                                {status.label}
-                              </div>
+                          className="bg-white border border-zinc-200 hover:border-zinc-300 rounded-2xl overflow-hidden cursor-pointer transition group fade-up hover:shadow-lg"
+                          style={{ animationDelay: `${i * 0.05}s` }}
+                        >
+                          {/* Match Header - Optimized for mobile */}
+                          <div className="bg-zinc-50 border-b border-zinc-200 px-4 py-2.5 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="font-semibold text-zinc-700">
+                                {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                              <span className="text-zinc-300">•</span>
+                              <span className="font-bold text-zinc-900">
+                                {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
                             </div>
-
-                            <div className="flex-1 flex items-center justify-between gap-4">
-                              <TeamBlock team={team1} align="right" />
-                              <div className="text-center px-3">
-                                {m.statut !== 'upcoming' ? (
-                                  <div className={`text-2xl font-bold tracking-tight ${live ? 'text-red-600' : 'text-zinc-900'}`}>
-                                    {team1?.goals ?? 0} – {team2?.goals ?? 0}
+                            
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-bold border ${status.cls}`}>
+                              {live && <span className="w-1 h-1 rounded-full bg-red-500 live-dot" />}
+                              {status.label}
+                            </div>
+                          </div>
+                          
+                          {/* Match Content - Mobile Layout */}
+                          <div className="p-4">
+                            {/* Desktop Layout */}
+                            <div className="hidden md:flex items-center justify-between gap-6">
+                              {/* Team 1 */}
+                              <div className="flex items-center gap-3 flex-1">
+                                <img
+                                  src={team1?.imageUrl || '/images/team-placeholder.png'}
+                                  alt={team1?.teamName}
+                                  className="w-14 h-14 rounded-full object-cover border-2 border-zinc-100 flex-shrink-0"
+                                  onError={e => { e.target.style.display = 'none'; }}
+                                />
+                                <div className="min-w-0">
+                                  <div className="font-bold text-zinc-900 text-base truncate">
+                                    {team1?.teamName || 'TBD'}
                                   </div>
-                                ) : (
-                                  <div className="text-xl font-light text-zinc-300">VS</div>
-                                )}
-                                <div className="text-[10px] text-zinc-400 font-medium mt-1">{m.type}</div>
+                                  {team1?.country && (
+                                    <div className="text-xs text-zinc-500">{team1.country}</div>
+                                  )}
+                                </div>
                               </div>
-                              <TeamBlock team={team2} align="left" />
+                              
+                              {/* Score/VS */}
+                              <div className="flex flex-col items-center justify-center px-4">
+                                {m.statut !== 'upcoming' ? (
+                                  <>
+                                    <div className={`text-3xl font-bold tracking-tight ${live ? 'text-red-600' : 'text-zinc-900'}`}>
+                                      {team1?.goals ?? 0} – {team2?.goals ?? 0}
+                                    </div>
+                                    {live && (
+                                      <div className="text-xs text-red-600 font-semibold mt-1 uppercase">Live</div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <div className="text-2xl font-light text-zinc-300">VS</div>
+                                )}
+                                {m.type && (
+                                  <div className="text-[9px] text-zinc-400 font-medium mt-1.5 uppercase tracking-wider">
+                                    {m.type}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Team 2 */}
+                              <div className="flex items-center gap-3 flex-1 flex-row-reverse">
+                                <img
+                                  src={team2?.imageUrl || '/images/team-placeholder.png'}
+                                  alt={team2?.teamName}
+                                  className="w-14 h-14 rounded-full object-cover border-2 border-zinc-100 flex-shrink-0"
+                                  onError={e => { e.target.style.display = 'none'; }}
+                                />
+                                <div className="min-w-0 text-right">
+                                  <div className="font-bold text-zinc-900 text-base truncate">
+                                    {team2?.teamName || 'TBD'}
+                                  </div>
+                                  {team2?.country && (
+                                    <div className="text-xs text-zinc-500">{team2.country}</div>
+                                  )}
+                                </div>
+                              </div>
                             </div>
 
+                            {/* Mobile Layout - Vertical Stack */}
+                            <div className="md:hidden space-y-3">
+                              {/* Teams Container */}
+                              <div className="flex items-center justify-between">
+                                {/* Team 1 - Left */}
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <img
+                                    src={team1?.imageUrl || '/images/team-placeholder.png'}
+                                    alt={team1?.teamName}
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-zinc-100 flex-shrink-0"
+                                    onError={e => { e.target.style.display = 'none'; }}
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-bold text-zinc-900 text-sm truncate">
+                                      {team1?.teamName || 'TBD'}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Score - Center */}
+                                <div className="flex flex-col items-center justify-center px-3 flex-shrink-0">
+                                  {m.statut !== 'upcoming' ? (
+                                    <div className={`text-xl font-bold ${live ? 'text-red-600' : 'text-zinc-900'}`}>
+                                      {team1?.goals ?? 0} – {team2?.goals ?? 0}
+                                    </div>
+                                  ) : (
+                                    <div className="text-lg font-light text-zinc-300">VS</div>
+                                  )}
+                                </div>
+                                
+                                {/* Team 2 - Right */}
+                                <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse">
+                                  <img
+                                    src={team2?.imageUrl || '/images/team-placeholder.png'}
+                                    alt={team2?.teamName}
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-zinc-100 flex-shrink-0"
+                                    onError={e => { e.target.style.display = 'none'; }}
+                                  />
+                                  <div className="min-w-0 flex-1 text-right">
+                                    <div className="font-bold text-zinc-900 text-sm truncate">
+                                      {team2?.teamName || 'TBD'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Match Type - Mobile */}
+                              {m.type && (
+                                <div className="text-center">
+                                  <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider px-2 py-1 bg-zinc-50 rounded-full">
+                                    {m.type}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Stadium Info - Same for both */}
                             {m.stadeName && (
-                              <div className="hidden md:flex flex-shrink-0 flex-col items-end text-sm">
-                                <div className="text-zinc-500 font-medium">{m.stadeName}</div>
-                                <iconify-icon icon="solar:arrow-right-linear"
-                                  class="text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-1 transition-all text-lg mt-1" />
+                              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-xs text-zinc-600 min-w-0">
+                                  <iconify-icon icon="solar:structure-linear" class="text-zinc-400 flex-shrink-0" />
+                                  <span className="font-medium truncate">{m.stadeName}</span>
+                                </div>
+                                <iconify-icon 
+                                  icon="solar:arrow-right-linear"
+                                  class="text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-1 transition-all text-lg flex-shrink-0" 
+                                />
                               </div>
                             )}
                           </div>
@@ -603,9 +789,9 @@ export default function CityDetail() {
         {/* ── GALLERY ── */}
         {activeTab === 'gallery' && (
           <div className="fade-up">
-            <SectionHeader title={`Galerie de ${city.name}`} subtitle="Découvrez la ville en images" />
+            <SectionHeader title={`${city.name} Gallery`} subtitle="Discover the city in images" />
             {images.length === 0
-              ? <EmptyState icon="solar:gallery-minimalistic-linear" msg="Aucune image disponible" />
+              ? <EmptyState icon="solar:gallery-minimalistic-linear" msg="No images available" />
               : <>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {images.map((img, i) => (
@@ -664,20 +850,6 @@ function EmptyState({ icon, msg }) {
         <iconify-icon icon={icon} class="text-zinc-300 text-4xl" />
       </div>
       <p className="text-zinc-500 font-medium">{msg}</p>
-    </div>
-  );
-}
-
-function TeamBlock({ team, align }) {
-  return (
-    <div className={`flex flex-col items-center gap-2 flex-1 ${align === 'right' ? 'md:items-end' : 'md:items-start'}`}>
-      <img
-        src={team?.imageUrl || '/images/team-placeholder.png'}
-        alt={team?.teamName}
-        className="w-14 h-14 rounded-full object-cover border-2 border-zinc-100"
-        onError={e => { e.target.style.display = 'none'; }}
-      />
-      <span className="font-semibold text-zinc-900 text-sm text-center">{team?.teamName || 'TBD'}</span>
     </div>
   );
 }
