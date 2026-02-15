@@ -137,7 +137,7 @@ export default function CityDetail() {
         <link rel="icon" href="/images/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" />
          <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -170,7 +170,7 @@ export default function CityDetail() {
       <Navbar />
 
       {/* ══ HERO ══ */}
-      <header className="relative min-h-[72vh] flex flex-col justify-end overflow-hidden bg-zinc-900 pt-24">
+      <header className="relative min-h-[80vh] flex flex-col justify-end overflow-hidden bg-zinc-900 pt-24">
         <div className="absolute inset-0">
           {city.imageUrl
             ? <img src={city.imageUrl} alt={city.name} className="w-full h-full object-cover opacity-45" />
@@ -212,21 +212,24 @@ export default function CityDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 fade-up d4">
-              {[
-                { icon:'solar:bed-linear',                val: hotels.length,      label:'Hébergements', color:'bg-amber-400/10 text-amber-300'   },
-                { icon:'solar:map-point-school-linear',   val: attractions.length, label:'Attractions',  color:'bg-emerald-400/10 text-emerald-300'},
-                { icon:'solar:structure-linear',          val: stadiums.length,    label:'Stades',       color:'bg-rose-400/10 text-rose-300'     },
-                { icon:'solar:calendar-linear',           val: matches.length,     label:'Matchs',       color:'bg-blue-400/10 text-blue-300'     },
-              ].map((s, i) => (
-                <div key={i} className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${s.color}`}>
-                    <iconify-icon icon={s.icon} class="text-xl" />
+            {/* Updated Statistics Section */}
+            <div className="fade-up d4">
+              <div className="flex items-end justify-end gap-8">
+                {[
+                  { val: hotels.length,      label:'HOTELS',      color:'text-red-500'     },
+                  { val: attractions.length, label:'ATTRACTIONS', color:'text-amber-500'   },
+                  { val: stadiums.length,    label:'Staduims',      color:'text-emerald-500' },
+                ].map((s, i) => (
+                  <div key={i} className="text-right">
+                    <div className={`text-6xl lg:text-7xl font-bold ${s.color} mb-1`}>
+                      {s.val}
+                    </div>
+                    <div className="text-xs text-white/50 font-bold uppercase tracking-widest">
+                      {s.label}
+                    </div>
                   </div>
-                  <div className="text-3xl font-bold text-white mb-0.5">{s.val}</div>
-                  <div className="text-xs text-white/50 font-medium">{s.label}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -339,7 +342,8 @@ export default function CityDetail() {
               : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {hotels.map((h, i) => (
                     <div key={h.id}
-                      className="bg-white rounded-2xl border border-zinc-200 overflow-hidden card-lift group fade-up"
+                      onClick={() => router.push(`/hotel/${h.id}`)}
+                      className="bg-white rounded-2xl border border-zinc-200 overflow-hidden card-lift group fade-up cursor-pointer"
                       style={{ animationDelay: `${i * 0.07}s` }}>
                       <div className="relative h-52 bg-zinc-100 overflow-hidden">
                         <img
@@ -374,6 +378,7 @@ export default function CityDetail() {
                           )}
                           {h.urlReservation && (
                             <a href={h.urlReservation} target="_blank" rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 hover:text-zinc-600 transition mt-1">
                               <iconify-icon icon="solar:link-linear" />
                               Réserver maintenant
@@ -398,7 +403,8 @@ export default function CityDetail() {
               : <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {attractions.map((a, i) => (
                     <div key={a.id}
-                      className="bg-white border border-zinc-200 rounded-2xl overflow-hidden card-lift group fade-up md:flex"
+                      onClick={() => router.push(`/attraction/${a.id}`)}
+                      className="bg-white border border-zinc-200 rounded-2xl overflow-hidden card-lift group fade-up md:flex cursor-pointer"
                       style={{ animationDelay: `${i * 0.07}s` }}>
                       <div className="relative md:w-[42%] h-56 md:h-auto bg-zinc-100 flex-shrink-0 overflow-hidden">
                         <img
@@ -440,6 +446,7 @@ export default function CityDetail() {
                           {a.latitude && a.longitude && (
                             <a href={`https://www.google.com/maps?q=${a.latitude},${a.longitude}`}
                               target="_blank" rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1.5 font-semibold text-zinc-900 hover:text-zinc-600 transition mt-1">
                               <iconify-icon icon="solar:map-linear" />
                               Voir sur la carte
@@ -545,7 +552,7 @@ export default function CityDetail() {
                       const date   = new Date(m.dateOfMatch);
                       return (
                         <div key={m.id}
-                          onClick={() => router.push(`/matches/${m.id}`)}
+                          onClick={() => router.push(`/match/${m.id}`)}
                           className="bg-white border border-zinc-100 hover:border-zinc-300 hover:shadow-md rounded-2xl p-6 cursor-pointer transition group fade-up"
                           style={{ animationDelay: `${i * 0.05}s` }}>
                           <div className="flex flex-col md:flex-row items-center gap-6">

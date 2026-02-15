@@ -232,7 +232,7 @@ export default function Cities() {
                   { val: globalStats.hotels, label: 'Hôtels',  accent: '#d4a847' },
                   { val: globalStats.stades, label: 'Stades',  accent: '#4caf7d' },
                 ].map((s, i) => (
-                  <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm text-center">
+                  <div key={i} className=" rounded-2xl p-5 backdrop-blur-sm text-center">
                     <div
                       className="serif font-light mb-1"
                       style={{ fontSize: '52px', lineHeight: 1, color: s.accent }}
