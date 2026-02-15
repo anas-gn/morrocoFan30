@@ -66,6 +66,7 @@ public List<AttractionDTO> getItineraryAttractions(@PathVariable int id) {
             .map(this::convertAttractionToDTO)
             .toList();
 }
+
     // GET ITINERARY DETAILS
     @GetMapping("/{id}")
     public ItineraryDTO getItineraryById(@PathVariable int id) {
