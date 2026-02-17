@@ -1,97 +1,125 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { useRouter } from 'next/router';
 
-export default function TeamDetails() {
+const BASE = 'http://localhost:3309/api';
+
+export default function TeamDetail() {
   const router = useRouter();
   const { id } = router.query;
 
-  // État pour stocker les données de l'équipe
-  const [team, setTeam] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview'); // overview, players, news, matches, culture
+  const [team, setTeam]         = useState(null);
+  const [players, setPlayers]   = useState([]);
+  const [news, setNews]         = useState([]);
+  const [cultures, setCultures] = useState([]);
+  const [matches, setMatches]   = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading]   = useState(true);
+  // debug: raw statuts to understand backend values
+  const [rawStatuts, setRawStatuts] = useState([]);
 
-  // Récupérer les détails de l'équipe
   useEffect(() => {
     if (!id) return;
+    const get = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
 
-    fetch(`http://localhost:3309/api/teams/getOne/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Team not found');
-        return res.json();
+    Promise.all([
+      get(`${BASE}/teams/teams/${id}`),
+      get(`${BASE}/teams/teams/plyers/${id}`).catch(() => []),
+      get(`${BASE}/teams/teams/news/${id}`).catch(() => []),
+      get(`${BASE}/teams/teams/contenuCultirel/${id}`).catch(() => []),
+    ])
+      .then(([teamData, pData, nData, cData]) => {
+        setTeam(teamData);
+        setPlayers(Array.isArray(pData) ? pData : []);
+        setNews(Array.isArray(nData) ? nData : []);
+        setCultures(Array.isArray(cData) ? cData : []);
+        return get(`${BASE}/matches/matches/byTeam/${encodeURIComponent(teamData.name)}`).catch(() => []);
       })
-      .then((data) => {
-        setTeam(data);
+      .then(mData => {
+        const arr = Array.isArray(mData) ? mData : [];
+        setMatches(arr);
+        // collect unique statuts for debugging
+        setRawStatuts([...new Set(arr.map(m => m.statut))]);
         setLoading(false);
       })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, [id]);
 
-  // Calculer les statistiques de l'équipe
-  const getTeamStats = () => {
-    if (!team || !team.matches) return { wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 };
-
-    let wins = 0, draws = 0, losses = 0, goalsFor = 0, goalsAgainst = 0;
-
-    team.matches.forEach(match => {
-      if (match.status === 'completed') {
-        goalsFor += match.goals;
-        goalsAgainst += match.opponentGoals;
-
-        if (match.goals > match.opponentGoals) wins++;
-        else if (match.goals === match.opponentGoals) draws++;
-        else losses++;
-      }
-    });
-
-    return { wins, draws, losses, goalsFor, goalsAgainst };
+  // ─── Helpers ────────────────────────────────────────────
+  // Accepte TOUTES les valeurs possibles du backend
+  const isDone = s => {
+    const v = (s || '').toLowerCase().trim();
+    return (
+      v.includes('termin') ||   // "termine", "terminé", "Terminé"
+      v.includes('finish') ||   // "Finished", "finished"
+      v === 'done'           ||
+      v === 'completed'      ||
+      v === 'ended'
+    );
   };
 
-  const stats = getTeamStats();
+  const isLive = s => {
+    const v = (s || '').toLowerCase().trim();
+    return v === 'live' || v === 'commence' || v === 'started' || v === 'en cours';
+  };
 
-  // Affichage du chargement
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50">
-        <img
-          src="/images/logo.png"
-          alt="Loading"
-          className="w-20 h-20 mb-4 animate-pulse"
-        />
-        <p className="text-stone-600 animate-pulse">Loading team details...</p>
-      </div>
-    );
-  }
+  // ─── Stats ──────────────────────────────────────────────
+  const teamId = parseInt(id);
 
-  // Affichage des erreurs
-  if (error || !team) {
-    return (
+  const teamStats = (() => {
+    let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+    matches.forEach(m => {
+      if (!isDone(m.statut)) return;
+      // teamId comparison: backend sends integer, id from URL is string
+      const my = m.matchTeams?.find(mt => Number(mt.teamId) === teamId);
+      const op = m.matchTeams?.find(mt => Number(mt.teamId) !== teamId);
+      if (!my || !op) return;
+      const mg = Number(my.goals) || 0;
+      const og = Number(op.goals) || 0;
+      gf += mg; ga += og;
+      if (mg > og)      wins++;
+      else if (mg === og) draws++;
+      else               losses++;
+    });
+    return { wins, draws, losses, gf, ga };
+  })();
+
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'players',  label: 'Squad'    },
+    { id: 'matches',  label: 'Fixtures' },
+    { id: 'news',     label: 'News'     },
+    { id: 'culture',  label: 'Culture'  },
+  ];
+
+  // ── Loading ─────────────────────────────────────────────
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50">
+      <img src="/images/logo.png" alt="Loading" className="w-20 h-20 mb-4 animate-pulse" />
+    </div>
+  );
+
+  if (!team) return (
+    <>
+      <Navbar />
       <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50">
-        <Navbar />
-        <div className="text-center pt-32">
-          <span className="material-icons text-6xl text-stone-300 mb-4">error_outline</span>
-          <p className="text-xl text-stone-600 mb-4">Team not found</p>
-          <button 
-            onClick={() => router.push('/')}
-            className="px-6 py-3 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white rounded-xl font-medium hover:shadow-lg transition-all"
-          >
-            Return to Home
-          </button>
-        </div>
+        <p className="text-xl text-stone-600 mb-6">Team not found</p>
+        <button onClick={() => router.push('/teams')} className="px-6 py-3 bg-[#C1272D] text-white rounded-xl font-medium">
+          Back to Teams
+        </button>
       </div>
-    );
-  }
+    </>
+  );
+
+  const isHost = ['Morocco', 'Portugal', 'Spain'].includes(team.country);
 
   return (
     <>
       <Head>
         <title>{team.name} | MoroccoFan2030</title>
-        <meta name="description" content={`${team.name} - ${team.description}`} />
+        <meta name="description" content={team.description} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
@@ -99,579 +127,489 @@ export default function TeamDetails() {
         <link rel="icon" href="/images/logo.png" />
       </Head>
 
+      {/* ── EXACT SAME STYLES AS Teams.jsx ─────────────────── */}
       <style jsx global>{`
-        .bg-pattern {
-          background-color: #fafaf9;
-          background-image: radial-gradient(#e7e5e4 1px, transparent 1px);
-          background-size: 24px 24px;
-        }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .glass {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-        }
-
-        body { font-family: 'Cairo', sans-serif; letter-spacing: 0.01em; }
-        h1, h2, h3, h4, .serif-font { font-family: 'Amiri', serif; letter-spacing: 0.02em; }
-        .decorative-font { font-family: 'Aref Ruqaa', serif; }
-
-        .bg-morocco-red { background: linear-gradient(135deg, #C1272D 0%, #a01e23 100%); }
-        .bg-morocco-green { background: linear-gradient(135deg, #006233 0%, #004d28 100%); }
-
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slide-in-left { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
-        
-        .animate-fade-in { animation: fade-in 0.6s ease-out; }
-        .animate-slide-up { animation: slide-up 0.6s ease-out; }
-        .animate-slide-in-left { animation: slide-in-left 0.6s ease-out; }
-        .animate-scale-in { animation: scale-in 0.6s ease-out; }
-        .animate-shimmer { animation: shimmer 2s infinite linear; }
-
-        .tab-indicator {
-          position: absolute;
-          bottom: 0;
-          height: 3px;
-          background: linear-gradient(90deg, #C1272D, #006233);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .player-card:hover .player-overlay {
-          opacity: 1;
-        }
-
-        .match-card {
-          transition: all 0.3s ease;
-        }
-
-        .match-card:hover {
-          transform: translateY(-4px);
-        }
+        .bg-pattern { background-color:#fafaf9; background-image:radial-gradient(#e7e5e4 1px,transparent 1px); background-size:24px 24px; }
+        .no-scrollbar::-webkit-scrollbar{display:none} .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+        .glass{background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,0.05)}
+        body{font-family:'Cairo',sans-serif}
+        h1,h2,h3,h4,.serif-font{font-family:'Amiri',serif}
+        .decorative-font{font-family:'Aref Ruqaa',serif}
+        @keyframes scaleIn{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+        .group:hover .animate-scale{animation:scaleIn 0.6s ease-in-out}
+        @keyframes floatLine1{0%,100%{transform:translateY(0) rotate(-15deg)}50%{transform:translateY(-30px) rotate(-15deg)}}
+        @keyframes floatLine2{0%,100%{transform:translateY(0) rotate(25deg)}50%{transform:translateY(20px) rotate(25deg)}}
+        @keyframes floatLine3{0%,100%{transform:translateY(0) rotate(-35deg)}50%{transform:translateY(-20px) rotate(-35deg)}}
+        @keyframes slideInLeft{from{opacity:0;transform:translateX(-100px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes slideInRight{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        .animate-slide-in-left{animation:slideInLeft 0.8s ease-out forwards}
+        .animate-slide-in-right{animation:slideInRight 0.8s ease-out forwards}
+        .animate-fade-in-up{animation:fadeInUp 0.6s ease-out forwards}
+        .delay-100{animation-delay:0.1s}.delay-200{animation-delay:0.2s}.delay-300{animation-delay:0.3s}.delay-400{animation-delay:0.4s}
+        .decorative-line-red{animation:floatLine1 8s ease-in-out infinite}
+        .decorative-line-yellow{animation:floatLine2 10s ease-in-out infinite}
+        .decorative-line-green{animation:floatLine3 12s ease-in-out infinite}
+        .card-hover{transition:all 0.4s cubic-bezier(0.4,0,0.2,1)}
+        .card-hover:hover{transform:translateY(-8px) scale(1.02)}
       `}</style>
 
       <Navbar />
 
-      {/* Hero Section with Team Banner */}
-      <header className="relative w-full pt-32 pb-20 overflow-hidden border-b-2 border-[#C1272D]">
-        <div className="absolute inset-0 w-full h-full z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-800 to-stone-900"></div>
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: `url(${team.imageUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(8px) brightness(0.5)'
-          }}></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+      {/* ══════════════════════════════════════════════════════
+          HEADER — team.imageUrl en background floutée
+      ══════════════════════════════════════════════════════ */}
+      <header className="relative w-full pt-32 pb-16 overflow-hidden border-b border-stone-200">
+        {/* Background = team.imageUrl floutée + overlay — identique à Teams.jsx */}
+        <div className="absolute inset-0 z-0">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${team.imageUrl})`,
+              filter: 'blur(8px) brightness(0.45)',
+              transform: 'scale(1.06)',
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/70 to-black/60" />
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-8 animate-slide-up">
-            {/* Team Logo */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#C1272D] to-[#006233] rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-              <div className="relative w-40 h-40 md:w-48 md:h-48 bg-white rounded-3xl shadow-2xl flex items-center justify-center overflow-hidden ring-4 ring-white/20">
-                <img 
-                  src={team.imageUrl}
-                  alt={team.name}
-                  className="w-32 h-32 md:w-40 md:h-40 object-contain"
-                  onError={(e) => { e.target.src = `https://via.placeholder.com/160x160/C1272D/FFFFFF?text=${team.name.substring(0, 2)}`; }}
-                />
-              </div>
-            </div>
+          {/* Back */}
+          <button onClick={() => router.push('/teams')}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white text-xs font-bold uppercase tracking-widest mb-6 shadow-lg animate-slide-in-left hover:bg-white/20 transition-all">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M19 12H5M12 5l-7 7 7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            All Teams
+          </button>
 
-            {/* Team Info */}
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex items-center gap-3 justify-center md:justify-start mb-3">
-                <span className="px-4 py-1.5 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
-                  {team.country}
-                </span>
-                <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full text-xs font-medium">
-                  {team.participation} World Cup Participations
-                </span>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
+            {/* Left */}
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-stone-700 text-xs font-bold uppercase tracking-widest mb-6 shadow-lg animate-slide-in-left">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+                  <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" strokeWidth="2"/>
+                </svg>
+                {team.country}
               </div>
 
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-4 drop-shadow-2xl serif-font">
-                {team.name}
-              </h1>
-              
-              <p className="text-lg md:text-xl text-stone-300 max-w-3xl mb-6 leading-relaxed">
+              <div className="flex items-center gap-5 mb-4 animate-slide-in-left delay-100">
+                {/* Logo — même cercle que Teams cards */}
+                <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white flex-shrink-0">
+                  <img src={team.imageUrl} alt={team.name}
+                    className="w-full h-full object-cover"
+                    onError={e => { e.target.src = `https://via.placeholder.com/80/C1272D/FFFFFF?text=${team.name?.substring(0,2)}`; }} />
+                </div>
+                <h1 className="text-5xl md:text-7xl font-normal tracking-tight text-white leading-tight">
+                  <span className="serif-font italic text-[#C1272D] font-medium">{team.name}</span>
+                </h1>
+              </div>
+
+              <p className="text-white/90 text-base md:text-lg leading-relaxed animate-slide-in-left delay-200 mb-4">
                 {team.description}
               </p>
 
-              <div className="flex flex-wrap items-center gap-6 justify-center md:justify-start">
-                <div className="flex items-center gap-2 text-white">
-                  <span className="material-icons text-amber-400">sports_soccer</span>
-                  <span className="text-sm">Coach: <span className="font-semibold">{team.coach}</span></span>
-                </div>
-                <div className="flex items-center gap-2 text-white">
-                  <span className="material-icons text-[#006233]">groups</span>
-                  <span className="text-sm">{team.players?.length || 0} Players</span>
-                </div>
-                <div className="flex items-center gap-2 text-white">
-                  <span className="material-icons text-[#C1272D]">article</span>
-                  <span className="text-sm">{team.news?.length || 0} News Articles</span>
-                </div>
+              <div className="flex flex-wrap gap-2 animate-slide-in-left delay-300">
+                {isHost && (
+                  <span className="px-3 py-1 bg-[#C1272D]/20 border border-[#C1272D]/40 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                    Host Nation
+                  </span>
+                )}
+                {team.participation > 0 && (
+                  <span className="px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-amber-200">
+                    {team.participation}× World Cup
+                  </span>
+                )}
+                {team.coach && (
+                  <span className="px-3 py-1 bg-white/10 border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
+                    Coach: {team.coach}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4 md:gap-6">
-              <div className="text-center bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6">
-                <div className="text-3xl md:text-4xl font-bold text-[#006233] mb-1">{stats.wins}</div>
-                <div className="text-xs text-stone-300 uppercase tracking-wider">Wins</div>
+            {/* Right — même grands chiffres que Teams.jsx */}
+            <div className="flex gap-12 animate-slide-in-right delay-300">
+              <div className="text-center">
+                <div className="text-5xl font-bold text-[#C1272D] mb-1">{teamStats.wins}</div>
+                <div className="text-xs font-bold text-white uppercase tracking-widest">Wins</div>
               </div>
-              <div className="text-center bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6">
-                <div className="text-3xl md:text-4xl font-bold text-amber-400 mb-1">{stats.draws}</div>
-                <div className="text-xs text-stone-300 uppercase tracking-wider">Draws</div>
+              <div className="text-center">
+                <div className="text-5xl font-bold text-amber-500 mb-1">{teamStats.draws}</div>
+                <div className="text-xs font-bold text-white uppercase tracking-widest">Draws</div>
               </div>
-              <div className="text-center bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 md:p-6">
-                <div className="text-3xl md:text-4xl font-bold text-[#C1272D] mb-1">{stats.losses}</div>
-                <div className="text-xs text-stone-300 uppercase tracking-wider">Losses</div>
+              <div className="text-center">
+                <div className="text-5xl font-bold text-emerald-500 mb-1">{matches.length}</div>
+                <div className="text-xs font-bold text-white uppercase tracking-widest">Matches</div>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      <section className="sticky top-0 z-40 bg-white border-b border-stone-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="relative flex items-center gap-8 overflow-x-auto no-scrollbar">
-            {[
-              { id: 'overview', label: 'Overview', icon: 'dashboard' },
-              { id: 'players', label: 'Squad', icon: 'groups' },
-              { id: 'matches', label: 'Fixtures', icon: 'calendar_today' },
-              { id: 'news', label: 'News', icon: 'article' },
-              { id: 'culture', label: 'Culture', icon: 'public' }
-            ].map((tab, index) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`relative py-4 px-2 flex items-center gap-2 font-medium transition-all whitespace-nowrap ${
-                  activeTab === tab.id 
-                    ? 'text-[#C1272D]' 
-                    : 'text-stone-500 hover:text-stone-900'
-                }`}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <span className="material-icons text-lg">{tab.icon}</span>
-                <span>{tab.label}</span>
+      {/* ══════════════════════════════════════════════════════
+          STICKY TAB BAR — même que filter bar de Teams.jsx
+      ══════════════════════════════════════════════════════ */}
+      <div className="sticky top-16 z-40 bg-white/90 backdrop-blur border-b border-stone-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex gap-2 w-full overflow-x-auto no-scrollbar pb-1">
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-[#C1272D] text-white shadow-md shadow-red-500/20 scale-105'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                }`}>
+                {tab.label}
               </button>
             ))}
-            <div 
-              className="tab-indicator"
-              style={{
-                width: '80px',
-                left: activeTab === 'overview' ? '0px' : 
-                      activeTab === 'players' ? '120px' :
-                      activeTab === 'matches' ? '240px' :
-                      activeTab === 'news' ? '360px' : '480px'
-              }}
-            ></div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Main Content */}
-      <main className="bg-stone-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          
-          {/* Overview Tab */}
+      {/* ══════════════════════════════════════════════════════
+          MAIN — même bg + lignes décoratives que Teams.jsx
+      ══════════════════════════════════════════════════════ */}
+      <main className="relative py-12 bg-stone-50 min-h-screen overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="decorative-line-red    absolute top-40 -left-40 w-[500px] h-0.5 bg-gradient-to-r from-transparent via-[#C1272D]/20 to-transparent" />
+          <div className="decorative-line-red    absolute top-[600px] right-20 w-[400px] h-0.5 bg-gradient-to-l from-transparent via-[#C1272D]/15 to-transparent" style={{animationDelay:'2s'}} />
+          <div className="decorative-line-yellow absolute top-[300px] right-10 w-[450px] h-0.5 bg-gradient-to-r from-amber-400/20 to-transparent" />
+          <div className="decorative-line-yellow absolute top-[800px] left-10 w-[380px] h-0.5 bg-gradient-to-r from-transparent via-amber-500/15 to-transparent" style={{animationDelay:'3s'}} />
+          <div className="decorative-line-green  absolute top-[200px] left-32 w-[420px] h-0.5 bg-gradient-to-r from-[#006233]/20 via-transparent to-transparent" />
+          <div className="decorative-line-green  absolute top-[900px] right-32 w-[480px] h-0.5 bg-gradient-to-l from-transparent via-[#006233]/15 to-transparent" style={{animationDelay:'1s'}} />
+          <div className="decorative-line-red    absolute top-[1100px] left-20 w-[350px] h-0.5 bg-gradient-to-r from-[#C1272D]/15 to-transparent" style={{animationDelay:'4s'}} />
+          <div className="decorative-line-yellow absolute top-[1300px] right-40 w-[400px] h-0.5 bg-gradient-to-l from-amber-400/15 to-transparent" style={{animationDelay:'5s'}} />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+
+          {/* ── OVERVIEW ──────────────────────────────────── */}
           {activeTab === 'overview' && (
-            <div className="space-y-8 animate-fade-in">
-              {/* Performance Stats */}
-              <section className="bg-white rounded-2xl border-2 border-stone-200 p-8 shadow-lg">
-                <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-3 serif-font">
-                  <span className="w-1.5 h-8 bg-gradient-to-b from-[#C1272D] to-[#006233] rounded-full"></span>
-                  Performance Overview
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="text-center p-6 bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-100">
-                    <div className="text-4xl font-bold text-[#006233] mb-2">{stats.goalsFor}</div>
-                    <div className="text-sm text-stone-600">Goals For</div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6 mb-8">
+                {[
+                  { label:'Goals Scored',    value: teamStats.gf,    accent:'border-[#C1272D]/20', color:'text-[#C1272D]'  },
+                  { label:'Goals Conceded',  value: teamStats.ga,    accent:'border-stone-200',    color:'text-stone-600'  },
+                  { label:'Goal Difference', value:`${teamStats.gf-teamStats.ga>=0?'+':''}${teamStats.gf-teamStats.ga}`, accent:'border-amber-200', color:'text-amber-600' },
+                  { label:'Players',         value: players.length,  accent:'border-emerald-200',  color:'text-[#006233]'  },
+                ].map((s,i) => (
+                  <div key={s.label}
+                    className={`group bg-white rounded-2xl border ${s.accent} p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 card-hover animate-fade-in-up`}
+                    style={{animationDelay:`${i*0.05}s`}}>
+                    <div className={`text-4xl font-bold ${s.color} mb-2`}>{s.value}</div>
+                    <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">{s.label}</div>
                   </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-red-50 to-white rounded-xl border border-red-100">
-                    <div className="text-4xl font-bold text-[#C1272D] mb-2">{stats.goalsAgainst}</div>
-                    <div className="text-sm text-stone-600">Goals Against</div>
-                  </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-100">
-                    <div className="text-4xl font-bold text-amber-600 mb-2">
-                      {stats.goalsFor - stats.goalsAgainst > 0 ? '+' : ''}{stats.goalsFor - stats.goalsAgainst}
-                    </div>
-                    <div className="text-sm text-stone-600">Goal Difference</div>
-                  </div>
-                  <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100">
-                    <div className="text-4xl font-bold text-blue-600 mb-2">
-                      {team.matches?.length || 0}
-                    </div>
-                    <div className="text-sm text-stone-600">Matches Played</div>
-                  </div>
-                </div>
-              </section>
+                ))}
+              </div>
 
-              {/* Recent Form */}
-              {team.matches && team.matches.length > 0 && (
-                <section className="bg-white rounded-2xl border-2 border-stone-200 p-8 shadow-lg">
-                  <h2 className="text-2xl font-bold text-stone-900 mb-6 flex items-center gap-3 serif-font">
-                    <span className="w-1.5 h-8 bg-gradient-to-b from-[#C1272D] to-[#006233] rounded-full"></span>
-                    Recent Form
-                  </h2>
-                  <div className="flex gap-3 items-center">
-                    <span className="text-sm text-stone-600 font-medium">Last 5:</span>
-                    {team.matches
-                      .filter(m => m.status === 'completed')
-                      .slice(-5)
-                      .reverse()
-                      .map((match, index) => {
-                        const result = match.goals > match.opponentGoals ? 'W' : match.goals === match.opponentGoals ? 'D' : 'L';
-                        const color = result === 'W' ? 'from-[#006233] to-green-600' : result === 'D' ? 'from-amber-500 to-amber-600' : 'from-[#C1272D] to-red-600';
-                        return (
-                          <div
-                            key={index}
-                            className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} text-white flex items-center justify-center font-bold text-sm shadow-lg`}
-                            title={`${match.opponentName} ${match.goals}-${match.opponentGoals}`}
-                          >
-                            {result}
-                          </div>
-                        );
-                      })}
+              {/* Squad preview */}
+              {players.length > 0 && (
+                <>
+                  <div className="flex justify-between items-center mb-6 animate-fade-in-up delay-200">
+                    <h2 className="text-2xl font-bold text-stone-900 serif-font">Squad Preview</h2>
+                    <button onClick={() => setActiveTab('players')}
+                      className="px-4 py-2 rounded-lg text-xs font-semibold tracking-wide bg-stone-100 hover:bg-stone-200 text-stone-600 transition-all flex items-center gap-2">
+                      View Full Squad
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
                   </div>
-                </section>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
+                    {players.slice(0, 4).map((p, i) => (
+                      <PlayerCard key={p.id} player={p} index={i} />
+                    ))}
+                  </div>
+                </>
               )}
-            </div>
+            </>
           )}
 
-          {/* Players Tab */}
+          {/* ── PLAYERS ───────────────────────────────────── */}
           {activeTab === 'players' && (
-            <div className="space-y-8 animate-fade-in">
-              <div className="flex justify-between items-center">
+            <>
+              <div className="flex justify-between items-center mb-6 animate-fade-in-up">
                 <h2 className="text-3xl font-bold text-stone-900 serif-font">Team Squad</h2>
-                <span className="text-sm text-stone-500">{team.players?.length || 0} players</span>
+                <span className="text-sm text-stone-400">{players.length} players</span>
               </div>
-
-              {team.players && team.players.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {team.players.map((player, index) => (
-                    <div 
-                      key={player.id} 
-                      className="player-card group bg-white rounded-2xl border-2 border-stone-200 overflow-hidden hover:border-[#C1272D] hover:shadow-2xl transition-all duration-300 cursor-pointer"
-                      style={{ animationDelay: `${index * 0.05}s` }}
-                    >
-                      <div className="relative h-64 overflow-hidden bg-gradient-to-br from-stone-100 to-stone-50">
-                        <img 
-                          src={player.imgUrl}
-                          alt={player.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          onError={(e) => { e.target.src = `https://via.placeholder.com/300x400/C1272D/FFFFFF?text=${player.name.substring(0, 2)}`; }}
-                        />
-                        <div className="player-overlay absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 transition-opacity duration-300 flex items-end p-6">
-                          <div className="text-white">
-                            <div className="text-sm uppercase tracking-wider mb-1">Stats</div>
-                            <div className="flex gap-4 text-sm">
-                              <span>⚽ {player.goals} goals</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <h3 className="text-xl font-bold text-stone-900 mb-2 group-hover:text-[#C1272D] transition-colors">
-                          {player.name}
-                        </h3>
-                        <div className="grid grid-cols-3 gap-3 text-sm">
-                          <div className="text-center p-3 bg-stone-50 rounded-lg">
-                            <div className="font-bold text-stone-900">{player.age}</div>
-                            <div className="text-xs text-stone-500">Age</div>
-                          </div>
-                          <div className="text-center p-3 bg-stone-50 rounded-lg">
-                            <div className="font-bold text-stone-900">{player.height}m</div>
-                            <div className="text-xs text-stone-500">Height</div>
-                          </div>
-                          <div className="text-center p-3 bg-stone-50 rounded-lg">
-                            <div className="font-bold text-stone-900">{player.weight}kg</div>
-                            <div className="text-xs text-stone-500">Weight</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              {players.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
+                  {players.map((p, i) => <PlayerCard key={p.id} player={p} index={i} />)}
                 </div>
-              ) : (
-                <div className="text-center py-20 bg-white rounded-2xl border-2 border-stone-200">
-                  <span className="material-icons text-6xl text-stone-300 mb-4">groups</span>
-                  <p className="text-stone-500">No players available</p>
-                </div>
-              )}
-            </div>
+              ) : <EmptyState />}
+            </>
           )}
 
-          {/* Matches Tab */}
+          {/* ── MATCHES ───────────────────────────────────── */}
           {activeTab === 'matches' && (
-            <div className="space-y-8 animate-fade-in">
-              <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-stone-900 serif-font">Match Fixtures</h2>
+            <>
+              <div className="flex justify-between items-center mb-6 animate-fade-in-up">
+                <h2 className="text-3xl font-bold text-stone-900 serif-font">Fixtures & Results</h2>
+                <span className="text-sm text-stone-400">{matches.length} matches</span>
               </div>
-
-              {team.matches && team.matches.length > 0 ? (
-                <div className="space-y-4">
-                  {team.matches.map((match, index) => {
-                    const isCompleted = match.status === 'completed';
-                    const isWin = isCompleted && match.goals > match.opponentGoals;
-                    const isDraw = isCompleted && match.goals === match.opponentGoals;
-                    const isLoss = isCompleted && match.goals < match.opponentGoals;
+              {matches.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
+                  {matches.map((m, i) => {
+                    const my = m.matchTeams?.find(mt => Number(mt.teamId) === teamId);
+                    const op = m.matchTeams?.find(mt => Number(mt.teamId) !== teamId);
+                    const done = isDone(m.statut);
+                    const live = isLive(m.statut);
+                    const mg = Number(my?.goals) || 0;
+                    const og = Number(op?.goals) || 0;
+                    const isWin  = done && mg > og;
+                    const isDraw = done && mg === og;
+                    const isLoss = done && mg < og;
 
                     return (
-                      <div 
-                        key={match.id}
-                        className={`match-card bg-white rounded-2xl border-2 p-6 shadow-sm ${
-                          isWin ? 'border-[#006233] bg-gradient-to-r from-green-50/50 to-white' :
-                          isDraw ? 'border-amber-400 bg-gradient-to-r from-amber-50/50 to-white' :
-                          isLoss ? 'border-[#C1272D] bg-gradient-to-r from-red-50/50 to-white' :
-                          'border-stone-200'
-                        }`}
-                        style={{ animationDelay: `${index * 0.05}s` }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-6 flex-1">
-                            {/* Team Info */}
-                            <div className="flex items-center gap-4 flex-1">
-                              <div className="w-14 h-14 bg-white rounded-full shadow-md flex items-center justify-center overflow-hidden border-2 border-stone-200">
-                                <img 
-                                  src={team.imageUrl}
-                                  alt={team.name}
-                                  className="w-12 h-12 object-contain"
-                                />
-                              </div>
-                              <div>
-                                <div className="font-bold text-stone-900">{team.name}</div>
-                                <div className="text-sm text-stone-500">{match.type}</div>
-                              </div>
+                      <div key={m.id}
+                        onClick={() => router.push(`/matches/${m.id}`)}
+                        className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-pointer card-hover animate-fade-in-up"
+                        style={{animationDelay:`${i*0.05}s`}}>
+
+                        {/* Badge résultat — même style top-4 right-4 que Teams */}
+                        {done && (
+                          <div className={`absolute top-4 right-4 px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded border
+                            ${isWin  ? 'bg-[#006233]/10 text-[#006233] border-[#006233]/20'
+                             : isDraw ? 'bg-amber-50 text-amber-700 border-amber-200'
+                             : 'bg-[#C1272D]/10 text-[#C1272D] border-[#C1272D]/20'}`}>
+                            {isWin ? 'Win' : isDraw ? 'Draw' : 'Loss'}
+                          </div>
+                        )}
+                        {live && (
+                          <div className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wider rounded border border-red-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" /> Live
+                          </div>
+                        )}
+                        {/* Badge type — left-4 */}
+                        <div className="absolute top-4 left-4 px-2 py-1 bg-stone-50 text-stone-500 text-[10px] font-bold uppercase tracking-wider rounded border border-stone-200 max-w-[100px] truncate">
+                          {m.type}
+                        </div>
+
+                        {/* Logos + score centré — même layout que Teams card */}
+                        <div className="flex flex-col items-center text-center mt-10 mb-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            {/* Mon équipe */}
+                            <div className="w-12 h-12 rounded-full border-4 border-white shadow-lg overflow-hidden bg-stone-100 flex-shrink-0">
+                              <img src={team.imageUrl} alt={team.name}
+                                className="w-full h-full object-contain"
+                                onError={e => { e.target.src=`https://via.placeholder.com/48/C1272D/FFF?text=${team.name?.substring(0,2)}`; }} />
                             </div>
 
-                            {/* Score */}
-                            <div className="text-center px-8">
-                              {isCompleted ? (
-                                <div className="flex items-center gap-4">
-                                  <div className="text-3xl font-bold text-stone-900">{match.goals}</div>
-                                  <div className="text-2xl text-stone-400">-</div>
-                                  <div className="text-3xl font-bold text-stone-900">{match.opponentGoals}</div>
-                                </div>
+                            {/* Score — affiché seulement si match terminé */}
+                            <div className="flex items-center gap-1 min-w-[80px] justify-center">
+                              {done ? (
+                                <>
+                                  <span className={`text-2xl font-black ${isWin ? 'text-[#006233]' : isLoss ? 'text-[#C1272D]' : 'text-stone-700'}`}>
+                                    {mg}
+                                  </span>
+                                  <span className="text-stone-300 text-xl font-light mx-1">–</span>
+                                  <span className={`text-2xl font-black ${isLoss ? 'text-[#006233]' : isWin ? 'text-[#C1272D]' : 'text-stone-700'}`}>
+                                    {og}
+                                  </span>
+                                </>
                               ) : (
-                                <div className="text-sm font-medium text-stone-500 uppercase tracking-wider">
-                                  {new Date(match.dateOfMatch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </div>
+                                <span className="text-sm font-bold text-stone-300 uppercase tracking-widest">vs</span>
                               )}
                             </div>
 
-                            {/* Opponent Info */}
-                            <div className="flex items-center gap-4 flex-1 justify-end">
-                              <div className="text-right">
-                                <div className="font-bold text-stone-900">{match.opponentName}</div>
-                                <div className="text-sm text-stone-500">Away</div>
-                              </div>
-                              <div className="w-14 h-14 bg-stone-100 rounded-full shadow-md flex items-center justify-center text-2xl">
-                                🏴
-                              </div>
+                            {/* Adversaire */}
+                            <div className="w-12 h-12 rounded-full border-4 border-white shadow-lg overflow-hidden bg-stone-100 flex-shrink-0 flex items-center justify-center">
+                              {op?.imageUrl
+                                ? <img src={op.imageUrl} alt={op.teamName} className="w-full h-full object-contain" />
+                                : <span className="text-stone-400 text-xs font-bold">{op?.teamName?.substring(0,2) || '?'}</span>}
                             </div>
                           </div>
 
-                          {/* Match Details */}
-                          <div className="ml-8 text-right">
-                            <div className="flex items-center gap-2 text-sm text-stone-500 justify-end">
-                              <span className="material-icons text-xs">calendar_today</span>
-                              <span>{new Date(match.dateOfMatch).toLocaleDateString()}</span>
-                            </div>
-                            {match.referee && (
-                              <div className="flex items-center gap-2 text-sm text-stone-500 mt-1 justify-end">
-                                <span className="material-icons text-xs">sports</span>
-                                <span>{match.referee}</span>
-                              </div>
-                            )}
-                            {isCompleted && (
-                              <div className="mt-2">
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                  isWin ? 'bg-[#006233] text-white' :
-                                  isDraw ? 'bg-amber-500 text-white' :
-                                  'bg-[#C1272D] text-white'
-                                }`}>
-                                  {isWin ? 'WIN' : isDraw ? 'DRAW' : 'LOSS'}
-                                </span>
-                              </div>
-                            )}
+                          <h3 className="text-base font-serif text-stone-900 mb-1">{op?.teamName ?? 'TBD'}</h3>
+                          <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">
+                            {new Date(m.dateOfMatch).toLocaleDateString()}
+                            {m.stadeName ? ` • ${m.stadeName}` : ''}
+                          </div>
+                        </div>
+
+                        {/* Footer — même chevron rouge que Teams */}
+                        <div className="flex items-center justify-between border-t border-stone-100 pt-4">
+                          <div className="text-xs text-stone-500 flex-1 truncate">
+                            <span className="text-stone-400">Referee:</span>{' '}
+                            <span className="font-medium text-stone-700">{m.referee || '—'}</span>
+                          </div>
+                          <div className="ml-auto w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-[#C1272D] group-hover:border-[#C1272D] group-hover:text-white transition-all flex-shrink-0">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              ) : (
-                <div className="text-center py-20 bg-white rounded-2xl border-2 border-stone-200">
-                  <span className="material-icons text-6xl text-stone-300 mb-4">event</span>
-                  <p className="text-stone-500">No matches scheduled</p>
-                </div>
-              )}
-            </div>
+              ) : <EmptyState />}
+            </>
           )}
 
-          {/* News Tab */}
+          {/* ── NEWS — navigation onClick vers /news/[id] ──── */}
           {activeTab === 'news' && (
-            <div className="space-y-8 animate-fade-in">
-              <div className="flex justify-between items-center">
+            <>
+              <div className="flex justify-between items-center mb-6 animate-fade-in-up">
                 <h2 className="text-3xl font-bold text-stone-900 serif-font">Latest News</h2>
-                <span className="text-sm text-stone-500">{team.news?.length || 0} articles</span>
+                <span className="text-sm text-stone-400">{news.length} articles</span>
               </div>
+              {news.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
+                  {news.map((a, i) => (
+                    <div key={a.id}
+                      onClick={() => router.push(`/news/${a.id}`)}
+                      className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-pointer card-hover animate-fade-in-up"
+                      style={{animationDelay:`${i*0.05}s`}}>
 
-              {team.news && team.news.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {team.news.map((article, index) => (
-                    <article 
-                      key={article.id}
-                      className="group bg-white rounded-2xl border-2 border-stone-200 overflow-hidden hover:border-[#C1272D] hover:shadow-2xl transition-all duration-300 cursor-pointer"
-                      style={{ animationDelay: `${index * 0.05}s` }}
-                    >
-                      <div className="relative h-56 overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
-                        <img 
-                          src={article.imageUrl}
-                          alt={article.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=2070&auto=format&fit=crop'; }}
-                        />
-                        <div className="absolute top-4 left-4 z-20">
-                          <span className="px-3 py-1 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
-                            News
-                          </span>
+                      <div className="absolute top-4 right-4 px-2 py-1 bg-[#C1272D]/10 text-[#C1272D] text-[10px] font-bold uppercase tracking-wider rounded border border-[#C1272D]/20">
+                        News
+                      </div>
+
+                      <div className="relative h-36 -mx-6 -mt-6 mb-4 overflow-hidden bg-stone-100">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10" />
+                        <img src={a.imageUrl} alt={a.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={e => { e.target.src='https://images.unsplash.com/photo-1551958219-acbc608c6377?w=400&q=70'; }} />
+                      </div>
+
+                      <div className="flex flex-col items-center text-center mb-4">
+                        <h3 className="text-base font-serif text-stone-900 mb-1 group-hover:text-[#C1272D] transition-colors line-clamp-2">{a.title}</h3>
+                        <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">
+                          {new Date(a.dateOfCreation).toLocaleDateString()}
+                          {a.author ? ` • ${a.author}` : ''}
                         </div>
                       </div>
-                      <div className="p-6">
-                        <div className="flex items-center gap-3 text-xs text-stone-400 mb-3">
-                          <span>{new Date(article.dateOfCreation).toLocaleDateString()}</span>
-                          <span className="w-1 h-1 rounded-full bg-stone-300"></span>
-                          <span>4 min read</span>
-                        </div>
-                        <h3 className="text-xl font-bold text-stone-900 mb-3 group-hover:text-[#C1272D] transition-colors leading-tight">
-                          {article.title}
-                        </h3>
-                        <p className="text-stone-600 mb-4 line-clamp-2">
-                          {article.description}
-                        </p>
-                        <button className="text-[#C1272D] text-sm font-medium flex items-center gap-2 group-hover:gap-3 transition-all">
-                          Read More
-                          <span className="material-icons text-sm">arrow_forward</span>
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-20 bg-white rounded-2xl border-2 border-stone-200">
-                  <span className="material-icons text-6xl text-stone-300 mb-4">article</span>
-                  <p className="text-stone-500">No news available</p>
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Culture Tab */}
-          {activeTab === 'culture' && (
-            <div className="space-y-8 animate-fade-in">
-              <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold text-stone-900 serif-font">Cultural Heritage</h2>
-                <span className="text-sm text-stone-500">{team.cultures?.length || 0} highlights</span>
-              </div>
-
-              {team.cultures && team.cultures.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {team.cultures.map((culture, index) => (
-                    <div 
-                      key={culture.id}
-                      className="group bg-white rounded-2xl border-2 border-stone-200 overflow-hidden hover:border-[#006233] hover:shadow-2xl transition-all duration-300 cursor-pointer"
-                      style={{ animationDelay: `${index * 0.05}s` }}
-                    >
-                      <div className="relative h-64 overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
-                        <img 
-                          src={culture.imageUrl}
-                          alt={culture.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1535069502363-2207185df19f?q=80&w=2070&auto=format&fit=crop'; }}
-                        />
-                        <div className="absolute bottom-4 left-4 z-20">
-                          <h3 className="text-2xl font-bold text-white decorative-font">
-                            {culture.title}
-                          </h3>
+                      <div className="flex items-center justify-between border-t border-stone-100 pt-4">
+                        <div className="text-xs text-stone-500 flex-1 truncate line-clamp-1">{a.description}</div>
+                        <div className="ml-auto w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-[#C1272D] group-hover:border-[#C1272D] group-hover:text-white transition-all flex-shrink-0">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
                         </div>
-                      </div>
-                      <div className="p-6">
-                        <p className="text-stone-600 leading-relaxed">
-                          {culture.description}
-                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-20 bg-white rounded-2xl border-2 border-stone-200">
-                  <span className="material-icons text-6xl text-stone-300 mb-4">public</span>
-                  <p className="text-stone-500">No cultural content available</p>
-                </div>
-              )}
-            </div>
+              ) : <EmptyState />}
+            </>
           )}
 
+          {/* ── CULTURE — navigation onClick vers /culture/[id] ── */}
+          {activeTab === 'culture' && (
+            <>
+              <div className="flex justify-between items-center mb-6 animate-fade-in-up">
+                <h2 className="text-3xl font-bold text-stone-900 serif-font">Cultural Heritage</h2>
+                <span className="text-sm text-stone-400">{cultures.length} highlights</span>
+              </div>
+              {cultures.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
+                  {cultures.map((c, i) => (
+                    <div key={c.id}
+                      onClick={() => router.push(`/culture/${c.id}`)}
+                      className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-pointer card-hover animate-fade-in-up"
+                      style={{animationDelay:`${i*0.05}s`}}>
+
+                      <div className="absolute top-4 right-4 px-2 py-1 bg-[#006233]/10 text-[#006233] text-[10px] font-bold uppercase tracking-wider rounded border border-[#006233]/20">
+                        Culture
+                      </div>
+
+                      <div className="relative h-36 -mx-6 -mt-6 mb-4 overflow-hidden bg-stone-100">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10" />
+                        <img src={c.imageUrl} alt={c.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={e => { e.target.src='https://images.unsplash.com/photo-1535069502363-2207185df19f?w=400&q=70'; }} />
+                      </div>
+
+                      <div className="flex flex-col items-center text-center mb-4">
+                        <h3 className="text-base font-serif text-stone-900 mb-1 group-hover:text-[#006233] transition-colors decorative-font">{c.title}</h3>
+                        <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">
+                          {new Date(c.dateOfCreation).toLocaleDateString()}
+                          {c.author ? ` • ${c.author}` : ''}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-stone-100 pt-4">
+                        <div className="text-xs text-stone-500 flex-1 truncate line-clamp-1">{c.description}</div>
+                        <div className="ml-auto w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-[#006233] group-hover:border-[#006233] group-hover:text-white transition-all flex-shrink-0">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <EmptyState />}
+            </>
+          )}
+
+          {/* ── DEBUG PANEL (retirer en prod) ─────────────── */}
+         
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-br from-[#1a1412] via-[#2d1e1a] to-[#1a1412] text-stone-300 pt-16 pb-8 border-t-4 border-[#C1272D]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div>
-              <a href="/" className="flex items-center gap-2 mb-4 text-white group">
-                <img 
-                  src="/images/logo.png" 
-                  alt="MoroccoFan2030 Logo" 
-                  className="w-10 h-10 object-contain"
-                />
-                <span className="font-bold tracking-tight uppercase">MoroccoFan2030</span>
-              </a>
-              <p className="text-sm leading-relaxed text-stone-400">
-                Celebrating the spirit of football in the heart of the Maghreb.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="/" className="text-stone-400 hover:text-[#C1272D] transition-colors">Home</a></li>
-                <li><a href="#" className="text-stone-400 hover:text-[#006233] transition-colors">Teams</a></li>
-                <li><a href="#" className="text-stone-400 hover:text-[#C1272D] transition-colors">Matches</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-semibold mb-4">Follow Us</h4>
-              <div className="flex gap-3">
-                <a href="#" className="w-9 h-9 rounded-full border-2 border-stone-700 flex items-center justify-center hover:border-[#C1272D] hover:bg-[#C1272D]/10 hover:text-[#C1272D] transition-all">
-                  <span className="material-icons text-sm">photo_camera</span>
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full border-2 border-stone-700 flex items-center justify-center hover:border-[#006233] hover:bg-[#006233]/10 hover:text-[#006233] transition-all">
-                  <span className="material-icons text-sm">chat</span>
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-stone-700/50 pt-6 text-center text-xs text-stone-400">
-            <p>© 2024 MoroccoFan2030. Unofficial Fan Concept.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </>
+  );
+}
+
+/* ── Player card — même structure que Teams card ─────────── */
+function PlayerCard({ player, index }) {
+  return (
+    <div className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-default card-hover animate-fade-in-up"
+      style={{animationDelay:`${index*0.05}s`}}>
+      {player.goals > 0 && (
+        <div className="absolute top-4 right-4 px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded border border-amber-200">
+          {player.goals}G
+        </div>
+      )}
+      <div className="flex flex-col items-center text-center mt-4 mb-6">
+        <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg mb-4 overflow-hidden bg-stone-100 animate-scale transition-transform duration-500">
+          <img src={player.urlImage || player.imgUrl} alt={player.name}
+            className="w-full h-full object-cover"
+            onError={e => {
+              e.target.style.display = 'none';
+              e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-200 to-stone-300 text-stone-600 text-xl font-bold">${player.name?.substring(0,2)}</div>`;
+            }} />
+        </div>
+        <h3 className="text-xl font-serif text-stone-900 mb-1 group-hover:text-[#C1272D] transition-colors">{player.name}</h3>
+        <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">
+          Age {player.age || '—'} • {player.height ? `${player.height}m` : '—'}
+        </div>
+      </div>
+      <div className="flex items-center justify-between border-t border-stone-100 pt-4">
+        <div className="text-xs text-stone-500 flex-1 truncate">
+          <span className="text-stone-400">Weight:</span>{' '}
+          <span className="font-medium text-stone-700">{player.weight ? `${player.weight}kg` : '—'}</span>
+        </div>
+        <div className="ml-auto w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-[#C1272D] group-hover:border-[#C1272D] group-hover:text-white transition-all flex-shrink-0">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Empty state — même que Teams "no teams found" ─────── */
+function EmptyState() {
+  return (
+    <div className="text-center py-20 animate-fade-in-up">
+      <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg className="w-10 h-10 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" strokeWidth="2"/>
+          <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round"/>
+          <line x1="11" y1="8" x2="11" y2="14" strokeWidth="2" strokeLinecap="round"/>
+          <line x1="8" y1="11" x2="14" y2="11" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </div>
+      <h3 className="text-xl font-medium text-stone-700 mb-2">No content found</h3>
+      <p className="text-stone-500">Try checking back later</p>
+    </div>
   );
 }

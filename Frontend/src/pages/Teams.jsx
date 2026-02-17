@@ -485,7 +485,7 @@ export default function Teams() {
                 return (
                   <div 
                     key={team.id}
-                    onClick={() => router.push(`/Team/${team.id}`)}
+                    onClick={() => router.push(`/Team?id=${team.id}`)}
                     className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-pointer card-hover animate-fade-in-up"
                     style={{animationDelay: `${index * 0.05}s`}}
                   >

@@ -451,7 +451,7 @@ export default function Acceuil() {
                   </thead>
                   <tbody className="text-stone-600">
                     {group.groupTeams && group.groupTeams.map((team, index) => (
-                      <tr key={team.id} className={`border-b border-stone-50 ${index === 0 ? `bg-gradient-to-r ${groupIndex % 2 === 0 ? 'from-[#C1272D]/10' : 'from-[#006233]/10'} to-transparent` : ''}`}>
+                      <tr key={team.id} className={`border-b border-stone-50 ${index === 0 ? `` : ''}`}>
                         <td className={`py-3 ${index === 0 ? `font-medium ${groupIndex % 2 === 0 ? 'text-[#C1272D]' : 'text-[#006233]'}` : ''}`}>{index + 1}</td>
                         <td className={`py-3 ${index === 0 ? 'font-semibold text-stone-900' : ''}`}>
                           <div className="flex items-center gap-3">
@@ -508,7 +508,7 @@ export default function Acceuil() {
           className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 px-6 max-w-[100vw] no-scrollbar relative z-10"
         >
           {cities.map((city) => (
-            <div key={city.id} className="min-w-[280px] md:min-w-[340px] snap-center group cursor-pointer">
+            <div key={city.id} className="min-w-[280px] md:min-w-[340px] snap-center group cursor-pointer"  onClick={() => window.location.href = `/cities/${city.id}`}>
               <div className="relative h-[400px] rounded-2xl overflow-hidden mb-4 ring-2 ring-white/20 group-hover:ring-white/40 transition-all">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
                 <img

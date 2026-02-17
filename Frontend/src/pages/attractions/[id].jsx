@@ -28,13 +28,11 @@ export default function AttractionDetail() {
   }, [id]);
 
   /* ── Open modal ──────────────────────────────────────────────── */
-  const openModal = () => {
-    setShowModal(true);
-    setLoadingItins(true);
-    fetch(`http://localhost:3309/api/itineraries/supporter/${supporterId}`)
-      .then(r => r.json())
-      .then(d => { setItineraries(Array.isArray(d) ? d : []); setLoadingItins(false); })
-      .catch(() => setLoadingItins(false));
+  const openModal = async () => {
+    setLoading(true);
+    const data = await safeFetch(`http://localhost:3309/api/itineraries/supporter/${supporterId}`);
+    setItineraries(Array.isArray(data) ? data : data?.content || []);
+    setLoading(false);
   };
 
   /* ── Add to itinerary ─────────────────────────────────────────── */
