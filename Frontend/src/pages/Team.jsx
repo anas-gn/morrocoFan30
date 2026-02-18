@@ -10,116 +10,134 @@ export default function TeamDetail() {
   const router = useRouter();
   const { id } = router.query;
 
-  const [team, setTeam]         = useState(null);
-  const [players, setPlayers]   = useState([]);
-  const [news, setNews]         = useState([]);
-  const [cultures, setCultures] = useState([]);
-  const [matches, setMatches]   = useState([]);
+  const [team, setTeam]           = useState(null);
+  const [players, setPlayers]     = useState([]);
+  const [news, setNews]           = useState([]);
+  const [cultures, setCultures]   = useState([]);
+  const [matches, setMatches]     = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
-  const [loading, setLoading]   = useState(true);
-  // debug: raw statuts to understand backend values
-  const [rawStatuts, setRawStatuts] = useState([]);
+  const [loading, setLoading]     = useState(true);
+
+  const [supporterId, setSupporterId] = useState(null);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favLoading, setFavLoading]   = useState(false);
+  const [favToast, setFavToast]       = useState(null);
+
+  useEffect(() => {
+    const sid = localStorage.getItem('supporterId');
+    if (sid) setSupporterId(parseInt(sid));
+  }, []);
+
+  useEffect(() => {
+    if (!supporterId || !id) return;
+    fetch(`${BASE}/favorites/${supporterId}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const arr = Array.isArray(data) ? data : [];
+        setIsFavorited(arr.some(f =>
+          f.type === 'Team' &&
+          (String(f.ownerId) === String(id) || String(f.ownerID) === String(id))
+        ));
+      }).catch(() => {});
+  }, [supporterId, id]);
+
+  const toggleFavorite = async () => {
+    if (!supporterId) { router.push('/login'); return; }
+    setFavLoading(true);
+    try {
+      if (isFavorited) {
+        const res = await fetch(`${BASE}/favorites/remove?supporterId=${supporterId}&ownerId=${id}&type=Team`, { method: 'DELETE' });
+        if (res.ok || res.status === 204 || res.status === 200) { setIsFavorited(false); showToast('removed'); }
+      } else {
+        let res = await fetch(`${BASE}/favorites/add?supporterId=${supporterId}&ownerId=${id}&type=Team`, { method: 'POST' });
+        if (!res.ok && res.status !== 201) {
+          res = await fetch(`${BASE}/favorites/add`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ supporterId, ownerId: parseInt(id), type: 'Team', supporterID: supporterId, ownerID: parseInt(id) }),
+          });
+        }
+        if (res.ok || res.status === 201 || res.status === 200) { setIsFavorited(true); showToast('added'); }
+        else showToast('error');
+      }
+    } catch (e) { console.error('[Fav]', e); } finally { setFavLoading(false); }
+  };
+
+  const showToast = (type) => { setFavToast(type); setTimeout(() => setFavToast(null), 2600); };
 
   useEffect(() => {
     if (!id) return;
     const get = url => fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
-
     Promise.all([
       get(`${BASE}/teams/teams/${id}`),
       get(`${BASE}/teams/teams/plyers/${id}`).catch(() => []),
       get(`${BASE}/teams/teams/news/${id}`).catch(() => []),
       get(`${BASE}/teams/teams/contenuCultirel/${id}`).catch(() => []),
-    ])
-      .then(([teamData, pData, nData, cData]) => {
-        setTeam(teamData);
-        setPlayers(Array.isArray(pData) ? pData : []);
-        setNews(Array.isArray(nData) ? nData : []);
-        setCultures(Array.isArray(cData) ? cData : []);
-        return get(`${BASE}/matches/matches/byTeam/${encodeURIComponent(teamData.name)}`).catch(() => []);
-      })
-      .then(mData => {
-        const arr = Array.isArray(mData) ? mData : [];
-        setMatches(arr);
-        // collect unique statuts for debugging
-        setRawStatuts([...new Set(arr.map(m => m.statut))]);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    ]).then(([tD, pD, nD, cD]) => {
+      setTeam(tD);
+      setPlayers(Array.isArray(pD) ? pD : []);
+      setNews(Array.isArray(nD) ? nD : []);
+      setCultures(Array.isArray(cD) ? cD : []);
+      return get(`${BASE}/matches/matches/byTeam/${encodeURIComponent(tD.name)}`).catch(() => []);
+    }).then(mD => { setMatches(Array.isArray(mD) ? mD : []); setLoading(false); })
+    .catch(() => setLoading(false));
   }, [id]);
 
-  // ─── Helpers ────────────────────────────────────────────
-  // Accepte TOUTES les valeurs possibles du backend
-  const isDone = s => {
-    const v = (s || '').toLowerCase().trim();
-    return (
-      v.includes('termin') ||   // "termine", "terminé", "Terminé"
-      v.includes('finish') ||   // "Finished", "finished"
-      v === 'done'           ||
-      v === 'completed'      ||
-      v === 'ended'
-    );
-  };
+  const isDone   = s => { const v=(s||'').toLowerCase().trim(); return v.includes('termin')||v.includes('finish')||v==='done'||v==='completed'||v==='ended'; };
+  const isLiveS  = s => { const v=(s||'').toLowerCase().trim(); return v==='live'||v==='commence'||v==='started'||v==='en cours'||v==='direct'; };
 
-  const isLive = s => {
-    const v = (s || '').toLowerCase().trim();
-    return v === 'live' || v === 'commence' || v === 'started' || v === 'en cours';
-  };
-
-  // ─── Stats ──────────────────────────────────────────────
   const teamId = parseInt(id);
-
   const teamStats = (() => {
-    let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+    let wins=0,draws=0,losses=0,gf=0,ga=0;
     matches.forEach(m => {
       if (!isDone(m.statut)) return;
-      // teamId comparison: backend sends integer, id from URL is string
-      const my = m.matchTeams?.find(mt => Number(mt.teamId) === teamId);
-      const op = m.matchTeams?.find(mt => Number(mt.teamId) !== teamId);
-      if (!my || !op) return;
-      const mg = Number(my.goals) || 0;
-      const og = Number(op.goals) || 0;
-      gf += mg; ga += og;
-      if (mg > og)      wins++;
-      else if (mg === og) draws++;
-      else               losses++;
+      const my = m.matchTeams?.find(mt => Number(mt.teamId)===teamId);
+      const op = m.matchTeams?.find(mt => Number(mt.teamId)!==teamId);
+      if (!my||!op) return;
+      const mg=Number(my.goals)||0, og=Number(op.goals)||0;
+      gf+=mg; ga+=og;
+      if (mg>og) wins++; else if (mg===og) draws++; else losses++;
     });
-    return { wins, draws, losses, gf, ga };
+    return {wins,draws,losses,gf,ga};
   })();
 
+  const formatDate = d => d ? new Date(d).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}) : 'TBD';
+  const formatTime = d => d ? new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'players',  label: 'Squad'    },
-    { id: 'matches',  label: 'Fixtures' },
-    { id: 'news',     label: 'News'     },
-    { id: 'culture',  label: 'Culture'  },
+    { id:'overview', label:'Overview', icon:'⚡' },
+    { id:'players',  label:'Squad',    icon:'👤' },
+    { id:'matches',  label:'Fixtures', icon:'📅' },
+    { id:'news',     label:'News',     icon:'📰' },
+    { id:'culture',  label:'Culture',  icon:'🏛️'  },
   ];
 
-  // ── Loading ─────────────────────────────────────────────
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50">
-      <img src="/images/logo.png" alt="Loading" className="w-20 h-20 mb-4 animate-pulse" />
+    <div className="flex items-center justify-center min-h-screen" style={{background:'#0a0a0f'}}>
+      <div style={{width:56,height:56,border:'3px solid #C1272D',borderTopColor:'transparent',borderRadius:'50%',animation:'spin 0.8s linear infinite'}} />
     </div>
   );
 
   if (!team) return (
-    <>
-      <Navbar />
-      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-50">
-        <p className="text-xl text-stone-600 mb-6">Team not found</p>
-        <button onClick={() => router.push('/teams')} className="px-6 py-3 bg-[#C1272D] text-white rounded-xl font-medium">
-          Back to Teams
-        </button>
-      </div>
-    </>
+    <><Navbar />
+    <div className="flex flex-col items-center justify-center min-h-screen" style={{background:'#0a0a0f'}}>
+      <p className="text-xl text-white/60 mb-6">Team not found</p>
+      <button onClick={() => router.push('/teams')} className="px-6 py-3 text-white rounded-xl" style={{background:'#C1272D'}}>Back</button>
+    </div></>
   );
 
-  const isHost = ['Morocco', 'Portugal', 'Spain'].includes(team.country);
+  const isHost = ['Morocco','Portugal','Spain'].includes(team.country);
+  const gd = teamStats.gf - teamStats.ga;
+  const totalPlayed = teamStats.wins + teamStats.draws + teamStats.losses;
+  const winPct = totalPlayed > 0 ? Math.round((teamStats.wins / totalPlayed) * 100) : 0;
 
   return (
     <>
       <Head>
-        <title>{team.name} | MoroccoFan2030</title>
-        <meta name="description" content={team.description} />
+        <title>{team.name} — MoroccoFan2030</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        <link rel="icon" href="/images/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
@@ -127,489 +145,551 @@ export default function TeamDetail() {
         <link rel="icon" href="/images/logo.png" />
       </Head>
 
-      {/* ── EXACT SAME STYLES AS Teams.jsx ─────────────────── */}
       <style jsx global>{`
-        .bg-pattern { background-color:#fafaf9; background-image:radial-gradient(#e7e5e4 1px,transparent 1px); background-size:24px 24px; }
-        .no-scrollbar::-webkit-scrollbar{display:none} .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
-        .glass{background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(0,0,0,0.05)}
-        body{font-family:'Cairo',sans-serif}
-        h1,h2,h3,h4,.serif-font{font-family:'Amiri',serif}
-        .decorative-font{font-family:'Aref Ruqaa',serif}
-        @keyframes scaleIn{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
-        .group:hover .animate-scale{animation:scaleIn 0.6s ease-in-out}
-        @keyframes floatLine1{0%,100%{transform:translateY(0) rotate(-15deg)}50%{transform:translateY(-30px) rotate(-15deg)}}
-        @keyframes floatLine2{0%,100%{transform:translateY(0) rotate(25deg)}50%{transform:translateY(20px) rotate(25deg)}}
-        @keyframes floatLine3{0%,100%{transform:translateY(0) rotate(-35deg)}50%{transform:translateY(-20px) rotate(-35deg)}}
-        @keyframes slideInLeft{from{opacity:0;transform:translateX(-100px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes slideInRight{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-        .animate-slide-in-left{animation:slideInLeft 0.8s ease-out forwards}
-        .animate-slide-in-right{animation:slideInRight 0.8s ease-out forwards}
-        .animate-fade-in-up{animation:fadeInUp 0.6s ease-out forwards}
-        .delay-100{animation-delay:0.1s}.delay-200{animation-delay:0.2s}.delay-300{animation-delay:0.3s}.delay-400{animation-delay:0.4s}
-        .decorative-line-red{animation:floatLine1 8s ease-in-out infinite}
-        .decorative-line-yellow{animation:floatLine2 10s ease-in-out infinite}
-        .decorative-line-green{animation:floatLine3 12s ease-in-out infinite}
-        .card-hover{transition:all 0.4s cubic-bezier(0.4,0,0.2,1)}
-        .card-hover:hover{transform:translateY(-8px) scale(1.02)}
+        /* ── Fonts ── */
+        .td-syne{font-family:'Syne',sans-serif}
+
+        /* ── Keyframes (global, but class-scoped usage) ── */
+        @keyframes td-spin{to{transform:rotate(360deg)}}
+        @keyframes td-fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes td-fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes td-scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+        @keyframes td-blink{0%,100%{opacity:1}50%{opacity:.3}}
+        @keyframes td-heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+        @keyframes td-toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+        /* ── Animations helpers ── */
+        .td-fu{animation:td-fadeUp .5s ease-out forwards;opacity:0}
+        .td-fi{animation:td-fadeIn .5s ease-out forwards;opacity:0}
+        .td-si{animation:td-scaleIn .4s ease-out forwards;opacity:0}
+        .td-d1{animation-delay:.08s}
+        .td-d2{animation-delay:.16s}
+        .td-d3{animation-delay:.24s}
+        .td-d4{animation-delay:.32s}
+
+        /* ── PAGE WRAPPER — all dark styles scoped here ── */
+        .td-page{background:linear-gradient(160deg,#3d0a10 0%,#2a0608 30%,#1a0405 60%,#0f0203 100%);color:#fff;font-family:'Inter',sans-serif;min-height:100vh}
+        .td-page *{box-sizing:border-box}
+
+        /* ── HERO ── */
+        .td-page .td-hero{position:relative;width:100%;min-height:520px;display:flex;align-items:flex-end;overflow:hidden;padding-top:80px;margin-top:80px}
+        .td-page .td-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center top;transform:scale(1.06)}
+        .td-page .td-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(45,6,8,.5) 0%,rgba(26,4,5,.8) 60%,#1a0405 100%)}
+        .td-page .td-hero-noise{position:absolute;inset:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+        .td-page .td-hero-inner{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;padding:0 32px 56px}
+
+        /* ── BADGES ── */
+        .td-page .td-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:100px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:1px solid}
+        .td-page .td-badge-host{background:rgba(193,39,45,.15);border-color:rgba(193,39,45,.4);color:#ff6b6b}
+        .td-page .td-badge-neutral{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
+        .td-page .td-badge-gold{background:rgba(240,165,0,.12);border-color:rgba(240,165,0,.3);color:#f0a500}
+        .td-page .td-badge-green{background:rgba(0,98,51,.18);border-color:rgba(0,98,51,.4);color:#3dba7a}
+
+        /* ── TABS BAR ── */
+        .td-page .td-tabs{position:sticky;top:64px;z-index:50;background:rgba(20,3,5,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(193,39,45,.15)}
+        .td-page .td-tab{position:relative;padding:16px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,.4);cursor:pointer;background:none;border:none;white-space:nowrap;transition:color .2s;font-family:'Inter',sans-serif}
+        .td-page .td-tab.active{color:#fff}
+        .td-page .td-tab.active::after{content:'';position:absolute;bottom:0;left:16px;right:16px;height:2px;background:#C1272D;border-radius:2px 2px 0 0}
+        .td-page .td-tab:hover:not(.active){color:rgba(255,255,255,.7)}
+
+        /* ── SECTION ── */
+        .td-page .td-section{max-width:1200px;margin:0 auto;padding:48px 32px}
+
+        /* ── STAT ROW ── */
+        .td-page .td-stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:40px}
+        .td-page .td-stat-card{background:#1f0508;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;text-align:center;transition:border-color .2s}
+        .td-page .td-stat-card:hover{border-color:rgba(255,255,255,.15)}
+        .td-page .td-stat-val{font-size:36px;font-weight:800;line-height:1;font-family:'Syne',sans-serif}
+        .td-page .td-stat-lbl{font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-top:6px;font-weight:500}
+
+        /* ── GRIDS ── */
+        .td-page .td-grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+        .td-page .td-grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+
+        /* ── PLAYER CARD ── */
+        .td-page .td-player{background:#1f0508;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;display:flex;align-items:center;gap:16px;transition:border-color .2s,transform .2s}
+        .td-page .td-player:hover{border-color:rgba(193,39,45,.4);transform:translateY(-2px)}
+        .td-page .td-player-name{font-weight:600;font-size:15px;margin-bottom:3px;color:#fff}
+        .td-page .td-player-meta{font-size:12px;color:rgba(255,255,255,.4)}
+        .td-page .td-goals{margin-left:auto;background:rgba(240,165,0,.15);border:1px solid rgba(240,165,0,.3);color:#f0a500;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;white-space:nowrap}
+
+        /* ── MATCH CARD ── */
+        .td-page .td-match{background:#1f0508;border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s}
+        .td-page .td-match:hover{border-color:rgba(193,39,45,.4);transform:translateY(-3px)}
+        .td-page .td-match-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.07);font-size:11px;color:rgba(255,255,255,.4)}
+        .td-page .td-match-body{padding:28px 20px;display:flex;align-items:center;gap:16px}
+        .td-page .td-match-team{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+        .td-page .td-match-img{width:48px;height:48px;border-radius:50%;object-fit:cover;background:#170304;border:2px solid rgba(255,255,255,.1)}
+        .td-page .td-match-name{font-size:12px;font-weight:600;line-height:1.2;color:#fff}
+        .td-page .td-match-score{display:flex;flex-direction:column;align-items:center;min-width:80px;gap:4px}
+        .td-page .td-score-nums{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:800;font-family:'Syne',sans-serif;line-height:1}
+        .td-page .td-score-lbl{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+        .td-page .td-match-foot{padding:14px 20px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:rgba(255,255,255,.4);display:flex;align-items:center;justify-content:space-between}
+        .td-page .td-live-dot{width:6px;height:6px;border-radius:50%;background:#ef4444;display:inline-block;animation:td-blink 1.2s ease-in-out infinite;margin-right:5px}
+        .td-page .td-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+        .td-page .td-pill-w{background:rgba(61,186,122,.12);color:#3dba7a;border:1px solid rgba(61,186,122,.25)}
+        .td-page .td-pill-d{background:rgba(240,165,0,.12);color:#f0a500;border:1px solid rgba(240,165,0,.25)}
+        .td-page .td-pill-l{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+        .td-page .td-pill-u{background:rgba(255,255,255,.05);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.1)}
+
+        /* ── ARTICLE CARD ── */
+        .td-page .td-article{background:#1f0508;border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .2s}
+        .td-page .td-article:hover{border-color:rgba(193,39,45,.4);transform:translateY(-3px)}
+        .td-page .td-article-img{width:100%;height:160px;object-fit:cover;display:block}
+        .td-page .td-article-body{padding:18px}
+        .td-page .td-article-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#C1272D;margin-bottom:8px}
+        .td-page .td-article-title{font-size:15px;font-weight:600;line-height:1.4;margin-bottom:6px;transition:color .2s;color:#fff}
+        .td-page .td-article:hover .td-article-title{color:#ff6b6b}
+        .td-page .td-article-desc{font-size:12px;color:rgba(255,255,255,.4);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .td-page .td-article-meta{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:rgba(255,255,255,.3)}
+
+        /* ── PROFILE CARD ── */
+        .td-page .td-profile{background:#1f0508;border:1px solid rgba(255,255,255,.07);border-radius:20px;overflow:hidden;margin-bottom:40px}
+        .td-page .td-profile-banner{height:200px;position:relative;overflow:hidden}
+        .td-page .td-profile-banner-img{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(6px) brightness(.5);transform:scale(1.08)}
+        .td-page .td-profile-banner-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,#1f0508 100%)}
+        .td-page .td-profile-content{padding:0 28px 28px;position:relative;margin-top:-56px}
+        .td-page .td-profile-logo{width:80px;height:80px;border-radius:50%;border:4px solid #1f0508;object-fit:cover;background:#170304}
+        .td-page .td-profile-name{font-size:32px;font-weight:800;font-family:'Syne',sans-serif;line-height:1.1;margin:12px 0 4px;color:#fff}
+        .td-page .td-profile-country{font-size:14px;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:6px}
+        .td-page .td-profile-desc{font-size:14px;color:rgba(255,255,255,.55);line-height:1.7;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07)}
+
+        /* ── PERF BAR ── */
+        .td-page .td-perf{background:#1f0508;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;margin-bottom:40px}
+        .td-page .td-perf-row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+        .td-page .td-perf-row:last-child{margin-bottom:0}
+        .td-page .td-perf-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;width:52px;flex-shrink:0}
+        .td-page .td-perf-track{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+        .td-page .td-perf-fill{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+        .td-page .td-perf-num{font-size:13px;font-weight:700;width:28px;text-align:right;flex-shrink:0}
+
+        /* ── FAV BUTTON ── */
+        .td-page .td-fav{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:100px;border:1px solid;font-size:12px;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+        .td-page .td-fav-off{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
+        .td-page .td-fav-off:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff}
+        .td-page .td-fav-on{background:#C1272D;border-color:#C1272D;color:#fff;animation:td-heartbeat 2s ease-in-out infinite}
+        .td-page .td-fav:disabled{opacity:.5;cursor:wait}
+
+        /* ── SECTION TITLE ── */
+        .td-page .td-stitle{font-size:22px;font-weight:700;font-family:'Syne',sans-serif;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+        .td-page .td-scount{font-size:13px;color:rgba(255,255,255,.4);font-weight:400;font-family:'Inter',sans-serif}
+
+        /* ── EMPTY ── */
+        .td-page .td-empty{text-align:center;padding:80px 24px}
+        .td-page .td-empty-icon{width:64px;height:64px;border-radius:50%;background:#170304;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;border:1px solid rgba(255,255,255,.07)}
+
+        /* ── TOAST ── */
+        .td-toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;animation:td-toastIn .3s ease-out forwards}
+        .td-toast{display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:14px;background:#170304;border:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:500;min-width:240px;box-shadow:0 16px 48px rgba(0,0,0,.7);color:rgba(255,255,255,.8)}
+
+        /* ── SCROLLBAR ── */
+        .td-page .td-nosb::-webkit-scrollbar{display:none}
+        .td-page .td-nosb{-ms-overflow-style:none;scrollbar-width:none}
+
+        @media(max-width:640px){
+          .td-page .td-hero-inner{padding:0 20px 40px}
+          .td-page .td-section{padding:36px 20px}
+          .td-page .td-grid-2,.td-page .td-grid-3{grid-template-columns:1fr}
+          .td-page .td-stat-row{grid-template-columns:repeat(2,1fr)}
+          .td-page .td-profile-name{font-size:26px}
+        }
       `}</style>
 
       <Navbar />
 
-      {/* ══════════════════════════════════════════════════════
-          HEADER — team.imageUrl en background floutée
-      ══════════════════════════════════════════════════════ */}
-      <header className="relative w-full pt-32 pb-16 overflow-hidden border-b border-stone-200">
-        {/* Background = team.imageUrl floutée + overlay — identique à Teams.jsx */}
-        <div className="absolute inset-0 z-0">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${team.imageUrl})`,
-              filter: 'blur(8px) brightness(0.45)',
-              transform: 'scale(1.06)',
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/70 to-black/60" />
+      {/* ── TOAST (outside td-page so it overlays navbar too) ── */}
+      {favToast && (
+        <div className="td-toast-wrap">
+          <div className="td-toast">
+            <div style={{width:32,height:32,borderRadius:'50%',background:favToast==='added'?'#C1272D':favToast==='removed'?'#18181f':'#f59e0b',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:'1px solid rgba(255,255,255,.1)'}}>
+              <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                {favToast==='added'
+                  ? <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  : <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                }
+              </svg>
+            </div>
+            <span>
+              {favToast==='added' ? <><strong style={{color:'#fff'}}>{team.name}</strong> added to favorites</> : favToast==='removed' ? <><strong style={{color:'#fff'}}>{team.name}</strong> removed</> : <>Something went wrong</>}
+            </span>
+          </div>
         </div>
+      )}
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
+      {/* ══ DARK PAGE WRAPPER — scopes all dark styles ══ */}
+      <div className="td-page">
+
+      {/* ══ HERO ══ */}
+      <header className="td-hero">
+        <div className="td-hero-bg" style={{backgroundImage:`url(${team.imageUrl})`}} />
+        <div className="td-hero-overlay" />
+        <div className="td-hero-noise" />
+
+        <div className="td-hero-inner">
           {/* Back */}
-          <button onClick={() => router.push('/teams')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white text-xs font-bold uppercase tracking-widest mb-6 shadow-lg animate-slide-in-left hover:bg-white/20 transition-all">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={() => router.push('/teams')} className="td-fi"
+            style={{display:'inline-flex',alignItems:'center',gap:6,padding:'7px 16px 7px 12px',borderRadius:100,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',color:'rgba(255,255,255,.7)',fontSize:12,fontWeight:500,cursor:'pointer',marginBottom:95,transition:'all .2s'}}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path d="M19 12H5M12 5l-7 7 7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             All Teams
           </button>
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-            {/* Left */}
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-stone-700 text-xs font-bold uppercase tracking-widest mb-6 shadow-lg animate-slide-in-left">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-                  <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" strokeWidth="2"/>
+          {/* Bottom section */}
+          <div style={{display:'flex',flexDirection:'column',gap:20}}>
+            {/* Badges row */}
+            <div className="td-fu" style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:70}}>
+              <span className="td-badge td-badge-neutral">
+                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" strokeWidth="2"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" strokeWidth="2"/>
                 </svg>
                 {team.country}
-              </div>
-
-              <div className="flex items-center gap-5 mb-4 animate-slide-in-left delay-100">
-                {/* Logo — même cercle que Teams cards */}
-                <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white flex-shrink-0">
-                  <img src={team.imageUrl} alt={team.name}
-                    className="w-full h-full object-cover"
-                    onError={e => { e.target.src = `https://via.placeholder.com/80/C1272D/FFFFFF?text=${team.name?.substring(0,2)}`; }} />
-                </div>
-                <h1 className="text-5xl md:text-7xl font-normal tracking-tight text-white leading-tight">
-                  <span className="serif-font italic text-[#C1272D] font-medium">{team.name}</span>
-                </h1>
-              </div>
-
-              <p className="text-white/90 text-base md:text-lg leading-relaxed animate-slide-in-left delay-200 mb-4">
-                {team.description}
-              </p>
-
-              <div className="flex flex-wrap gap-2 animate-slide-in-left delay-300">
-                {isHost && (
-                  <span className="px-3 py-1 bg-[#C1272D]/20 border border-[#C1272D]/40 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
-                    Host Nation
-                  </span>
-                )}
-                {team.participation > 0 && (
-                  <span className="px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-amber-200">
-                    {team.participation}× World Cup
-                  </span>
-                )}
-                {team.coach && (
-                  <span className="px-3 py-1 bg-white/10 border border-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
-                    Coach: {team.coach}
-                  </span>
-                )}
-              </div>
+              </span>
+              {isHost && <span className="td-badge td-badge-host"> Host Nation</span>}
+              {team.participation > 0 && <span className="td-badge td-badge-gold"> {team.participation}× World Cup</span>}
+              {team.coach && <span className="td-badge td-badge-neutral">Coach: {team.coach}</span>}
             </div>
 
-            {/* Right — même grands chiffres que Teams.jsx */}
-            <div className="flex gap-12 animate-slide-in-right delay-300">
-              <div className="text-center">
-                <div className="text-5xl font-bold text-[#C1272D] mb-1">{teamStats.wins}</div>
-                <div className="text-xs font-bold text-white uppercase tracking-widest">Wins</div>
-              </div>
-              <div className="text-center">
-                <div className="text-5xl font-bold text-amber-500 mb-1">{teamStats.draws}</div>
-                <div className="text-xs font-bold text-white uppercase tracking-widest">Draws</div>
-              </div>
-              <div className="text-center">
-                <div className="text-5xl font-bold text-emerald-500 mb-1">{matches.length}</div>
-                <div className="text-xs font-bold text-white uppercase tracking-widest">Matches</div>
+            {/* Name + logo */}
+            <div className="td-fu td-d1" style={{display:'flex',alignItems:'center',gap:20}}>
+              <img src={team.imageUrl} alt={team.name}
+                style={{width:72,height:72,borderRadius:'50%',objectFit:'cover',border:'3px solid rgba(255,255,255,.2)',flexShrink:0,background:'#18181f'}}
+                onError={e => { e.target.src=`https://via.placeholder.com/72/C1272D/FFF?text=${team.name?.substring(0,2)}`; }} />
+              <h1 className="td-syne" style={{fontSize:'clamp(36px,6vw,72px)',fontWeight:800,lineHeight:1,letterSpacing:'-.02em'}}>
+                {team.name}
+              </h1>
+            </div>
+
+            {/* Description */}
+            {team.description && (
+              <p className="td-fu td-d2" style={{fontSize:15,color:'rgba(255,255,255,.55)',maxWidth:560,lineHeight:1.7}}>
+                {team.description}
+              </p>
+            )}
+
+            {/* Actions + quick stats */}
+            <div className="td-fu td-d3" style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:20}}>
+              <button onClick={toggleFavorite} disabled={favLoading}
+                className={`td-fav ${isFavorited ? 'td-fav-on' : 'td-fav-off'}`}>
+                {favLoading
+                  ? <svg style={{animation:'td-spin .7s linear infinite'}} width="14" height="14" fill="none" viewBox="0 0 24 24"><circle opacity=".25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path fill="currentColor" opacity=".75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                  : <svg width="14" height="14" fill={isFavorited ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                }
+                {isFavorited ? 'Saved' : 'Add to Favorites'}
+              </button>
+
+              {/* Quick stats inline */}
+              <div style={{display:'flex',gap:24}}>
+                {[
+                  {v:teamStats.wins,   l:'Wins',    c:'#3dba7a'},
+                  {v:teamStats.draws,  l:'Draws',   c:'#f0a500'},
+                  {v:teamStats.losses, l:'Losses',  c:'#f87171'},
+                ].map(s => (
+                  <div key={s.l} style={{textAlign:'center'}}>
+                    <div className="td-syne" style={{fontSize:24,fontWeight:800,color:s.c,lineHeight:1}}>{s.v}</div>
+                    <div style={{fontSize:10,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.1em',marginTop:3,fontWeight:600}}>{s.l}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* ══════════════════════════════════════════════════════
-          STICKY TAB BAR — même que filter bar de Teams.jsx
-      ══════════════════════════════════════════════════════ */}
-      <div className="sticky top-16 z-40 bg-white/90 backdrop-blur border-b border-stone-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex gap-2 w-full overflow-x-auto no-scrollbar pb-1">
-            {tabs.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide whitespace-nowrap transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-[#C1272D] text-white shadow-md shadow-red-500/20 scale-105'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
-                }`}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
+      {/* ══ TABS ══ */}
+      <div className="td-tabs">
+        <div style={{maxWidth:1200,margin:'0 auto',padding:'0 32px',display:'flex',overflowX:'auto'}} className="td-nosb">
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              className={`td-tab ${activeTab===t.id ? 'active' : ''}`}>
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════
-          MAIN — même bg + lignes décoratives que Teams.jsx
-      ══════════════════════════════════════════════════════ */}
-      <main className="relative py-12 bg-stone-50 min-h-screen overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="decorative-line-red    absolute top-40 -left-40 w-[500px] h-0.5 bg-gradient-to-r from-transparent via-[#C1272D]/20 to-transparent" />
-          <div className="decorative-line-red    absolute top-[600px] right-20 w-[400px] h-0.5 bg-gradient-to-l from-transparent via-[#C1272D]/15 to-transparent" style={{animationDelay:'2s'}} />
-          <div className="decorative-line-yellow absolute top-[300px] right-10 w-[450px] h-0.5 bg-gradient-to-r from-amber-400/20 to-transparent" />
-          <div className="decorative-line-yellow absolute top-[800px] left-10 w-[380px] h-0.5 bg-gradient-to-r from-transparent via-amber-500/15 to-transparent" style={{animationDelay:'3s'}} />
-          <div className="decorative-line-green  absolute top-[200px] left-32 w-[420px] h-0.5 bg-gradient-to-r from-[#006233]/20 via-transparent to-transparent" />
-          <div className="decorative-line-green  absolute top-[900px] right-32 w-[480px] h-0.5 bg-gradient-to-l from-transparent via-[#006233]/15 to-transparent" style={{animationDelay:'1s'}} />
-          <div className="decorative-line-red    absolute top-[1100px] left-20 w-[350px] h-0.5 bg-gradient-to-r from-[#C1272D]/15 to-transparent" style={{animationDelay:'4s'}} />
-          <div className="decorative-line-yellow absolute top-[1300px] right-40 w-[400px] h-0.5 bg-gradient-to-l from-amber-400/15 to-transparent" style={{animationDelay:'5s'}} />
-        </div>
+      {/* ══ CONTENT ══ */}
+      <main style={{minHeight:'60vh'}}>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
+        {/* ── OVERVIEW ── */}
+        {activeTab==='overview' && (
+          <div className="td-section">
+            {/* Profile card */}
+            <div className="td-profile td-fu td-si">
+              <div className="td-profile-banner">
+                <div className="td-profile-banner-img" style={{backgroundImage:`url(${team.imageUrl})`}} />
+                <div className="td-profile-banner-overlay" />
+              </div>
+              <div className="td-profile-content">
+                <img src={team.imageUrl} alt={team.name} className="td-profile-logo"
+                  onError={e => { e.target.src=`https://via.placeholder.com/80/C1272D/FFF?text=${team.name?.substring(0,2)}`; }} />
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12,marginTop:4}}>
+                  <div>
+                    <h2 className="td-profile-name">{team.name}</h2>
+                    <div className="td-profile-country">
+                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" strokeWidth="2"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" strokeWidth="2"/>
+                      </svg>
+                      {team.country}
+                      {isHost && <span className="td-badge td-badge-host" style={{marginLeft:8}}>Host Nation</span>}
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    {team.participation > 0 && <span className="td-badge td-badge-gold">{team.participation}× World Cup</span>}
+                    {team.coach && <span className="td-badge td-badge-neutral">Coach: {team.coach}</span>}
+                  </div>
+                </div>
+                {team.description && <p className="td-profile-desc">{team.description}</p>}
+              </div>
+            </div>
 
-          {/* ── OVERVIEW ──────────────────────────────────── */}
-          {activeTab === 'overview' && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6 mb-8">
+            {/* Stats grid */}
+            <div className="td-stat-row td-fu td-d1">
+              {[
+                {v:teamStats.gf,                                l:'Goals Scored',    c:'#C1272D'},
+                {v:teamStats.ga,                                l:'Goals Conceded',  c:'rgba(255,255,255,.5)'},
+                {v:`${gd>=0?'+':''}${gd}`,                     l:'Goal Diff',        c:gd>0?'#3dba7a':gd<0?'#f87171':'rgba(255,255,255,.5)'},
+                {v:`${winPct}%`,                                l:'Win Rate',         c:'#f0a500'},
+                {v:matches.length,                              l:'Matches',          c:'rgba(255,255,255,.9)'},
+                {v:players.length,                              l:'Players',          c:'rgba(255,255,255,.9)'},
+              ].map(s => (
+                <div key={s.l} className="td-stat-card">
+                  <div className="td-stat-val" style={{color:s.c}}>{s.v}</div>
+                  <div className="td-stat-lbl">{s.l}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Performance bars */}
+            {totalPlayed > 0 && (
+              <div className="td-perf td-fu td-d2">
+                <div className="td-stitle" style={{marginBottom:20,fontSize:16}}>Performance</div>
                 {[
-                  { label:'Goals Scored',    value: teamStats.gf,    accent:'border-[#C1272D]/20', color:'text-[#C1272D]'  },
-                  { label:'Goals Conceded',  value: teamStats.ga,    accent:'border-stone-200',    color:'text-stone-600'  },
-                  { label:'Goal Difference', value:`${teamStats.gf-teamStats.ga>=0?'+':''}${teamStats.gf-teamStats.ga}`, accent:'border-amber-200', color:'text-amber-600' },
-                  { label:'Players',         value: players.length,  accent:'border-emerald-200',  color:'text-[#006233]'  },
-                ].map((s,i) => (
-                  <div key={s.label}
-                    className={`group bg-white rounded-2xl border ${s.accent} p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 card-hover animate-fade-in-up`}
-                    style={{animationDelay:`${i*0.05}s`}}>
-                    <div className={`text-4xl font-bold ${s.color} mb-2`}>{s.value}</div>
-                    <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">{s.label}</div>
+                  {label:'Wins',   val:teamStats.wins,  total:totalPlayed, color:'#3dba7a'},
+                  {label:'Draws',  val:teamStats.draws, total:totalPlayed, color:'#f0a500'},
+                  {label:'Losses', val:teamStats.losses,total:totalPlayed, color:'#f87171'},
+                ].map(p => (
+                  <div key={p.label} className="td-perf-row">
+                    <div className="td-perf-label" style={{color:p.color}}>{p.label}</div>
+                    <div className="td-perf-track">
+                      <div className="td-perf-fill" style={{width:`${totalPlayed>0?(p.val/totalPlayed)*100:0}%`,background:p.color}} />
+                    </div>
+                    <div className="td-perf-num" style={{color:p.color}}>{p.val}</div>
                   </div>
                 ))}
               </div>
+            )}
 
-              {/* Squad preview */}
-              {players.length > 0 && (
-                <>
-                  <div className="flex justify-between items-center mb-6 animate-fade-in-up delay-200">
-                    <h2 className="text-2xl font-bold text-stone-900 serif-font">Squad Preview</h2>
-                    <button onClick={() => setActiveTab('players')}
-                      className="px-4 py-2 rounded-lg text-xs font-semibold tracking-wide bg-stone-100 hover:bg-stone-200 text-stone-600 transition-all flex items-center gap-2">
-                      View Full Squad
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
-                    {players.slice(0, 4).map((p, i) => (
-                      <PlayerCard key={p.id} player={p} index={i} />
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          )}
-
-          {/* ── PLAYERS ───────────────────────────────────── */}
-          {activeTab === 'players' && (
-            <>
-              <div className="flex justify-between items-center mb-6 animate-fade-in-up">
-                <h2 className="text-3xl font-bold text-stone-900 serif-font">Team Squad</h2>
-                <span className="text-sm text-stone-400">{players.length} players</span>
-              </div>
-              {players.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
-                  {players.map((p, i) => <PlayerCard key={p.id} player={p} index={i} />)}
+            {/* Squad preview */}
+            {players.length > 0 && (
+              <>
+                <div className="td-stitle td-fu td-d3">
+                  <span className="td-syne">Squad Preview</span>
+                  <button onClick={() => setActiveTab('players')} style={{fontSize:13,color:'#C1272D',background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:4,fontFamily:'Inter,sans-serif'}}>
+                    View All
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
                 </div>
-              ) : <EmptyState />}
-            </>
-          )}
-
-          {/* ── MATCHES ───────────────────────────────────── */}
-          {activeTab === 'matches' && (
-            <>
-              <div className="flex justify-between items-center mb-6 animate-fade-in-up">
-                <h2 className="text-3xl font-bold text-stone-900 serif-font">Fixtures & Results</h2>
-                <span className="text-sm text-stone-400">{matches.length} matches</span>
-              </div>
-              {matches.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
-                  {matches.map((m, i) => {
-                    const my = m.matchTeams?.find(mt => Number(mt.teamId) === teamId);
-                    const op = m.matchTeams?.find(mt => Number(mt.teamId) !== teamId);
-                    const done = isDone(m.statut);
-                    const live = isLive(m.statut);
-                    const mg = Number(my?.goals) || 0;
-                    const og = Number(op?.goals) || 0;
-                    const isWin  = done && mg > og;
-                    const isDraw = done && mg === og;
-                    const isLoss = done && mg < og;
-
-                    return (
-                      <div key={m.id}
-                        onClick={() => router.push(`/matches/${m.id}`)}
-                        className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-pointer card-hover animate-fade-in-up"
-                        style={{animationDelay:`${i*0.05}s`}}>
-
-                        {/* Badge résultat — même style top-4 right-4 que Teams */}
-                        {done && (
-                          <div className={`absolute top-4 right-4 px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded border
-                            ${isWin  ? 'bg-[#006233]/10 text-[#006233] border-[#006233]/20'
-                             : isDraw ? 'bg-amber-50 text-amber-700 border-amber-200'
-                             : 'bg-[#C1272D]/10 text-[#C1272D] border-[#C1272D]/20'}`}>
-                            {isWin ? 'Win' : isDraw ? 'Draw' : 'Loss'}
-                          </div>
-                        )}
-                        {live && (
-                          <div className="absolute top-4 right-4 flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wider rounded border border-red-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" /> Live
-                          </div>
-                        )}
-                        {/* Badge type — left-4 */}
-                        <div className="absolute top-4 left-4 px-2 py-1 bg-stone-50 text-stone-500 text-[10px] font-bold uppercase tracking-wider rounded border border-stone-200 max-w-[100px] truncate">
-                          {m.type}
-                        </div>
-
-                        {/* Logos + score centré — même layout que Teams card */}
-                        <div className="flex flex-col items-center text-center mt-10 mb-4">
-                          <div className="flex items-center gap-3 mb-3">
-                            {/* Mon équipe */}
-                            <div className="w-12 h-12 rounded-full border-4 border-white shadow-lg overflow-hidden bg-stone-100 flex-shrink-0">
-                              <img src={team.imageUrl} alt={team.name}
-                                className="w-full h-full object-contain"
-                                onError={e => { e.target.src=`https://via.placeholder.com/48/C1272D/FFF?text=${team.name?.substring(0,2)}`; }} />
-                            </div>
-
-                            {/* Score — affiché seulement si match terminé */}
-                            <div className="flex items-center gap-1 min-w-[80px] justify-center">
-                              {done ? (
-                                <>
-                                  <span className={`text-2xl font-black ${isWin ? 'text-[#006233]' : isLoss ? 'text-[#C1272D]' : 'text-stone-700'}`}>
-                                    {mg}
-                                  </span>
-                                  <span className="text-stone-300 text-xl font-light mx-1">–</span>
-                                  <span className={`text-2xl font-black ${isLoss ? 'text-[#006233]' : isWin ? 'text-[#C1272D]' : 'text-stone-700'}`}>
-                                    {og}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-sm font-bold text-stone-300 uppercase tracking-widest">vs</span>
-                              )}
-                            </div>
-
-                            {/* Adversaire */}
-                            <div className="w-12 h-12 rounded-full border-4 border-white shadow-lg overflow-hidden bg-stone-100 flex-shrink-0 flex items-center justify-center">
-                              {op?.imageUrl
-                                ? <img src={op.imageUrl} alt={op.teamName} className="w-full h-full object-contain" />
-                                : <span className="text-stone-400 text-xs font-bold">{op?.teamName?.substring(0,2) || '?'}</span>}
-                            </div>
-                          </div>
-
-                          <h3 className="text-base font-serif text-stone-900 mb-1">{op?.teamName ?? 'TBD'}</h3>
-                          <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">
-                            {new Date(m.dateOfMatch).toLocaleDateString()}
-                            {m.stadeName ? ` • ${m.stadeName}` : ''}
-                          </div>
-                        </div>
-
-                        {/* Footer — même chevron rouge que Teams */}
-                        <div className="flex items-center justify-between border-t border-stone-100 pt-4">
-                          <div className="text-xs text-stone-500 flex-1 truncate">
-                            <span className="text-stone-400">Referee:</span>{' '}
-                            <span className="font-medium text-stone-700">{m.referee || '—'}</span>
-                          </div>
-                          <div className="ml-auto w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-[#C1272D] group-hover:border-[#C1272D] group-hover:text-white transition-all flex-shrink-0">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="td-grid-2">
+                  {players.slice(0,4).map((p,i) => <PlayerCard key={p.id} player={p} index={i} />)}
                 </div>
-              ) : <EmptyState />}
-            </>
-          )}
+              </>
+            )}
+          </div>
+        )}
 
-          {/* ── NEWS — navigation onClick vers /news/[id] ──── */}
-          {activeTab === 'news' && (
-            <>
-              <div className="flex justify-between items-center mb-6 animate-fade-in-up">
-                <h2 className="text-3xl font-bold text-stone-900 serif-font">Latest News</h2>
-                <span className="text-sm text-stone-400">{news.length} articles</span>
-              </div>
-              {news.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
-                  {news.map((a, i) => (
-                    <div key={a.id}
-                      onClick={() => router.push(`/news/${a.id}`)}
-                      className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-pointer card-hover animate-fade-in-up"
-                      style={{animationDelay:`${i*0.05}s`}}>
+        {/* ── PLAYERS ── */}
+        {activeTab==='players' && (
+          <div className="td-section">
+            <div className="td-stitle td-fu">
+              <span className="td-syne">Team Squad</span>
+              <span className="td-scount">{players.length} players</span>
+            </div>
+            {players.length > 0
+              ? <div className="td-grid-2">{players.map((p,i) => <PlayerCard key={p.id} player={p} index={i} />)}</div>
+              : <EmptyState msg="No players found" />
+            }
+          </div>
+        )}
 
-                      <div className="absolute top-4 right-4 px-2 py-1 bg-[#C1272D]/10 text-[#C1272D] text-[10px] font-bold uppercase tracking-wider rounded border border-[#C1272D]/20">
-                        News
+        {/* ── MATCHES ── */}
+        {activeTab==='matches' && (
+          <div className="td-section">
+            <div className="td-stitle td-fu">
+              <span className="td-syne">Fixtures & Results</span>
+              <span className="td-scount">{matches.length} matches</span>
+            </div>
+            {matches.length > 0 ? (
+              <div className="td-grid-3">
+                {matches.map((m,i) => {
+                  const my   = m.matchTeams?.find(mt => Number(mt.teamId)===teamId);
+                  const op   = m.matchTeams?.find(mt => Number(mt.teamId)!==teamId);
+                  const done = isDone(m.statut);
+                  const live = isLiveS(m.statut);
+                  const mg   = Number(my?.goals)||0;
+                  const og   = Number(op?.goals)||0;
+                  const isWin  = done && mg>og;
+                  const isDraw = done && mg===og;
+                  const isLoss = done && mg<og;
+                  return (
+                    <div key={m.id} className="td-match td-fu" style={{animationDelay:`${i*.04}s`}} onClick={() => router.push(`/matches/${m.id}`)}>
+                      {/* Head */}
+                      <div className="td-match-head">
+                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                          {live && <span className="td-pill td-pill-l"><span className="td-live-dot"/>LIVE</span>}
+                          {done && <span className={`td-pill ${isWin?'td-pill-w':isDraw?'td-pill-d':'td-pill-l'}`}>{isWin?'Win':isDraw?'Draw':'Loss'}</span>}
+                          {!live && !done && <span className="td-pill td-pill-u">Upcoming</span>}
+                          {m.type && <span style={{color:'rgba(255,255,255,.25)',marginLeft:4}}>{m.type}</span>}
+                        </div>
+                        <span>{formatDate(m.dateOfMatch)}</span>
                       </div>
-
-                      <div className="relative h-36 -mx-6 -mt-6 mb-4 overflow-hidden bg-stone-100">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10" />
-                        <img src={a.imageUrl} alt={a.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={e => { e.target.src='https://images.unsplash.com/photo-1551958219-acbc608c6377?w=400&q=70'; }} />
-                      </div>
-
-                      <div className="flex flex-col items-center text-center mb-4">
-                        <h3 className="text-base font-serif text-stone-900 mb-1 group-hover:text-[#C1272D] transition-colors line-clamp-2">{a.title}</h3>
-                        <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">
-                          {new Date(a.dateOfCreation).toLocaleDateString()}
-                          {a.author ? ` • ${a.author}` : ''}
+                      {/* Body */}
+                      <div className="td-match-body">
+                        <div className="td-match-team">
+                          <img src={team.imageUrl} alt={team.name} className="td-match-img"
+                            onError={e => { e.target.src=`https://via.placeholder.com/48/C1272D/FFF?text=${team.name?.substring(0,2)}`; }} />
+                          <span className="td-match-name">{team.name}</span>
+                        </div>
+                        <div className="td-match-score">
+                          {(done||live) ? (
+                            <>
+                              <div className="td-score-nums">
+                                <span style={{color:isWin?'#3dba7a':isLoss?'#f87171':'#fff'}}>{mg}</span>
+                                <span style={{fontSize:20,color:'rgba(255,255,255,.1)'}}>:</span>
+                                <span style={{color:isLoss?'#3dba7a':isWin?'#f87171':'#fff'}}>{og}</span>
+                              </div>
+                              <span className="td-score-lbl">{done?'FT':'Live'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span style={{fontSize:13,color:'rgba(255,255,255,.3)',fontWeight:300,letterSpacing:'.15em'}}>VS</span>
+                              <span style={{fontSize:12,color:'rgba(255,255,255,.4)',marginTop:2}}>{formatTime(m.dateOfMatch)}</span>
+                            </>
+                          )}
+                        </div>
+                        <div className="td-match-team">
+                          {op?.imageUrl
+                            ? <img src={op.imageUrl} alt={op.teamName} className="td-match-img" />
+                            : <div className="td-match-img" style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'rgba(255,255,255,.5)'}}>{(op?.teamName||'TBD').substring(0,3).toUpperCase()}</div>
+                          }
+                          <span className="td-match-name">{op?.teamName||'TBD'}</span>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between border-t border-stone-100 pt-4">
-                        <div className="text-xs text-stone-500 flex-1 truncate line-clamp-1">{a.description}</div>
-                        <div className="ml-auto w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-[#C1272D] group-hover:border-[#C1272D] group-hover:text-white transition-all flex-shrink-0">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
+                      {/* Foot */}
+                      {(m.stadeName||m.referee) && (
+                        <div className="td-match-foot">
+                          <span>{m.stadeName && <><svg style={{display:'inline',marginRight:4,verticalAlign:'middle'}} width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" strokeWidth="2"/><circle cx="12" cy="10" r="3" strokeWidth="2"/></svg>{m.stadeName}</>}</span>
+                          <span style={{color:'rgba(193,39,45,.7)',display:'flex',alignItems:'center',gap:4}}>
+                            View Details
+                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </span>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : <EmptyState />}
-            </>
-          )}
-
-          {/* ── CULTURE — navigation onClick vers /culture/[id] ── */}
-          {activeTab === 'culture' && (
-            <>
-              <div className="flex justify-between items-center mb-6 animate-fade-in-up">
-                <h2 className="text-3xl font-bold text-stone-900 serif-font">Cultural Heritage</h2>
-                <span className="text-sm text-stone-400">{cultures.length} highlights</span>
+                  );
+                })}
               </div>
-              {cultures.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
-                  {cultures.map((c, i) => (
-                    <div key={c.id}
-                      onClick={() => router.push(`/culture/${c.id}`)}
-                      className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-pointer card-hover animate-fade-in-up"
-                      style={{animationDelay:`${i*0.05}s`}}>
+            ) : <EmptyState msg="No matches yet" />}
+          </div>
+        )}
 
-                      <div className="absolute top-4 right-4 px-2 py-1 bg-[#006233]/10 text-[#006233] text-[10px] font-bold uppercase tracking-wider rounded border border-[#006233]/20">
-                        Culture
-                      </div>
-
-                      <div className="relative h-36 -mx-6 -mt-6 mb-4 overflow-hidden bg-stone-100">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10" />
-                        <img src={c.imageUrl} alt={c.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={e => { e.target.src='https://images.unsplash.com/photo-1535069502363-2207185df19f?w=400&q=70'; }} />
-                      </div>
-
-                      <div className="flex flex-col items-center text-center mb-4">
-                        <h3 className="text-base font-serif text-stone-900 mb-1 group-hover:text-[#006233] transition-colors decorative-font">{c.title}</h3>
-                        <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">
-                          {new Date(c.dateOfCreation).toLocaleDateString()}
-                          {c.author ? ` • ${c.author}` : ''}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-stone-100 pt-4">
-                        <div className="text-xs text-stone-500 flex-1 truncate line-clamp-1">{c.description}</div>
-                        <div className="ml-auto w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-[#006233] group-hover:border-[#006233] group-hover:text-white transition-all flex-shrink-0">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                      </div>
+        {/* ── NEWS ── */}
+        {activeTab==='news' && (
+          <div className="td-section">
+            <div className="td-stitle td-fu">
+              <span className="td-syne">Latest News</span>
+              <span className="td-scount">{news.length} articles</span>
+            </div>
+            {news.length > 0 ? (
+              <div className="td-grid-3">
+                {news.map((a,i) => (
+                  <div key={a.id} className="td-article td-fu" style={{animationDelay:`${i*.04}s`}} onClick={() => router.push(`/news/${a.id}`)}>
+                    <img src={a.imageUrl} alt={a.title} className="td-article-img"
+                      onError={e => { e.target.src='https://images.unsplash.com/photo-1551958219-acbc608c6377?w=400&q=70'; }} />
+                    <div className="td-article-body">
+                      <div className="td-article-tag">News</div>
+                      <div className="td-article-title">{a.title}</div>
+                      <div className="td-article-desc">{a.description}</div>
+                      <div className="td-article-meta">{new Date(a.dateOfCreation).toLocaleDateString()}{a.author ? ` · ${a.author}` : ''}</div>
                     </div>
-                  ))}
-                </div>
-              ) : <EmptyState />}
-            </>
-          )}
+                  </div>
+                ))}
+              </div>
+            ) : <EmptyState msg="No news yet" />}
+          </div>
+        )}
 
-          {/* ── DEBUG PANEL (retirer en prod) ─────────────── */}
-         
-        </div>
+        {/* ── CULTURE ── */}
+        {activeTab==='culture' && (
+          <div className="td-section">
+            <div className="td-stitle td-fu">
+              <span className="td-syne">Cultural Heritage</span>
+              <span className="td-scount">{cultures.length} highlights</span>
+            </div>
+            {cultures.length > 0 ? (
+              <div className="td-grid-3">
+                {cultures.map((c,i) => (
+                  <div key={c.id} className="td-article td-fu" style={{animationDelay:`${i*.04}s`}} onClick={() => router.push(`/culture/${c.id}`)}>
+                    <img src={c.imageUrl} alt={c.title} className="td-article-img"
+                      onError={e => { e.target.src='https://images.unsplash.com/photo-1535069502363-2207185df19f?w=400&q=70'; }} />
+                    <div className="td-article-body">
+                      <div className="td-article-tag" style={{color:'#3dba7a'}}>Culture</div>
+                      <div className="td-article-title" style={{fontFamily:'Syne,sans-serif'}}>{c.title}</div>
+                      <div className="td-article-desc">{c.description}</div>
+                      <div className="td-article-meta">{new Date(c.dateOfCreation).toLocaleDateString()}{c.author ? ` · ${c.author}` : ''}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : <EmptyState msg="No cultural content yet" />}
+          </div>
+        )}
+
       </main>
+      </div>{/* end .td-page */}
 
       <Footer />
     </>
   );
 }
 
-/* ── Player card — même structure que Teams card ─────────── */
 function PlayerCard({ player, index }) {
+  const initials = (player.name||'??').substring(0,2).toUpperCase();
   return (
-    <div className="group bg-white rounded-2xl border border-stone-200 p-6 relative overflow-hidden hover:shadow-xl hover:shadow-stone-200/50 transition-all duration-300 cursor-default card-hover animate-fade-in-up"
-      style={{animationDelay:`${index*0.05}s`}}>
+    <div className="td-player td-fu" style={{animationDelay:`${index*.04}s`}}>
+      <div style={{width:52,height:52,borderRadius:'50%',overflow:'hidden',flexShrink:0,background:'#18181f',border:'2px solid rgba(255,255,255,.08)'}}>
+        <img src={player.urlImage||player.imgUrl} alt={player.name}
+          style={{width:'100%',height:'100%',objectFit:'cover'}}
+          onError={e => { e.target.style.display='none'; e.target.parentElement.innerHTML=`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e1e28,#2a2a38);color:rgba(255,255,255,.6);font-weight:700;font-size:14px">${initials}</div>`; }} />
+      </div>
+      <div style={{flex:1,minWidth:0}}>
+        <div className="td-player-name">{player.name}</div>
+        <div className="td-player-meta">
+          {player.age ? `Age ${player.age}` : '—'}
+          {player.height ? ` · ${player.height}m` : ''}
+          {player.weight ? ` · ${player.weight}kg` : ''}
+        </div>
+      </div>
       {player.goals > 0 && (
-        <div className="absolute top-4 right-4 px-2 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded border border-amber-200">
-          {player.goals}G
-        </div>
+        <div className="td-goals">⚽ {player.goals}</div>
       )}
-      <div className="flex flex-col items-center text-center mt-4 mb-6">
-        <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg mb-4 overflow-hidden bg-stone-100 animate-scale transition-transform duration-500">
-          <img src={player.urlImage || player.imgUrl} alt={player.name}
-            className="w-full h-full object-cover"
-            onError={e => {
-              e.target.style.display = 'none';
-              e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-200 to-stone-300 text-stone-600 text-xl font-bold">${player.name?.substring(0,2)}</div>`;
-            }} />
-        </div>
-        <h3 className="text-xl font-serif text-stone-900 mb-1 group-hover:text-[#C1272D] transition-colors">{player.name}</h3>
-        <div className="text-xs font-medium text-stone-400 uppercase tracking-widest">
-          Age {player.age || '—'} • {player.height ? `${player.height}m` : '—'}
-        </div>
-      </div>
-      <div className="flex items-center justify-between border-t border-stone-100 pt-4">
-        <div className="text-xs text-stone-500 flex-1 truncate">
-          <span className="text-stone-400">Weight:</span>{' '}
-          <span className="font-medium text-stone-700">{player.weight ? `${player.weight}kg` : '—'}</span>
-        </div>
-        <div className="ml-auto w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-400 group-hover:bg-[#C1272D] group-hover:border-[#C1272D] group-hover:text-white transition-all flex-shrink-0">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-      </div>
     </div>
   );
 }
 
-/* ── Empty state — même que Teams "no teams found" ─────── */
-function EmptyState() {
+function EmptyState({ msg = 'Nothing here yet' }) {
   return (
-    <div className="text-center py-20 animate-fade-in-up">
-      <div className="w-20 h-20 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg className="w-10 h-10 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="td-empty td-fu">
+      <div className="td-empty-icon">
+        <svg width="28" height="28" fill="none" stroke="rgba(255,255,255,.3)" viewBox="0 0 24 24">
           <circle cx="11" cy="11" r="8" strokeWidth="2"/>
           <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round"/>
-          <line x1="11" y1="8" x2="11" y2="14" strokeWidth="2" strokeLinecap="round"/>
-          <line x1="8" y1="11" x2="14" y2="11" strokeWidth="2" strokeLinecap="round"/>
         </svg>
       </div>
-      <h3 className="text-xl font-medium text-stone-700 mb-2">No content found</h3>
-      <p className="text-stone-500">Try checking back later</p>
+      <div style={{fontSize:18,fontWeight:600,fontFamily:'Syne,sans-serif',color:'rgba(255,255,255,.6)',marginBottom:8}}>{msg}</div>
+      <div style={{fontSize:13,color:'rgba(255,255,255,.3)'}}>Check back later</div>
     </div>
   );
 }

@@ -286,7 +286,7 @@ export default function Profile() {
                 </button>
 
                 <button
-                  onClick={() => router.push('/favorites')}
+                  onClick={() => router.push('/Favorite')}
                   className="flex items-center justify-between px-3 py-2.5 text-sm font-medium text-stone-500 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all group"
                 >
                   <div className="flex items-center gap-3">

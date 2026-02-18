@@ -4,10 +4,10 @@ import Head from 'next/head';
 export default function Footer() {
         {/* Footer */}
         return(
-      <footer className="bg-gradient-to-br from-[#1a1412] via-[#2d1e1a] to-[#1a1412] text-stone-300 pt-20 pb-10 relative overflow-hidden ">
+      <footer className="bg-gradient-to-br from-[#2d0a0e] via-[#1a0608] to-[#2d0a0e] text-stone-300 pt-20 pb-10 relative overflow-hidden ">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
         <div className="absolute top-20 left-10 w-64 h-64 bg-[#C1272D]/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-10 w-64 h-64 bg-[#006233]/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-64 h-64 bg-[#8B0000]/10 rounded-full blur-3xl"></div>
         
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
@@ -75,7 +75,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="border-t border-stone-700/50 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-stone-400">
+          <div className="border-t border-[#C1272D]/20 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-stone-400">
             <p className="flex items-center gap-2">
               <span>© 2024 MoroccoFan2030. Unofficial Fan Concept.</span>
               <span className="hidden md:inline">•</span>
