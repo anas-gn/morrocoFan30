@@ -2,208 +2,97 @@ import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+
 export default function Acceuil() {
-  // États pour stocker les données
-  const [cities, setCities] = useState([]);
-  const [stades, setStades] = useState([]);
-  const [groups, setGroups] = useState([]);
-  const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [latestNews, setLatestNews] = useState([]);
-  const [cultures, setCultures] = useState([]);
-  const [teams, setTeams] = useState([]);
-  const [upcomingMatches, setUpcomingMatches] = useState([]);
-
-  // État pour la rotation des actualités
+  const [cities, setCities]                     = useState([]);
+  const [stades, setStades]                     = useState([]);
+  const [groups, setGroups]                     = useState([]);
+  const [upcomingEvents, setUpcomingEvents]     = useState([]);
+  const [latestNews, setLatestNews]             = useState([]);
+  const [cultures, setCultures]                 = useState([]);
+  const [teams, setTeams]                       = useState([]);
+  const [upcomingMatches, setUpcomingMatches]   = useState([]);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
+  const [loading, setLoading]                   = useState(true);
+  const [error, setError]                       = useState(null);
+  const [hoveredCulture, setHoveredCulture]     = useState(null);
+  const [cultureVisible, setCultureVisible]     = useState(false);
+  const [newsVisible, setNewsVisible]           = useState(false);
 
-  // États pour gérer le chargement et les erreurs
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const citiesScrollRef   = useRef(null);
+  const stadesScrollRef   = useRef(null);
+  const newsScrollRef     = useRef(null);
+  const newsSectionRef    = useRef(null);
+  const cultureSectionRef = useRef(null);
 
-  // Refs pour les sliders
-  const citiesScrollRef = useRef(null);
-  const stadesScrollRef = useRef(null);
-  const newsScrollRef = useRef(null);
-
-  // Récupérer les villes
+  // ── Data fetching ────────────────────────────────────────
   useEffect(() => {
     fetch('http://localhost:3309/api/acceuil/CityHosts/all')
-      .then((res) => res.json())
-      .then((data) => {
-        setCities(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      .then(r => r.json()).then(d => { setCities(d); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
   }, []);
-
-  // Récupérer les stades
-  useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/stade/all')
-      .then((res) => res.json())
-      .then((data) => setStades(data))
-      .catch((err) => console.error('Erreur:', err));
-  }, []);
-
-  // Récupérer les groupes
-  useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/accueil/groupes')
-      .then((res) => res.json())
-      .then((data) => setGroups(data))
-      .catch((err) => console.error('Erreur:', err));
-  }, []);
-
-  // Récupérer les événements à venir
-  useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/evants/upcaming')
-      .then((res) => res.json())
-      .then((data) => setUpcomingEvents(data))
-      .catch((err) => console.error('Erreur:', err));
-  }, []);
-
-  // Récupérer les dernières actualités
-  useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/news/lastest')
-      .then((res) => res.json())
-      .then((data) => setLatestNews(data))
-      .catch((err) => console.error('Erreur:', err));
-  }, []);
-
-  // Récupérer les cultures
-  useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/culture/foryou')
-      .then((res) => res.json())
-      .then((data) => setCultures(data))
-      .catch((err) => console.error('Erreur:', err));
-  }, []);
-
-  // Récupérer quelques équipes
-  useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/teams/some')
-      .then((res) => res.json())
-      .then((data) => setTeams(data))
-      .catch((err) => console.error('Erreur:', err));
-  }, []);
-
-  // Récupérer les matchs à venir - FILTRER SEULEMENT LES MATCHS FUTURS
+  useEffect(() => { fetch('http://localhost:3309/api/acceuil/stade/all').then(r=>r.json()).then(setStades).catch(console.error); }, []);
+  useEffect(() => { fetch('http://localhost:3309/api/acceuil/accueil/groupes').then(r=>r.json()).then(setGroups).catch(console.error); }, []);
+  useEffect(() => { fetch('http://localhost:3309/api/acceuil/evants/upcaming').then(r=>r.json()).then(setUpcomingEvents).catch(console.error); }, []);
+  useEffect(() => { fetch('http://localhost:3309/api/acceuil/news/lastest').then(r=>r.json()).then(setLatestNews).catch(console.error); }, []);
+  useEffect(() => { fetch('http://localhost:3309/api/acceuil/culture/foryou').then(r=>r.json()).then(setCultures).catch(console.error); }, []);
+  useEffect(() => { fetch('http://localhost:3309/api/acceuil/teams/some').then(r=>r.json()).then(setTeams).catch(console.error); }, []);
   useEffect(() => {
     fetch('http://localhost:3309/api/acceuil/matches/upcoming')
-      .then((res) => res.json())
-      .then((data) => {
-        // Filtrer pour garder seulement les matchs dont la date est dans le futur
-        const now = new Date();
-        const futureMatches = data.filter(match => {
-          const matchDate = new Date(match.dateOfMatch);
-          return matchDate > now;
-        });
-        setUpcomingMatches(futureMatches);
-      })
-      .catch((err) => console.error('Erreur:', err));
+      .then(r=>r.json())
+      .then(data => { const now=new Date(); setUpcomingMatches(data.filter(m=>new Date(m.dateOfMatch)>now)); })
+      .catch(console.error);
   }, []);
 
-  // Rotation automatique des actualités toutes les 5 secondes
+  // ── News auto-rotation ───────────────────────────────────
   useEffect(() => {
-    if (latestNews.length > 0) {
-      const interval = setInterval(() => {
-        setCurrentNewsIndex((prevIndex) => (prevIndex + 1) % latestNews.length);
-      }, 5000); // Change toutes les 5 secondes
-
-      return () => clearInterval(interval);
-    }
+    if (!latestNews.length) return;
+    const iv = setInterval(() => setCurrentNewsIndex(p => (p+1) % latestNews.length), 5000);
+    return () => clearInterval(iv);
   }, [latestNews]);
 
-  // Fonction countdown timer
+  // ── Countdown ────────────────────────────────────────────
   useEffect(() => {
-    const updateCountdown = () => {
-      const firstMatch = new Date('2030-06-11T18:00:00Z').getTime();
-      const now = new Date().getTime();
-      const distance = firstMatch - now;
-
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      const daysEl = document.getElementById('days');
-      const hoursEl = document.getElementById('hours');
-      const minutesEl = document.getElementById('minutes');
-      const secondsEl = document.getElementById('seconds');
-
-      if (daysEl) daysEl.textContent = String(days).padStart(3, '0');
-      if (hoursEl) hoursEl.textContent = String(hours).padStart(2, '0');
-      if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
-      if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
-
-      if (distance < 0) {
-        const countdownEl = document.getElementById('countdown');
-        if (countdownEl) {
-          countdownEl.innerHTML = '<span class="text-2xl font-bold text-white">The Match Has Begun!</span>';
-        }
-      }
+    const update = () => {
+      const dist = new Date('2030-06-11T18:00:00Z').getTime() - Date.now();
+      if (dist < 0) { const el=document.getElementById('countdown'); if(el) el.innerHTML='<span style="font-weight:800;color:#fff;font-family:Syne,sans-serif;font-size:22px">The Match Has Begun!</span>'; return; }
+      const pad=(n,l=2)=>String(n).padStart(l,'0');
+      const s=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+      s('days',   pad(Math.floor(dist/86400000),3));
+      s('hours',  pad(Math.floor((dist%86400000)/3600000)));
+      s('minutes',pad(Math.floor((dist%3600000)/60000)));
+      s('seconds',pad(Math.floor((dist%60000)/1000)));
     };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
+    update(); const iv=setInterval(update,1000); return ()=>clearInterval(iv);
   }, []);
 
-  // Fonctions de navigation pour les sliders
-  const scrollCities = (direction) => {
-    if (citiesScrollRef.current) {
-      const scrollAmount = 360; // largeur d'une carte + gap
-      const newScrollPosition = citiesScrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
-      citiesScrollRef.current.scrollTo({
-        left: newScrollPosition,
-        behavior: 'smooth'
-      });
-    }
-  };
+  // ── Intersection observers ───────────────────────────────
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e])=>{ if(e.isIntersecting) setNewsVisible(true); },{threshold:.12});
+    if(newsSectionRef.current) obs.observe(newsSectionRef.current);
+    return ()=>obs.disconnect();
+  }, []);
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e])=>{ if(e.isIntersecting) setCultureVisible(true); },{threshold:.08});
+    if(cultureSectionRef.current) obs.observe(cultureSectionRef.current);
+    return ()=>obs.disconnect();
+  }, []);
 
-  const scrollStades = (direction) => {
-    if (stadesScrollRef.current) {
-      const scrollAmount = 360; // largeur d'une carte + gap
-      const newScrollPosition = stadesScrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
-      stadesScrollRef.current.scrollTo({
-        left: newScrollPosition,
-        behavior: 'smooth'
-      });
-    }
-  };
+  // ── Slider helpers ───────────────────────────────────────
+  const scroll = (ref,dir,amt=360) => { if(!ref.current) return; ref.current.scrollTo({left:ref.current.scrollLeft+(dir==='left'?-amt:amt),behavior:'smooth'}); };
 
-  const scrollNews = (direction) => {
-    if (newsScrollRef.current) {
-      const scrollAmount = 400;
-      const newScrollPosition = newsScrollRef.current.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
-      newsScrollRef.current.scrollTo({
-        left: newScrollPosition,
-        behavior: 'smooth'
-      });
-    }
-  };
-
-  // Obtenir les actualités à afficher sur le côté (exclure l'actualité principale)
   const getSideNews = () => {
-    if (latestNews.length === 0) return [];
-    
-    const sideNews = latestNews.filter((_, index) => index !== currentNewsIndex);
-    return sideNews.slice(0, 3);
+    if (!latestNews.length) return [];
+    return latestNews.filter((_,i)=>i!==currentNewsIndex).slice(0,3);
   };
 
-  // Affichage du chargement ou des erreurs
- if (loading) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <img
-        src="/images/logo.png"
-        alt="Loading"
-        className="w-20 h-20 mb-4"
-      />
+  // ── Loading / error ──────────────────────────────────────
+  if (loading) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh'}}>
+      <img src="/images/logo.png" alt="Loading" style={{width:80,height:80}} />
     </div>
   );
-}
-  if (error) return <p className="text-center py-10 text-red-500">Erreur: {error}</p>;
+  if (error) return <p style={{textAlign:'center',padding:'40px',color:'#C1272D'}}>Erreur: {error}</p>;
 
   return (
     <>
@@ -212,212 +101,210 @@ export default function Acceuil() {
         <meta name="description" content="MoroccoFan2030 - Football World Cup 2030 in Morocco" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500;600;700&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link rel="icon" href="/images/logo.png" />
+         <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
         <link rel="icon" href="/images/logo.png" />
       </Head>
 
       <style jsx global>{`
-        .bg-pattern {
-          background-color: #fafaf9;
-          background-image: radial-gradient(#e7e5e4 1px, transparent 1px);
-          background-size: 24px 24px;
-        }
+        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+        body { font-family:'Inter',sans-serif; background:#fff; color:#1c1917; }
+        .no-scrollbar::-webkit-scrollbar { display:none; }
+        .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
 
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Pills */
+        .pill-red   { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(193,39,45,.1);border:1px solid rgba(193,39,45,.25);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#C1272D;font-family:'Syne',sans-serif; }
+        .pill-green { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,98,51,.1);border:1px solid rgba(0,98,51,.25);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#006233;font-family:'Syne',sans-serif; }
+        .pill-gold  { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(240,165,0,.1);border:1px solid rgba(240,165,0,.25);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#b07d00;font-family:'Syne',sans-serif; }
+        .pill-dark  { display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#fff;font-family:'Syne',sans-serif; }
 
-        .glass {
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
+        /* Section helpers */
+        .accent-bar        { width:3px;height:24px;background:linear-gradient(to bottom,#C1272D,#006233);border-radius:2px;flex-shrink:0; }
+        .section-title     { font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:#1c1917; }
+        .section-title-lg  { font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(24px,3vw,36px);color:#fff; }
 
-        body { font-family: 'Cairo', sans-serif; letter-spacing: 0.01em; }
-        h1, h2, h3, h4, .serif-font { font-family: 'Amiri', serif; letter-spacing: 0.02em; }
-        .decorative-font { font-family: 'Aref Ruqaa', serif; }
+        /* Animations */
+        @keyframes fadeUp    { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeLeft  { from{opacity:0;transform:translateX(-30px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes fadeRight { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes scaleIn   { from{opacity:0;transform:scale(.93)} to{opacity:1;transform:scale(1)} }
+        @keyframes glowPulse { 0%,100%{text-shadow:0 0 30px rgba(193,39,45,.5),0 0 60px rgba(193,39,45,.3)} 50%{text-shadow:0 0 50px rgba(193,39,45,.9),0 0 100px rgba(193,39,45,.5)} }
+        @keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+        @keyframes marquee   { from{transform:translateX(0)} to{transform:translateX(-50%)} }
 
-        .bg-morocco-red { background: linear-gradient(135deg, #C1272D 0%, #a01e23 100%); }
-        .bg-morocco-green { background: linear-gradient(135deg, #006233 0%, #004d28 100%); }
+        .anim-fadeUp   { animation:fadeUp   .7s cubic-bezier(.22,.68,0,1.2) both; }
+        .anim-fadeLeft { animation:fadeLeft .7s cubic-bezier(.22,.68,0,1.2) both; }
+        .anim-fadeRight{ animation:fadeRight .65s cubic-bezier(.22,.68,0,1.2) both; }
+        .anim-scaleIn  { animation:scaleIn .65s cubic-bezier(.22,.68,0,1.2) both; }
+        .anim-glow     { animation:glowPulse 3s ease-in-out infinite; }
+        .anim-float    { animation:float 5s ease-in-out infinite; }
+        .d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.2s}.d4{animation-delay:.28s}.d5{animation-delay:.36s}.d6{animation-delay:.44s}
 
-        @keyframes fade-in-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes glow { 0%, 100% { text-shadow: 0 0 30px rgba(193, 39, 45, 0.5), 0 0 60px rgba(193, 39, 45, 0.3); } 50% { text-shadow: 0 0 40px rgba(193, 39, 45, 0.8), 0 0 80px rgba(193, 39, 45, 0.4); } }
-        @keyframes float { 0%, 100% { transform: translateY(0) translateX(0); } 25% { transform: translateY(-30px) translateX(20px); } 50% { transform: translateY(-60px) translateX(-20px); } 75% { transform: translateY(-30px) translateX(20px); } }
-        @keyframes scroll-dot { 0%, 100% { transform: translateY(0); opacity: 0; } 50% { transform: translateY(12px); opacity: 1; } }
-        @keyframes slide-in { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        /* Marquee */
+        .marquee-track { display:flex; animation:marquee 32s linear infinite; }
+        .marquee-track:hover { animation-play-state:paused; }
 
-        .animate-fade-in-down { animation: fade-in-down 0.8s ease-out; }
-        .animate-fade-in-up { animation: fade-in-up 0.8s ease-out; }
-        .animate-fade-in { animation: fade-in 0.8s ease-out; opacity: 0; animation-fill-mode: forwards; }
-        .animate-glow { animation: glow 3s ease-in-out infinite; }
-        .animate-float { animation: float 8s ease-in-out infinite; }
-        .animate-scroll-dot { animation: scroll-dot 2s ease-in-out infinite; }
-        .animate-slide-in { animation: slide-in 0.6s ease-out; }
+        /* News card hover */
+        .news-card-img { transition:transform .8s cubic-bezier(.25,.46,.45,.94); }
+        .news-card:hover .news-card-img { transform:scale(1.05); }
+
+        /* Culture card */
+        .culture-card { cursor:pointer; border-radius:18px; overflow:hidden; position:relative; }
+        .culture-img  { width:100%; height:100%; object-fit:cover; display:block; transition:transform .7s cubic-bezier(.25,.46,.45,.94); }
+        .culture-card:hover .culture-img { transform:scale(1.07); }
+        .culture-ovl  { position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.25) 50%,transparent 100%);transition:opacity .4s; }
+        .culture-card:hover .culture-ovl { opacity:.92; }
+        .culture-body { position:absolute;bottom:0;left:0;right:0;padding:22px; }
+        .culture-desc-reveal { font-size:11px;line-height:1.65;color:rgba(255,255,255,.7);max-height:0;overflow:hidden;opacity:0;transition:max-height .45s ease,opacity .4s ease,margin-top .3s; }
+        .culture-card:hover .culture-desc-reveal { max-height:72px;opacity:1;margin-top:8px; }
+        .culture-tag  { display:inline-block;padding:3px 10px;background:linear-gradient(135deg,#f0a500,#c88400);color:#fff;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;font-family:'Syne',sans-serif;margin-bottom:8px; }
+        .culture-title{ font-family:'Syne',sans-serif;font-weight:800;color:#fff;line-height:1.2; }
+        .culture-cta  { display:flex;align-items:center;gap:6px;margin-top:10px;opacity:0;transition:opacity .3s; }
+        .culture-card:hover .culture-cta { opacity:1; }
       `}</style>
+
       <Navbar />
-      {/* Hero Section with Countdown */}
-      <header className="relative w-full pt-32 pb-20 md:pt-48 md:pb-24 overflow-hidden border-b border-stone-200">
-        <div className="absolute inset-0 w-full h-full z-0">
-          <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
+
+      {/* ══════════════════════════════════════════
+          HERO
+      ══════════════════════════════════════════ */}
+      <header style={{position:'relative',width:'100%',paddingTop:160,paddingBottom:96,overflow:'hidden',borderBottom:'1px solid #e7e5e4'}}>
+        {/* Video */}
+        <div style={{position:'absolute',inset:0,zIndex:0}}>
+          <video autoPlay muted loop playsInline style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}}>
             <source src="/videos/maroc.mp4" type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#C1272D]/20 via-transparent to-[#006233]/20 animate-pulse" style={{animationDuration: '4s'}}></div>
+          <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,.62),rgba(0,0,0,.42),rgba(0,0,0,.72))'}} />
+          <div className="anim-float" style={{position:'absolute',top:-60,left:-60,width:480,height:480,background:'radial-gradient(circle,rgba(193,39,45,.32),transparent 70%)',filter:'blur(60px)',pointerEvents:'none'}} />
+          <div className="anim-float" style={{position:'absolute',bottom:-60,right:-60,width:400,height:400,background:'radial-gradient(circle,rgba(0,98,51,.28),transparent 70%)',filter:'blur(60px)',pointerEvents:'none',animationDelay:'2.5s'}} />
         </div>
 
-        <div className="max-w-7xl mx-auto px-3 relative z-10">
-          <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-            <div className="mb-8 animate-fade-in-down">
-              <div className="inline-flex flex-col items-center gap-2 px-6 py-4 rounded-2xl  ">
-                <span className="text-xs font-bold text-green-200 uppercase tracking-widest decorative-font">First Match Begins In</span>
-                <div className="flex items-center gap-3" id="countdown">
-                  <div className="flex flex-col items-center">
-                    <span className="text-3xl md:text-4xl font-bold text-white" id="days">000</span>
-                    <span className="text-xs text-green-200 mt-1">Days</span>
+        <div style={{maxWidth:1280,margin:'0 auto',padding:'0 24px',position:'relative',zIndex:10}}>
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center',maxWidth:900,margin:'0 auto'}}>
+
+            {/* Countdown */}
+            <div className="anim-fadeUp" style={{marginBottom:40,background:'rgba(255,255,255,.07)',backdropFilter:'blur(16px)',border:'1px solid rgba(255,255,255,.14)',borderRadius:20,padding:'18px 32px'}}>
+              <div style={{fontSize:9,fontWeight:700,color:'rgba(187,247,208,.9)',letterSpacing:'.12em',textTransform:'uppercase',fontFamily:'Syne,sans-serif',marginBottom:14}}>First Match Begins In · حتى المباراة الأولى</div>
+              <div id="countdown" style={{display:'flex',alignItems:'center',gap:20}}>
+                {[['days','Days',3],['hours','Hrs',2],['minutes','Min',2],['seconds','Sec',2]].map(([id,label],i)=>(
+                  <div key={id} style={{display:'flex',alignItems:'center',gap:20}}>
+                    <div style={{textAlign:'center'}}>
+                      <div id={id} style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:38,color:'#fff',lineHeight:1,display:'block',minWidth:id==='days'?66:46}}>{id==='days'?'000':'00'}</div>
+                      <div style={{fontSize:9,color:'rgba(187,247,208,.7)',letterSpacing:'.1em',textTransform:'uppercase',marginTop:4,fontFamily:'Syne,sans-serif'}}>{label}</div>
+                    </div>
+                    {i<3&&<span style={{color:'rgba(255,255,255,.25)',fontSize:30,fontWeight:200,marginTop:-14}}>:</span>}
                   </div>
-                  <span className="text-3xl text-white/50">:</span>
-                  <div className="flex flex-col items-center">
-                    <span className="text-3xl md:text-4xl font-bold text-white" id="hours">00</span>
-                    <span className="text-xs text-green-200 mt-1">Hours</span>
-                  </div>
-                  <span className="text-3xl text-white/50">:</span>
-                  <div className="flex flex-col items-center">
-                    <span className="text-3xl md:text-4xl font-bold text-white" id="minutes">00</span>
-                    <span className="text-xs text-green-200 mt-1">Min</span>
-                  </div>
-                  <span className="text-3xl text-white/50">:</span>
-                  <div className="flex flex-col items-center">
-                    <span className="text-3xl md:text-4xl font-bold text-white" id="seconds">00</span>
-                    <span className="text-xs text-green-200 mt-1">Sec</span>
-                  </div>
-                </div>
-                <span className="text-xs text-green-200 decorative-font mt-1">حتى المباراة الأولى</span>
+                ))}
               </div>
             </div>
 
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight text-white mb-6 leading-[0.95] drop-shadow-2xl animate-fade-in-up">
-              Football returns to the <br />
-              <span className="decorative-font italic text-[#C1272D] font-bold drop-shadow-2xl animate-glow" style={{textShadow: '0 0 30px rgba(193, 39, 45, 0.5)'}}>
-                Kingdom of Light.
-              </span>
+            {/* Headline */}
+            <h1 className="anim-fadeUp d1" style={{fontFamily:'Inter,sans-serif',fontWeight:300,fontSize:'clamp(38px,7vw,78px)',color:'#fff',letterSpacing:'-.03em',lineHeight:1.05,marginBottom:22}}>
+              Football returns to the<br />
+              <span className="anim-glow" style={{fontFamily:'Amiri,serif',fontStyle:'italic',fontWeight:700,color:'#C1272D'}}>Kingdom of Light.</span>
             </h1>
-            
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-lg animate-fade-in" style={{animationDelay: '0.2s'}}>
-              Six cities, one heartbeat. Join us for a historic World Cup across two continents, uniting civilizations through the beautiful game.
+
+            <p className="anim-fadeUp d2" style={{fontFamily:'Inter,sans-serif',fontSize:17,color:'rgba(255,255,255,.7)',maxWidth:560,lineHeight:1.7,marginBottom:36}}>
+              Six cities, one heartbeat. A historic World Cup across two continents, uniting civilizations through the beautiful game.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto animate-fade-in" style={{animationDelay: '0.4s'}}>
-              <button className="group px-8 py-4 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white rounded-xl font-medium hover:shadow-2xl hover:shadow-red-500/50 hover:scale-105 transition-all duration-300 shadow-xl shadow-[#C1272D]/30 flex items-center justify-center gap-2 backdrop-blur-sm">
-                <span className="material-icons group-hover:rotate-12 transition-transform duration-300">calendar_today</span>
-                <span>View Schedule</span>
+            <div className="anim-fadeUp d3" style={{display:'flex',gap:12,flexWrap:'wrap',justifyContent:'center'}}>
+              <button style={{display:'flex',alignItems:'center',gap:8,padding:'13px 28px',background:'linear-gradient(135deg,#C1272D,#a01e23)',color:'#fff',borderRadius:12,border:'none',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:14,cursor:'pointer',boxShadow:'0 8px 24px rgba(193,39,45,.35)',transition:'all .25s'}}
+                onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 14px 32px rgba(193,39,45,.5)';}}
+                onMouseLeave={e=>{e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='0 8px 24px rgba(193,39,45,.35)';}}>
+                <span className="material-icons" style={{fontSize:18}}>calendar_today</span>View Schedule
               </button>
-              <button className="group px-8 py-4 bg-white/10 backdrop-blur-md border-2 border-white/30 text-white rounded-xl font-medium hover:bg-white/20 hover:border-white/50 hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 shadow-xl">
-                <span>Discover Cities</span>
-                <span className="material-icons group-hover:translate-x-1 transition-transform duration-300">arrow_forward</span>
+              <button style={{display:'flex',alignItems:'center',gap:8,padding:'13px 28px',background:'rgba(255,255,255,.1)',color:'#fff',borderRadius:12,border:'1.5px solid rgba(255,255,255,.3)',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:14,cursor:'pointer',backdropFilter:'blur(12px)',transition:'all .25s'}}
+                onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,.18)';}}
+                onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,.1)';}}>
+                Discover Cities<span className="material-icons" style={{fontSize:18}}>arrow_forward</span>
               </button>
             </div>
+
+            {/* Hero stat chips */}
+           
           </div>
         </div>
-        
+        <div style={{position:'absolute',bottom:0,left:0,right:0,height:80,background:'linear-gradient(to bottom,transparent,rgba(255,255,255,.12))',zIndex:5}} />
       </header>
 
-      {/* Participating Teams Slider */}
-      <section className="py-12 bg-gradient-to-r from-stone-50 to-white border-b border-stone-200 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 mb-6">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400">Participating Nations</h3>
-        </div>
-        <div className="relative w-full">
-          <div className="absolute left-0 top-0 w-20 h-full bg-gradient-to-r from-stone-50 to-transparent z-10 pointer-events-none"></div>
-          <div className="absolute right-0 top-0 w-20 h-full bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
-
-          <div className="flex overflow-x-auto gap-12 px-6 pb-4 items-center no-scrollbar">
-            {teams.map((team) => (
-              <div key={team.id} className="flex items-center gap-3 shrink-0 opacity-50 hover:opacity-100 transition-opacity cursor-default group">
-                <div className="w-10 h-10 rounded-full bg-white border-2 border-stone-200 flex items-center justify-center overflow-hidden group-hover:shadow-md group-hover:shadow-red-500/20 transition-all">
-                  <img 
-                    src={team.imageUrl}
-                    alt={team.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className="text-sm font-semibold tracking-wide text-stone-900">{team.name}</span>
+      {/* ══════════════════════════════════════════
+          TEAMS MARQUEE
+      ══════════════════════════════════════════ */}
+      <section style={{padding:'24px 0',background:'#fafaf9',borderBottom:'1px solid #e7e5e4',overflow:'hidden',position:'relative'}}>
+        <div style={{position:'absolute',left:0,top:0,width:100,height:'100%',background:'linear-gradient(to right,#fafaf9,transparent)',zIndex:2,pointerEvents:'none'}} />
+        <div style={{position:'absolute',right:0,top:0,width:100,height:'100%',background:'linear-gradient(to left,#fafaf9,transparent)',zIndex:2,pointerEvents:'none'}} />
+        <div className="marquee-track">
+          {[...teams,...teams].map((team,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:10,flexShrink:0,marginRight:40,opacity:.5,transition:'opacity .2s',cursor:'default'}}
+              onMouseEnter={e=>e.currentTarget.style.opacity='1'}
+              onMouseLeave={e=>e.currentTarget.style.opacity='.5'}>
+              <div style={{width:34,height:34,borderRadius:'50%',background:'#fff',border:'2px solid #e7e5e4',overflow:'hidden'}}>
+                <img src={team.imageUrl} alt={team.name} style={{width:'100%',height:'100%',objectFit:'cover'}} />
               </div>
-            ))}
-          </div>
+              <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:12,color:'#1c1917',whiteSpace:'nowrap'}}>{team.name}</span>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Upcoming Matches - AFFICHER SEULEMENT LES MATCHS FUTURS */}
-      <section id="matches" className="py-20 bg-white border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
-            <div>
-              <h2 className="text-3xl font-medium text-stone-900 tracking-tight">Upcoming Fixtures</h2>
-              <p className="text-stone-500 mt-2">Key qualification and friendly matches.</p>
+      {/* ══════════════════════════════════════════
+          UPCOMING MATCHES
+      ══════════════════════════════════════════ */}
+      <section id="matches" style={{padding:'80px 0',background:'#fff',borderBottom:'1px solid #e7e5e4'}}>
+        <div style={{maxWidth:1280,margin:'0 auto',padding:'0 24px'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:36,flexWrap:'wrap',gap:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div className="accent-bar" />
+              <div>
+                <h2 className="section-title">Upcoming Matches</h2>
+              </div>
             </div>
-            <a href="#" className="text-sm font-medium text-[#C1272D] flex items-center gap-1 hover:gap-2 transition-all group">
-              View Full Calendar <span className="material-icons text-sm group-hover:text-[#006233]">arrow_forward</span>
+            <a href="#" style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:700,color:'#C1272D',fontFamily:'Syne,sans-serif',textDecoration:'none'}}>
+              Full Calendar<span className="material-icons" style={{fontSize:16}}>arrow_forward</span>
             </a>
           </div>
 
-          {upcomingMatches.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-stone-500">No upcoming matches at the moment. Check back soon!</p>
-            </div>
+          {upcomingMatches.length===0 ? (
+            <p style={{textAlign:'center',padding:'48px 0',color:'#a8a29e',fontFamily:'Inter,sans-serif'}}>No upcoming matches at the moment. Check back soon!</p>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {upcomingMatches.slice(0, 3).map((match) => (
-                <div key={match.id} className="col-span-1 bg-gradient-to-br from-[#C1272D] to-[#a01e23] text-white rounded-2xl p-6 relative overflow-hidden group shadow-2xl shadow-red-500/20">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#006233]/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                  <div className="relative z-10 flex flex-col h-full justify-between">
-                    <div className="flex justify-between items-start mb-6">
-                      <span className="px-3 py-1 bg-white/20 backdrop-blur rounded-full text-xs font-medium uppercase tracking-wider">Next Match</span>
-                      <span className="material-icons text-white/60 hover:text-white cursor-pointer">notifications</span>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:20}}>
+              {upcomingMatches.slice(0,3).map((match,idx)=>(
+                <div key={match.id} className={`anim-fadeUp d${idx+1}`} style={{background:'linear-gradient(135deg,#2d0a0e,#1a0608)',borderRadius:16,padding:24,position:'relative',overflow:'hidden',border:'1px solid rgba(193,39,45,.2)',cursor:'pointer',transition:'transform .25s,box-shadow .25s'}}
+                  onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-4px)';e.currentTarget.style.boxShadow='0 20px 48px rgba(193,39,45,.2)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='';}}>
+                  <div style={{position:'absolute',top:-40,right:-40,width:140,height:140,background:'radial-gradient(circle,rgba(193,39,45,.25),transparent 70%)',filter:'blur(20px)'}} />
+                  <div style={{position:'relative',zIndex:1}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                      <span className="pill-dark">Next Match</span>
+                      <span className="material-icons" style={{fontSize:18,color:'rgba(255,255,255,.25)'}}>notifications</span>
                     </div>
-
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="text-center">
-                        <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mb-2 shadow-lg mx-auto overflow-hidden">
-                          <img 
-                            src={match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].imageUrl : ''}
-                            alt={match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].teamName : 'Team 1'}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = `https://via.placeholder.com/56x56/C1272D/FFFFFF?text=${match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].teamName.substring(0, 2) : 'T1'}`; }}
-                          />
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                      {[0,1].map(ti=>(
+                        <div key={ti} style={{textAlign:'center',flex:1}}>
+                          <div style={{width:50,height:50,background:'rgba(255,255,255,.1)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 8px',overflow:'hidden',border:'1.5px solid rgba(255,255,255,.15)'}}>
+                            <img src={match.matchTeams?.[ti]?.imageUrl||''} alt={match.matchTeams?.[ti]?.teamName||`Team ${ti+1}`} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>e.target.style.display='none'} />
+                          </div>
+                          <div style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:11,color:'rgba(255,255,255,.8)'}}>{match.matchTeams?.[ti]?.teamName||`Team ${ti+1}`}</div>
                         </div>
-                        <span className="text-sm font-medium">{match.matchTeams && match.matchTeams[0] ? match.matchTeams[0].teamName : 'Team 1'}</span>
-                      </div>
-                      <div className="text-center px-4">
-                        <span className="text-3xl font-light text-white/70">vs</span>
-                        <div className="text-xs text-white/70 mt-1 uppercase tracking-widest">
-                          {new Date(match.dateOfMatch).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="w-14 h-14 bg-white/10 backdrop-blur border border-white/20 rounded-full flex items-center justify-center mb-2 mx-auto overflow-hidden">
-                          <img 
-                            src={match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].imageUrl : ''}
-                            alt={match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].teamName : 'Team 2'}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = `https://via.placeholder.com/56x56/006233/FFFFFF?text=${match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].teamName.substring(0, 2) : 'T2'}`; }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{match.matchTeams && match.matchTeams[1] ? match.matchTeams[1].teamName : 'Team 2'}</span>
-                      </div>
+                      ))}
                     </div>
-
-                    <div className="pt-6 border-t border-white/20">
-                      <div className="flex items-center gap-2 text-xs text-white/90">
-                        <span className="material-icons text-white/60">location_on</span>
-                        <span>{match.stadeName || 'Stadium TBD'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-white/90 mt-1">
-                        <span className="material-icons text-white/60">calendar_today</span>
-                        <span>{new Date(match.dateOfMatch).toLocaleDateString()} • {match.type}</span>
-                      </div>
+                    <div style={{textAlign:'center',marginBottom:16}}>
+                      <span style={{fontFamily:'Amiri,serif',fontStyle:'italic',fontSize:22,color:'rgba(255,255,255,.35)'}}>vs</span>
+                      <div style={{fontSize:10,color:'rgba(255,255,255,.4)',letterSpacing:'.08em',textTransform:'uppercase',fontFamily:'Syne,sans-serif',marginTop:2}}>{new Date(match.dateOfMatch).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+                    </div>
+                    <div style={{borderTop:'1px solid rgba(255,255,255,.08)',paddingTop:12,display:'flex',flexDirection:'column',gap:5}}>
+                      {[['location_on',match.stadeName||'Stadium TBD'],['calendar_today',`${new Date(match.dateOfMatch).toLocaleDateString()} · ${match.type}`]].map(([ic,tx])=>(
+                        <div key={ic} style={{display:'flex',alignItems:'center',gap:7}}>
+                          <span className="material-icons" style={{fontSize:13,color:'rgba(255,255,255,.25)'}}>{ic}</span>
+                          <span style={{fontSize:11,color:'rgba(255,255,255,.55)',fontFamily:'Inter,sans-serif'}}>{tx}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -427,403 +314,389 @@ export default function Acceuil() {
         </div>
       </section>
 
-      {/* Groups Section */}
-      <section id="groups" className="py-20 bg-stone-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-10 text-center">
-            <h2 className="text-3xl font-medium text-stone-900 tracking-tight">Tournament Groups</h2>
-            <p className="text-stone-500 mt-2">Projected standings and live updates.</p>
+      {/* ══════════════════════════════════════════
+          GROUPS
+      ══════════════════════════════════════════ */}
+      <section id="groups" style={{padding:'80px 0',background:'#fafaf9',borderBottom:'1px solid #e7e5e4'}}>
+        <div style={{maxWidth:1280,margin:'0 auto',padding:'0 24px'}}>
+          <div style={{textAlign:'center',marginBottom:40}}>
+            <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:32,color:'#1c1917',letterSpacing:'-.02em'}}>Tournament Groups</h2>
+            <p style={{fontFamily:'Inter,sans-serif',fontSize:14,color:'#a8a29e',marginTop:6}}>Projected standings and live updates</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {groups.map((group, groupIndex) => (
-              <div key={group.id} className={`bg-gradient-to-br ${groupIndex % 2 === 0 ? 'from-red-50 to-white border-red-100' : 'from-green-50 to-white border-green-100'} rounded-2xl border-2 p-6 hover:shadow-xl ${groupIndex % 2 === 0 ? 'hover:shadow-red-500/10' : 'hover:shadow-green-500/10'} transition-all duration-300`}>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className={`font-bold ${groupIndex % 2 === 0 ? 'text-[#C1272D]' : 'text-[#006233]'} text-lg`}>{group.name}</h3>
-                </div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className={`text-stone-400 text-xs border-b ${groupIndex % 2 === 0 ? 'border-red-100' : 'border-green-100'}`}>
-                      <th className="font-medium text-left pb-2 w-8">#</th>
-                      <th className="font-medium text-left pb-2">Team</th>
-                      <th className="font-medium text-right pb-2">Pts</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-stone-600">
-                    {group.groupTeams && group.groupTeams.map((team, index) => (
-                      <tr key={team.id} className={`border-b border-stone-50 ${index === 0 ? `` : ''}`}>
-                        <td className={`py-3 ${index === 0 ? `font-medium ${groupIndex % 2 === 0 ? 'text-[#C1272D]' : 'text-[#006233]'}` : ''}`}>{index + 1}</td>
-                        <td className={`py-3 ${index === 0 ? 'font-semibold text-stone-900' : ''}`}>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full overflow-hidden border border-stone-200 flex-shrink-0 shadow-sm">
-                              <img 
-                                src={team.teamImageUrl}
-                                alt={team.teamName}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <span>{team.teamName}</span>
-                          </div>
-                        </td>
-                        <td className={`py-3 text-right ${index === 0 ? `font-bold ${groupIndex % 2 === 0 ? 'text-[#C1272D]' : 'text-[#006233]'}` : ''}`}>
-                          {team.wins * 3 + team.draws}
-                        </td>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))',gap:16}}>
+            {groups.map((group,gi)=>{
+              const isRed=gi%2===0; const accent=isRed?'#C1272D':'#006233';
+              return (
+                <div key={group.id} style={{background:'#fff',border:`1px solid ${isRed?'rgba(193,39,45,.1)':'rgba(0,98,51,.1)'}`,borderRadius:14,padding:20,transition:'box-shadow .2s,transform .2s'}}
+                  onMouseEnter={e=>{e.currentTarget.style.boxShadow=`0 8px 32px ${isRed?'rgba(193,39,45,.08)':'rgba(0,98,51,.08)'}`;e.currentTarget.style.transform='translateY(-2px)';}}
+                  onMouseLeave={e=>{e.currentTarget.style.boxShadow='';e.currentTarget.style.transform='';}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:16}}>
+                    <div style={{width:4,height:20,background:accent,borderRadius:2}} />
+                    <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:16,color:accent}}>{group.name}</h3>
+                  </div>
+                  <table style={{width:'100%',borderCollapse:'collapse'}}>
+                    <thead>
+                      <tr style={{borderBottom:`1px solid ${isRed?'rgba(193,39,45,.08)':'rgba(0,98,51,.08)'}`}}>
+                        {['#','Team','Pts'].map((h,hi)=>(
+                          <th key={h} style={{fontFamily:'Syne,sans-serif',fontSize:9,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',color:'#a8a29e',padding:'0 0 8px',textAlign:hi===2?'right':'left',width:hi===0?24:'auto'}}>{h}</th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {(group.groupTeams||[]).map((team,ti)=>(
+                        <tr key={team.id} style={{borderBottom:'1px solid #f5f5f4'}}>
+                          <td style={{padding:'10px 0',fontFamily:'Syne,sans-serif',fontWeight:ti===0?800:400,fontSize:12,color:ti===0?accent:'#a8a29e'}}>{ti+1}</td>
+                          <td style={{padding:'10px 4px'}}>
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                              <div style={{width:28,height:28,borderRadius:'50%',overflow:'hidden',border:'1px solid #e7e5e4',flexShrink:0}}>
+                                <img src={team.teamImageUrl} alt={team.teamName} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                              </div>
+                              <span style={{fontFamily:'Inter,sans-serif',fontSize:12,fontWeight:ti===0?600:400,color:ti===0?'#1c1917':'#57534e'}}>{team.teamName}</span>
+                            </div>
+                          </td>
+                          <td style={{padding:'10px 0',textAlign:'right',fontFamily:'Syne,sans-serif',fontWeight:ti===0?800:400,fontSize:13,color:ti===0?accent:'#57534e'}}>{team.wins*3+team.draws}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          HOST CITIES
+      ══════════════════════════════════════════ */}
+      <section id="cities" style={{padding:'64px 0',background:'linear-gradient(135deg,#2d0a0e,#1a0608,rgba(0,98,51,.3))',position:'relative',overflow:'hidden',borderBottom:'1px solid rgba(255,255,255,.05)'}}>
+        <div style={{position:'absolute',top:-100,left:-100,width:500,height:500,background:'radial-gradient(circle,rgba(193,39,45,.2),transparent 70%)',filter:'blur(60px)',pointerEvents:'none'}} />
+        <div style={{position:'absolute',bottom:-80,right:-80,width:400,height:400,background:'radial-gradient(circle,rgba(0,98,51,.2),transparent 70%)',filter:'blur(60px)',pointerEvents:'none'}} />
+        <div style={{maxWidth:1280,margin:'0 auto',padding:'0 24px',display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:28,position:'relative',zIndex:2}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <div style={{width:3,height:24,background:'linear-gradient(to bottom,#C1272D,#006233)',borderRadius:2}} />
+            <div>
+              <h2 className="section-title-lg">Host Cities</h2>
+            </div>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            {['arrow_back','arrow_forward'].map((icon,i)=>(
+              <button key={icon} onClick={()=>scroll(citiesScrollRef,i===0?'left':'right')} style={{width:40,height:40,borderRadius:'50%',border:'1.5px solid rgba(255,255,255,.2)',background:'rgba(255,255,255,.05)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'background .2s'}}
+                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,.15)'}
+                onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,.05)'}>
+                <span className="material-icons" style={{fontSize:20}}>{icon}</span>
+              </button>
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Host Cities Section - AVEC FLECHES FONCTIONNELLES */}
-      <section className="bg-gradient-to-br from-green-900 via-[#004d28] to-green-950 border-green-950 border-b pt-16 pb-16 relative overflow-hidden" id="cities">
-        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
-        
-        <div className="flex max-w-7xl mr-auto mb-8 ml-auto pr-6 pl-6 items-end justify-between relative z-10">
-          <div>
-            <h2 className="text-3xl font-medium text-white tracking-tight">Host Cities</h2>
-            <p className="text-green-200 mt-2">Explore the six venues across the Kingdom.</p>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => scrollCities('left')}
-              className="w-10 h-10 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/50 transition-all cursor-pointer"
-            >
-              <span className="material-icons">arrow_back</span>
-            </button>
-            <button 
-              onClick={() => scrollCities('right')}
-              className="w-10 h-10 rounded-full border-2 border-white/30 flex items-center justify-center text-white hover:bg-white/10 hover:border-white/50 transition-all cursor-pointer"
-            >
-              <span className="material-icons">arrow_forward</span>
-            </button>
-          </div>
-        </div>
-
-        <div 
-          ref={citiesScrollRef}
-          className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 px-6 max-w-[100vw] no-scrollbar relative z-10"
-        >
-          {cities.map((city) => (
-            <div key={city.id} className="min-w-[280px] md:min-w-[340px] snap-center group cursor-pointer"  onClick={() => window.location.href = `/cities/${city.id}`}>
-              <div className="relative h-[400px] rounded-2xl overflow-hidden mb-4 ring-2 ring-white/20 group-hover:ring-white/40 transition-all">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
-                <img
-                  src={city.imageUrl}
-                  alt={city.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute bottom-6 left-6 z-20 text-white">
-                  <span className="text-xs font-bold uppercase tracking-wider mb-1 block text-amber-300">Host City</span>
-                  <h3 className="text-3xl font-serif mb-1">{city.name}</h3>
-                  <p className="text-sm opacity-80 flex items-center gap-1">
-                    <span className="material-icons text-white/60 text-base">location_on</span>
-                    {city.description}
-                  </p>
-                </div>
+        <div ref={citiesScrollRef} className="no-scrollbar" style={{display:'flex',overflowX:'auto',gap:16,paddingBottom:4,paddingLeft:24,paddingRight:24,position:'relative',zIndex:2}}>
+          {cities.map(city=>(
+            <div key={city.id} onClick={()=>window.location.href=`/cities/${city.id}`} style={{minWidth:300,flexShrink:0,cursor:'pointer',borderRadius:16,overflow:'hidden',position:'relative',height:400,border:'1.5px solid rgba(255,255,255,.08)',transition:'border-color .3s,transform .3s'}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.3)';e.currentTarget.style.transform='translateY(-4px)';}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.08)';e.currentTarget.style.transform='';}}>
+              <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.82),rgba(0,0,0,.2) 55%,transparent)',zIndex:1}} />
+              <img src={city.imageUrl} alt={city.name} style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform .7s'}}
+                onMouseEnter={e=>e.target.style.transform='scale(1.06)'}
+                onMouseLeave={e=>e.target.style.transform=''} />
+              <div style={{position:'absolute',bottom:24,left:24,zIndex:2}}>
+                <div className="pill-dark" style={{marginBottom:8}}>Host City</div>
+                <h3 style={{fontFamily:'Amiri,serif',fontWeight:700,fontSize:30,color:'#fff',lineHeight:1.1}}>{city.name}</h3>
+                <p style={{fontFamily:'Inter,sans-serif',fontSize:12,color:'rgba(255,255,255,.6)',marginTop:6,display:'flex',alignItems:'center',gap:4}}>
+                  <span className="material-icons" style={{fontSize:14}}>location_on</span>{city.description}
+                </p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Stades Section - AVEC FLECHES FONCTIONNELLES */}
-      <section className="bg-gradient-to-br from-stone-50 via-white to-stone-50 border-stone-200 border-b pt-16 pb-16 relative overflow-hidden" id="stades">
-        <div className="absolute inset-0 opacity-5 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
-        
-        <div className="flex max-w-7xl mr-auto mb-8 ml-auto pr-6 pl-6 items-end justify-between relative z-10">
-          <div>
-            <h2 className="text-3xl font-medium text-stone-900 tracking-tight">World Cup Stadiums</h2>
-            <p className="text-stone-600 mt-2">Discover the iconic venues hosting the matches.</p>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => scrollStades('left')}
-              className="w-10 h-10 rounded-full border-2 border-stone-300 flex items-center justify-center text-stone-600 hover:bg-stone-100 hover:border-stone-400 transition-all cursor-pointer"
-            >
-              <span className="material-icons">arrow_back</span>
-            </button>
-            <button 
-              onClick={() => scrollStades('right')}
-              className="w-10 h-10 rounded-full border-2 border-stone-300 flex items-center justify-center text-stone-600 hover:bg-stone-100 hover:border-stone-400 transition-all cursor-pointer"
-            >
-              <span className="material-icons">arrow_forward</span>
-            </button>
-          </div>
-        </div>
-
-        <div 
-          ref={stadesScrollRef}
-          className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 px-6 max-w-[100vw] no-scrollbar relative z-10"
-        >
-          {stades.map((stade) => (
-            <div 
-              key={stade.id} 
-              className="min-w-[280px] md:min-w-[340px] snap-center group cursor-pointer"
-              onClick={() => window.location.href = `/stade/${stade.id}`}
-            >
-              <div className="relative h-[400px] rounded-2xl overflow-hidden mb-4 ring-2 ring-stone-200 group-hover:ring-[#C1272D] transition-all shadow-lg group-hover:shadow-2xl group-hover:shadow-red-500/20">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10"></div>
-                <img
-                  src={stade.imageUrl}
-                  alt={stade.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute top-4 right-4 z-20">
-                  <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold text-white uppercase tracking-wider border border-white/30">
-                    Capacity: {stade.capacity ? stade.capacity.toLocaleString() : 'N/A'}
-                  </div>
-                </div>
-                <div className="absolute bottom-6 left-6 z-20 text-white">
-                  <span className="text-xs font-bold uppercase tracking-wider mb-1 block text-[#C1272D] bg-white px-2 py-1 rounded inline-block">Stadium</span>
-                  <h3 className="text-3xl font-serif mb-2">{stade.name}</h3>
-                  <p className="text-sm opacity-90 flex items-center gap-1 mb-2">
-                    <span className="material-icons text-white/80 text-base">location_on</span>
-                    {stade.cityName || stade.city}
-                  </p>
-                  {stade.description && (
-                    <p className="text-xs opacity-80 line-clamp-2">{stade.description}</p>
-                  )}
-                </div>
-                <div className="absolute inset-0 z-[15] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Latest News Section - AVEC ROTATION AUTOMATIQUE */}
-      <section className="border-y bg-white border-stone-100 pt-20 pb-20" id="news">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-end mb-10">
+      {/* ══════════════════════════════════════════
+          STADIUMS
+      ══════════════════════════════════════════ */}
+      <section id="stades" style={{padding:'64px 0',background:'#fff',borderBottom:'1px solid #e7e5e4',overflow:'hidden',position:'relative'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:`url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='1' fill='%23e7e5e4'/%3E%3C/svg%3E")`,backgroundSize:'24px',opacity:.6,pointerEvents:'none'}} />
+        <div style={{maxWidth:1280,margin:'0 auto',padding:'0 24px',display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:28,position:'relative',zIndex:2}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <div className="accent-bar" />
             <div>
-              <h2 className="text-3xl font-medium text-stone-900 tracking-tight">Latest News</h2>
-              <p className="text-stone-500 mt-2">Stay updated with the latest from Morocco 2030</p>
+              <h2 className="section-title">Stadiums</h2>
             </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => scrollNews('left')}
-                className="w-10 h-10 rounded-full border border-stone-200 flex items-center justify-center hover:bg-stone-50 text-stone-500 hover:text-[#006233] hover:border-[#006233] transition-all cursor-pointer"
-              >
-                <span className="material-icons">arrow_back</span>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            {['arrow_back','arrow_forward'].map((icon,i)=>(
+              <button key={icon} onClick={()=>scroll(stadesScrollRef,i===0?'left':'right')} style={{width:40,height:40,borderRadius:'50%',border:'1.5px solid #e7e5e4',background:'#fff',color:'#57534e',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all .2s'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='#C1272D';e.currentTarget.style.color='#C1272D';}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='#e7e5e4';e.currentTarget.style.color='#57534e';}}>
+                <span className="material-icons" style={{fontSize:20}}>{icon}</span>
               </button>
-              <button 
-                onClick={() => scrollNews('right')}
-                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white flex items-center justify-center hover:shadow-lg hover:shadow-red-500/30 transition-all cursor-pointer"
-              >
-                <span className="material-icons">arrow_forward</span>
-              </button>
+            ))}
+          </div>
+        </div>
+        <div ref={stadesScrollRef} className="no-scrollbar" style={{display:'flex',overflowX:'auto',gap:16,paddingBottom:4,paddingLeft:24,paddingRight:24,position:'relative',zIndex:2}}>
+          {stades.map(stade=>(
+            <div key={stade.id} onClick={()=>window.location.href=`/stade/${stade.id}`} style={{minWidth:300,flexShrink:0,cursor:'pointer',borderRadius:16,overflow:'hidden',position:'relative',height:400,border:'1.5px solid #e7e5e4',transition:'border-color .3s,transform .3s,box-shadow .3s'}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='#C1272D';e.currentTarget.style.transform='translateY(-4px)';e.currentTarget.style.boxShadow='0 20px 48px rgba(193,39,45,.14)';}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='#e7e5e4';e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='';}}>
+              <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,.3) 50%,transparent)',zIndex:1}} />
+              <img src={stade.imageUrl} alt={stade.name} style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform .7s'}}
+                onMouseEnter={e=>e.target.style.transform='scale(1.06)'}
+                onMouseLeave={e=>e.target.style.transform=''} />
+              <div style={{position:'absolute',top:14,right:14,zIndex:2,background:'rgba(0,0,0,.5)',backdropFilter:'blur(8px)',border:'1px solid rgba(255,255,255,.18)',borderRadius:999,padding:'4px 12px'}}>
+                <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:10,color:'#fff',letterSpacing:'.06em'}}>{stade.capacity?stade.capacity.toLocaleString():'N/A'} cap.</span>
+              </div>
+              <div style={{position:'absolute',bottom:24,left:24,zIndex:2}}>
+                <div className="pill-red" style={{marginBottom:8,background:'rgba(193,39,45,.85)',color:'#fff',border:'none'}}>Stadium</div>
+                <h3 style={{fontFamily:'Amiri,serif',fontWeight:700,fontSize:28,color:'#fff',lineHeight:1.2}}>{stade.name}</h3>
+                <p style={{fontFamily:'Inter,sans-serif',fontSize:12,color:'rgba(255,255,255,.65)',marginTop:6,display:'flex',alignItems:'center',gap:4}}>
+                  <span className="material-icons" style={{fontSize:14}}>location_on</span>{stade.cityName||stade.city}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          NEWS — Modern animated section
+      ══════════════════════════════════════════ */}
+      <section id="news" ref={newsSectionRef} style={{padding:'80px 0',background:'#fff',borderBottom:'1px solid #e7e5e4',overflow:'hidden'}}>
+        <div style={{maxWidth:1280,margin:'0 auto',padding:'0 24px'}}>
+
+          {/* Header */}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:40,flexWrap:'wrap',gap:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div className="accent-bar" />
+              <div>
+                <h2 className="section-title">News & Updates</h2>
+              </div>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:14}}>
+              {/* Pill dot indicators */}
+              <div style={{display:'flex',gap:5,alignItems:'center'}}>
+                {latestNews.map((_,idx)=>(
+                  <button key={idx} onClick={()=>setCurrentNewsIndex(idx)} style={{width:idx===currentNewsIndex?24:8,height:8,borderRadius:999,background:idx===currentNewsIndex?'#C1272D':'#e7e5e4',border:'none',cursor:'pointer',transition:'all .35s cubic-bezier(.25,.46,.45,.94)',padding:0}} />
+                ))}
+              </div>
+              {/* Arrows */}
+              <div style={{display:'flex',gap:6}}>
+                {['arrow_back','arrow_forward'].map((icon,i)=>(
+                  <button key={icon} onClick={()=>scroll(newsScrollRef,i===0?'left':'right',400)} style={{width:38,height:38,borderRadius:'50%',border:'1.5px solid #e7e5e4',background:i===1?'linear-gradient(135deg,#C1272D,#a01e23)':'#fff',color:i===1?'#fff':'#57534e',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all .2s'}}
+                    onMouseEnter={e=>{if(i===0){e.currentTarget.style.borderColor='#C1272D';e.currentTarget.style.color='#C1272D';}}}
+                    onMouseLeave={e=>{if(i===0){e.currentTarget.style.borderColor='#e7e5e4';e.currentTarget.style.color='#57534e';}}}>
+                    <span className="material-icons" style={{fontSize:18}}>{icon}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Large Featured News - Left - AVEC ROTATION */}
-            {latestNews && latestNews.length > 0 && latestNews[currentNewsIndex] && (
-              <article key={currentNewsIndex} className="md:col-span-2 group cursor-pointer animate-slide-in">
-                <div className="relative h-[400px] rounded-2xl overflow-hidden mb-4 ring-2 ring-transparent group-hover:ring-[#C1272D]/20 transition-all">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10"></div>
-                  <img 
-                    src={latestNews[currentNewsIndex].imageUrl || "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=2070&auto=format&fit=crop"} 
-                    alt={latestNews[currentNewsIndex].title || 'News'} 
-                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
-                  />
-                  <div className="absolute top-4 left-4 z-20">
-                    <span className="px-3 py-1 bg-gradient-to-r from-[#C1272D] to-[#a01e23] text-white rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
-                      {latestNews[currentNewsIndex].category || 'NEWS'}
+          {/* Two-column grid */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 310px',gap:28,alignItems:'start'}}>
+
+            {/* ── Featured article ── */}
+            {latestNews.length>0 && latestNews[currentNewsIndex] && (
+              <article key={`f-${currentNewsIndex}`} className="news-card" style={{cursor:'pointer',animation:newsVisible?'fadeLeft .65s cubic-bezier(.22,.68,0,1.2) both':'none'}}>
+                <div style={{position:'relative',height:420,borderRadius:16,overflow:'hidden',marginBottom:20}}>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.78) 0%,rgba(0,0,0,.2) 55%,transparent)',zIndex:1}} />
+                  <img className="news-card-img" src={latestNews[currentNewsIndex].imageUrl||'https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=2070'} alt={latestNews[currentNewsIndex].title} style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                  {/* Category */}
+                  <div style={{position:'absolute',top:20,left:20,zIndex:2}}>
+                    <span style={{display:'inline-flex',alignItems:'center',padding:'5px 12px',background:'linear-gradient(135deg,#C1272D,#a01e23)',color:'#fff',borderRadius:999,fontSize:10,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',fontFamily:'Syne,sans-serif',boxShadow:'0 4px 14px rgba(193,39,45,.35)'}}>
+                      {latestNews[currentNewsIndex].category||'NEWS'}
                     </span>
                   </div>
-                  {/* Indicateur de rotation */}
-                  <div className="absolute top-4 right-4 z-20 flex gap-1">
-                    {latestNews.map((_, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === currentNewsIndex ? 'bg-white w-6' : 'bg-white/40'}`}
-                      ></div>
+                  {/* Dot indicators on image */}
+                  <div style={{position:'absolute',top:20,right:20,zIndex:2,display:'flex',gap:5}}>
+                    {latestNews.map((_,idx)=>(
+                      <div key={idx} onClick={e=>{e.stopPropagation();setCurrentNewsIndex(idx);}} style={{width:idx===currentNewsIndex?24:8,height:8,borderRadius:999,background:idx===currentNewsIndex?'#fff':'rgba(255,255,255,.35)',cursor:'pointer',transition:'all .35s cubic-bezier(.25,.46,.45,.94)'}} />
                     ))}
                   </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 text-xs text-stone-400 mb-2">
-                    <span>{new Date(latestNews[currentNewsIndex].dateOfCreation).toLocaleDateString()}</span>
-                    <span className="w-1 h-1 rounded-full bg-stone-300"></span>
-                    <span>4 min read</span>
+                  {/* Overlay headline */}
+                  <div style={{position:'absolute',bottom:24,left:24,right:24,zIndex:2}}>
+                    <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'clamp(18px,2.4vw,26px)',color:'#fff',lineHeight:1.25,marginBottom:8}}>
+                      {latestNews[currentNewsIndex].title||'Latest News Update'}
+                    </h3>
+                    <div style={{display:'flex',alignItems:'center',gap:8,fontSize:11,color:'rgba(255,255,255,.5)',fontFamily:'Inter,sans-serif'}}>
+                      <span className="material-icons" style={{fontSize:12}}>calendar_today</span>
+                      {new Date(latestNews[currentNewsIndex].dateOfCreation).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}
+                      <span style={{width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,.35)'}} />
+                      <span>4 min read</span>
+                    </div>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-medium text-stone-900 mb-2 group-hover:text-[#C1272D] transition-colors serif-font">
-                    {latestNews[currentNewsIndex].title || 'Latest News Update'}
-                  </h3>
-                  <p className="text-stone-500 leading-relaxed">{latestNews[currentNewsIndex].description || 'Read the latest updates about Morocco 2030'}</p>
                 </div>
+                <p style={{fontFamily:'Inter,sans-serif',fontSize:14,color:'#78716c',lineHeight:1.75}}>
+                  {latestNews[currentNewsIndex].description||'Read the latest updates about Morocco 2030'}
+                </p>
               </article>
             )}
 
-            {/* Side News List - Right */}
-            <div className="flex flex-col gap-6">
-              {getSideNews().map((news, index) => (
-                <article key={news.id || index} className="group cursor-pointer">
-                  <div className="flex items-start gap-4">
-                    <div className="w-24 h-20 rounded-xl overflow-hidden shrink-0 ring-2 ring-transparent group-hover:ring-stone-200 transition-all">
-                      <img 
-                        src={news.imageUrl || "https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=800&auto=format&fit=crop"} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                        alt={news.title || 'News'} 
-                      />
+            {/* ── Sidebar ── */}
+            <div style={{display:'flex',flexDirection:'column',gap:0,animation:newsVisible?'fadeRight .65s cubic-bezier(.22,.68,0,1.2) .1s both':'none'}}>
+              <div style={{fontSize:9,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',color:'#a8a29e',fontFamily:'Syne,sans-serif',marginBottom:14}}>More Stories</div>
+
+              {getSideNews().map((news,i)=>(
+                <article key={news.id||i} style={{display:'flex',gap:12,alignItems:'flex-start',padding:'14px 0',borderBottom:i<2?'1px solid #f5f5f4':'none',cursor:'pointer',borderRadius:8,transition:'background .2s',paddingLeft:4,paddingRight:4}}
+                  onMouseEnter={e=>e.currentTarget.style.background='#fafaf9'}
+                  onMouseLeave={e=>e.currentTarget.style.background=''}>
+                  <div style={{width:68,height:58,borderRadius:10,overflow:'hidden',flexShrink:0,border:'1px solid #e7e5e4'}}>
+                    <img style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform .5s'}} src={news.imageUrl||'https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=800'} alt={news.title}
+                      onMouseEnter={e=>e.target.style.transform='scale(1.08)'}
+                      onMouseLeave={e=>e.target.style.transform=''} />
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:9,fontWeight:700,letterSpacing:'.08em',textTransform:'uppercase',fontFamily:'Syne,sans-serif',color:i===0?'#006233':i===1?'#b07d00':'#C1272D',marginBottom:5}}>
+                      {news.category||(i===0?'TEAM NEWS':i===1?'TOURISM':'FIFA')}
                     </div>
-                    <div className="flex-1">
-                      <span className={`text-xs font-bold uppercase tracking-wider mb-1 block ${index === 0 ? 'text-[#006233]' : index === 1 ? 'text-amber-600' : 'text-[#C1272D]'}`}>
-                        {news.category || (index === 0 ? 'TEAM NEWS' : index === 1 ? 'TOURISM' : 'FIFA')}
-                      </span>
-                      <h4 className="text-base font-medium text-stone-900 mb-1 group-hover:text-[#C1272D] transition-colors leading-tight">
-                        {news.title || 'News Update'}
-                      </h4>
-                      <p className="text-xs text-stone-400">{new Date(news.dateOfCreation).toLocaleDateString()}</p>
+                    <h4 style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:12,color:'#1c1917',lineHeight:1.45,marginBottom:5}}>{news.title||'News Update'}</h4>
+                    <div style={{fontSize:10,color:'#a8a29e',fontFamily:'Inter,sans-serif',display:'flex',alignItems:'center',gap:3}}>
+                      <span className="material-icons" style={{fontSize:10}}>calendar_today</span>
+                      {new Date(news.dateOfCreation).toLocaleDateString()}
                     </div>
                   </div>
-                  {index < 2 && <div className="w-full h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent mt-6"></div>}
                 </article>
               ))}
+
+              {/* Newsletter CTA */}
+              <div style={{marginTop:18,padding:18,background:'linear-gradient(135deg,#2d0a0e,#1a0608)',borderRadius:14,position:'relative',overflow:'hidden',border:'1px solid rgba(193,39,45,.18)'}}>
+                <div style={{position:'absolute',top:-30,right:-30,width:100,height:100,background:'radial-gradient(circle,rgba(193,39,45,.3),transparent 70%)',filter:'blur(16px)'}} />
+                <div style={{position:'relative',zIndex:1}}>
+                  <div style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:15,color:'#fff',marginBottom:5}}>Stay Updated</div>
+                  <p style={{fontFamily:'Inter,sans-serif',fontSize:11,color:'rgba(255,255,255,.5)',marginBottom:12,lineHeight:1.55}}>Get the latest Morocco 2030 news in your inbox.</p>
+                  <button style={{width:'100%',padding:'9px 0',background:'linear-gradient(135deg,#C1272D,#a01e23)',color:'#fff',border:'none',borderRadius:8,fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:12,cursor:'pointer',letterSpacing:'.04em',transition:'opacity .2s'}}
+                    onMouseEnter={e=>e.currentTarget.style.opacity='.85'}
+                    onMouseLeave={e=>e.currentTarget.style.opacity='1'}>
+                    Subscribe Free →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Cultural Pulse Section */}
-      <section id="culture" className="py-24 bg-gradient-to-br from-[#C1272D] via-[#a01e23] to-[#8b1820] text-stone-200 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
-        
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-start mb-8">
-            <div>
-              <h2 className="text-3xl font-medium text-white tracking-tight mb-2">Cultural Pulse</h2>
-              <p className="text-red-100">Experience the sights, sounds, and tastes of the Maghreb.</p>
+      {/* ══════════════════════════════════════════
+          CULTURE — Modern animated section
+      ══════════════════════════════════════════ */}
+      <section id="culture" ref={cultureSectionRef} style={{padding:'80px 0',background:'linear-gradient(135deg,#2d0a0e,#1a0608,rgba(0,55,28,.5))',position:'relative',overflow:'hidden',borderBottom:'1px solid rgba(255,255,255,.04)'}}>
+        <div style={{position:'absolute',top:-100,left:-80,width:600,height:600,background:'radial-gradient(circle,rgba(193,39,45,.18),transparent 70%)',filter:'blur(80px)',pointerEvents:'none'}} />
+        <div style={{position:'absolute',bottom:-80,right:-80,width:500,height:500,background:'radial-gradient(circle,rgba(0,98,51,.18),transparent 70%)',filter:'blur(80px)',pointerEvents:'none'}} />
+
+        <div style={{maxWidth:1280,margin:'0 auto',padding:'0 24px',position:'relative',zIndex:2}}>
+          {/* Header */}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:36,flexWrap:'wrap',gap:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:3,height:24,background:'linear-gradient(to bottom,#C1272D,#006233)',borderRadius:2}} />
+              <div>
+                <h2 className="section-title-lg">Cultural Pulse</h2>
+              </div>
             </div>
-            <button className="text-amber-300 hover:text-white transition-colors font-medium flex items-center gap-2 mt-4 md:mt-0 bg-white/10 px-4 py-2 rounded-lg hover:bg-white/20">
-              Discover More
-              <span className="material-icons text-sm">arrow_forward</span>
+            <button style={{display:'flex',alignItems:'center',gap:8,padding:'9px 18px',background:'rgba(255,255,255,.07)',border:'1px solid rgba(255,255,255,.14)',borderRadius:10,color:'rgba(255,255,255,.7)',fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:12,cursor:'pointer',letterSpacing:'.04em',transition:'all .2s'}}
+              onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,.14)';e.currentTarget.style.color='#fff';}}
+              onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,.07)';e.currentTarget.style.color='rgba(255,255,255,.7)';}}>
+              Discover More<span className="material-icons" style={{fontSize:16}}>arrow_forward</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Large Featured Culture Card - Left (2/3 width) */}
-            {cultures && cultures.length > 0 && cultures[0] && (
-              <div className="md:col-span-2 relative h-[500px] rounded-3xl overflow-hidden group cursor-pointer ring-2 ring-white/20 hover:ring-white/40 transition-all">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10"></div>
-                <img
-                  src={cultures[0].imageUrl || "https://images.unsplash.com/photo-1535069502363-2207185df19f?q=80&w=2070&auto=format&fit=crop"}
-                  alt={cultures[0].title || 'Culture'}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute bottom-8 left-8 z-20 max-w-lg">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-black text-xs font-bold uppercase rounded-full shadow-lg">
-                      {cultures[0].category || 'CULTURE'}
-                    </span>
+          {/* Culture grid — CSS grid with hover expand */}
+          <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gridTemplateRows:'260px 260px',gap:12,height:532}}>
+
+            {/* Large card (row span 2) */}
+            {cultures[0] && (
+              <div className="culture-card" style={{gridRow:'1/3',border:'1.5px solid rgba(255,255,255,.07)',animation:cultureVisible?'scaleIn .7s cubic-bezier(.22,.68,0,1.2) .05s both':'none'}}
+                onMouseEnter={()=>setHoveredCulture(0)} onMouseLeave={()=>setHoveredCulture(null)}>
+                <div className="culture-ovl" />
+                <img className="culture-img" src={cultures[0].imageUrl||'https://images.unsplash.com/photo-1535069502363-2207185df19f?q=80&w=2070'} alt={cultures[0].title} />
+                <div className="culture-body">
+                  <div className="culture-tag">{cultures[0].category||'CULTURE'}</div>
+                  <h3 className="culture-title" style={{fontSize:'clamp(20px,2.4vw,30px)'}}>{cultures[0].title||'Discover Moroccan Culture'}</h3>
+                  <p className="culture-desc">{cultures[0].description||'Experience the rich cultural heritage of Morocco.'}</p>
+                  <div className="culture-cta">
+                    <span style={{fontFamily:'Syne,sans-serif',fontWeight:700,fontSize:10,color:'rgba(255,255,255,.6)',letterSpacing:'.08em'}}>EXPLORE</span>
+                    <span className="material-icons" style={{fontSize:15,color:'#f0a500'}}>arrow_forward</span>
                   </div>
-                  <h3 className="text-3xl md:text-4xl font-serif text-white mb-3 leading-tight">
-                    {cultures[0].title || 'Discover Moroccan Culture'}
-                  </h3>
-                  <p className="text-stone-200 leading-relaxed">
-                    {cultures[0].description || 'Experience the rich cultural heritage of Morocco'}
-                  </p>
                 </div>
               </div>
             )}
 
-            {/* Stacked Smaller Culture Cards - Right (1/3 width) */}
-            <div className="flex flex-col gap-6 h-[500px]">
-              {cultures && cultures.length > 1 && cultures[1] && (
-                <div className="flex-1 relative rounded-3xl overflow-hidden group cursor-pointer ring-2 ring-white/20 hover:ring-white/40 transition-all">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                  <img 
-                    src={cultures[1].imageUrl || "https://images.unsplash.com/photo-1590418606746-0188b23364f9?q=80&w=800&auto=format&fit=crop"} 
-                    alt={cultures[1].title || 'Culture'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                  />
-                  <div className="absolute bottom-6 left-6 z-20">
-                    <span className="text-amber-300 text-xs font-bold uppercase tracking-wider mb-1 block">
-                      {cultures[1].category || 'HERITAGE'}
-                    </span>
-                    <h4 className="text-xl font-medium text-white leading-tight">
-                      {cultures[1].title || 'Moroccan Heritage'}
-                    </h4>
-                  </div>
+            {/* Small card 1 */}
+            {cultures[1] && (
+              <div className="culture-card" style={{border:'1.5px solid rgba(255,255,255,.07)',animation:cultureVisible?'scaleIn .7s cubic-bezier(.22,.68,0,1.2) .15s both':'none'}}
+                onMouseEnter={()=>setHoveredCulture(1)} onMouseLeave={()=>setHoveredCulture(null)}>
+                <div className="culture-ovl" />
+                <img className="culture-img" src={cultures[1].imageUrl||'https://images.unsplash.com/photo-1590418606746-0188b23364f9?q=80&w=800'} alt={cultures[1].title} />
+                <div className="culture-body">
+                  <div className="culture-tag">{cultures[1].category||'HERITAGE'}</div>
+                  <h4 className="culture-title" style={{fontSize:16}}>{cultures[1].title||'Moroccan Heritage'}</h4>
+                  <p className="culture-desc" style={{fontSize:11}}>{cultures[1].description||''}</p>
                 </div>
-              )}
+              </div>
+            )}
 
-              {cultures && cultures.length > 2 && cultures[2] && (
-                <div className="flex-1 relative rounded-3xl overflow-hidden group cursor-pointer ring-2 ring-white/20 hover:ring-white/40 transition-all">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
-                  <img 
-                    src={cultures[2].imageUrl || "https://images.unsplash.com/photo-1512553353614-82a737009659?q=80&w=800&auto=format&fit=crop"} 
-                    alt={cultures[2].title || 'Culture'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                  />
-                  <div className="absolute bottom-6 left-6 z-20">
-                    <span className="text-amber-300 text-xs font-bold uppercase tracking-wider mb-1 block">
-                      {cultures[2].category || 'ARCHITECTURE'}
-                    </span>
-                    <h4 className="text-xl font-medium text-white leading-tight">
-                      {cultures[2].title || 'Moroccan Architecture'}
-                    </h4>
-                  </div>
+            {/* Small card 2 */}
+            {cultures[2] && (
+              <div className="culture-card" style={{border:'1.5px solid rgba(255,255,255,.07)',animation:cultureVisible?'scaleIn .7s cubic-bezier(.22,.68,0,1.2) .25s both':'none'}}
+                onMouseEnter={()=>setHoveredCulture(2)} onMouseLeave={()=>setHoveredCulture(null)}>
+                <div className="culture-ovl" />
+                <img className="culture-img" src={cultures[2].imageUrl||'https://images.unsplash.com/photo-1512553353614-82a737009659?q=80&w=800'} alt={cultures[2].title} />
+                <div className="culture-body">
+                  <div className="culture-tag">{cultures[2].category||'ARCHITECTURE'}</div>
+                  <h4 className="culture-title" style={{fontSize:16}}>{cultures[2].title||'Moroccan Architecture'}</h4>
+                  <p className="culture-desc" style={{fontSize:11}}>{cultures[2].description||''}</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
+
+          {/* Culture info strip */}
+          
         </div>
       </section>
 
-      {/* Events Section */}
-      <section id="events" className="py-24 bg-gradient-to-br from-stone-50 to-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5 pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '200px'}}></div>
-        
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-stone-900 mb-4 serif-font">Events & Festivities</h2>
-            <p className="text-lg text-stone-600 max-w-2xl mx-auto">
-              Experience Morocco 2030 beyond the stadiums - fanzones, festivals, and celebrations across the Kingdom
-            </p>
-            <p className="text-sm text-[#006233] decorative-font mt-2">الفعاليات والاحتفالات</p>
+      {/* ══════════════════════════════════════════
+          EVENTS
+      ══════════════════════════════════════════ */}
+      <section id="events" style={{padding:'80px 0',background:'#fafaf9',borderBottom:'1px solid #e7e5e4',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:`url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='1' fill='%23e7e5e4'/%3E%3C/svg%3E")`,backgroundSize:'24px',opacity:.5,pointerEvents:'none'}} />
+        <div style={{maxWidth:1280,margin:'0 auto',padding:'0 24px',position:'relative',zIndex:2}}>
+          {/* Header */}
+          <div style={{textAlign:'center',marginBottom:48}}>
+            
+            <h2 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:'clamp(26px,4vw,42px)',color:'#1c1917',letterSpacing:'-.02em',lineHeight:1.1}}>
+              Beyond the <span style={{fontFamily:'Amiri,serif',fontStyle:'italic',fontWeight:700,color:'#C1272D'}}>Stadiums</span>
+            </h2>
+            <p style={{fontFamily:'Inter,sans-serif',fontSize:14,color:'#78716c',marginTop:10,maxWidth:500,margin:'10px auto 0'}}>Fanzones, festivals, and celebrations across the Kingdom</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {upcomingEvents.slice(0, 3).map((event) => (
-              <div key={event.id} className="group bg-white rounded-2xl overflow-hidden border-2 border-stone-200 hover:border-[#C1272D] hover:shadow-2xl hover:shadow-red-500/20 transition-all duration-300 cursor-pointer">
-                <div className="relative h-56 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"></div>
-                  <img
-                    src={event.imageUrl || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800&auto=format&fit=crop"}
-                    alt={event.name || 'Event'}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute top-4 left-4 z-20">
-                    <span className="px-3 py-1 bg-[#C1272D] text-white rounded-full text-xs font-bold uppercase">Event</span>
-                  </div>
-                  <div className="absolute bottom-4 left-4 z-20">
-                    <h3 className="text-2xl font-bold text-white serif-font">{event.name || 'Event'}</h3>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:18}}>
+            {upcomingEvents.slice(0,5).map((event,ei)=>(
+              <div key={event.id} className={`anim-fadeUp d${(ei%4)+1}`} style={{background:'#fff',borderRadius:14,overflow:'hidden',border:'1px solid #e7e5e4',cursor:'pointer',transition:'all .3s'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='#C1272D';e.currentTarget.style.transform='translateY(-4px)';e.currentTarget.style.boxShadow='0 20px 48px rgba(193,39,45,.1)';}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='#e7e5e4';e.currentTarget.style.transform='';e.currentTarget.style.boxShadow='';}}>
+                <div style={{position:'relative',height:196,overflow:'hidden'}}>
+                  <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.72),transparent)',zIndex:1}} />
+                  <img src={event.imageUrl||'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800'} alt={event.name} style={{width:'100%',height:'100%',objectFit:'cover',transition:'transform .6s'}}
+                    onMouseEnter={e=>e.target.style.transform='scale(1.08)'}
+                    onMouseLeave={e=>e.target.style.transform=''} />
+                  <div style={{position:'absolute',top:12,left:12,zIndex:2}}><span className="pill-dark">Event</span></div>
+                  <div style={{position:'absolute',bottom:12,left:14,zIndex:2}}>
+                    <h3 style={{fontFamily:'Syne,sans-serif',fontWeight:800,fontSize:17,color:'#fff',lineHeight:1.2}}>{event.name||'Event'}</h3>
                   </div>
                 </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-2 text-sm text-stone-500 mb-3">
-                    <span className="material-icons" style={{fontSize: '16px'}}>calendar_today</span>
-                    <span>{new Date(event.dateOfEvent).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-stone-500 mb-4">
-                    <span className="material-icons" style={{fontSize: '16px'}}>location_on</span>
-                    <span>{event.cityName || 'Location TBD'}</span>
-                  </div>
-                  <p className="text-stone-600 mb-4">{event.description || 'Join us for this exciting event'}</p>
+                <div style={{padding:'14px 16px'}}>
+                  {[['calendar_today',new Date(event.dateOfEvent).toLocaleDateString()],['location_on',event.cityName||'Location TBD']].map(([ic,tx])=>(
+                    <div key={ic} style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                      <span className="material-icons" style={{fontSize:13,color:'#a8a29e'}}>{ic}</span>
+                      <span style={{fontFamily:'Inter,sans-serif',fontSize:11,color:'#78716c'}}>{tx}</span>
+                    </div>
+                  ))}
+                  <p style={{fontFamily:'Inter,sans-serif',fontSize:11,color:'#a8a29e',lineHeight:1.6,marginTop:6}}>{event.description||'Join us for this exciting event.'}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </section>
-<Footer/>
+
+      <Footer />
     </>
   );
 }

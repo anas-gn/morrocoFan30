@@ -9,30 +9,27 @@ const API = 'http://localhost:3309/api';
 async function safeFetch(url) {
   try {
     const res = await fetch(url);
-    if (!res.ok) { console.warn(`[safeFetch] HTTP ${res.status} — ${url}`); return null; }
+    if (!res.ok) return null;
     const text = await res.text();
     if (!text || text === 'null') return null;
     return JSON.parse(text);
-  } catch (err) {
-    console.error(`[safeFetch] Error — ${url}`, err);
-    return null;
-  }
+  } catch { return null; }
 }
 
 export default function ItineraryDetail() {
   const router = useRouter();
   const { id } = router.query;
 
-  const [itinerary, setItinerary]               = useState(null);
+  const [itinerary, setItinerary]                       = useState(null);
   const [itineraryAttractions, setItineraryAttractions] = useState([]);
-  const [allAttractions, setAllAttractions]     = useState([]);
-  const [loading, setLoading]                   = useState(true);
-  const [showAddModal, setShowAddModal]         = useState(false);
-  const [searchAdd, setSearchAdd]               = useState('');
-  const [filterType, setFilterType]             = useState('all');
-  const [notification, setNotification]         = useState(null);
-  const [editingDate, setEditingDate]           = useState(false);
-  const [newDate, setNewDate]                   = useState('');
+  const [allAttractions, setAllAttractions]             = useState([]);
+  const [loading, setLoading]                           = useState(true);
+  const [showAddModal, setShowAddModal]                 = useState(false);
+  const [searchAdd, setSearchAdd]                       = useState('');
+  const [filterType, setFilterType]                     = useState('all');
+  const [notification, setNotification]                 = useState(null);
+  const [editingDate, setEditingDate]                   = useState(false);
+  const [newDate, setNewDate]                           = useState('');
 
   const fetchItinerary = async () => {
     if (!id) return;
@@ -44,11 +41,8 @@ export default function ItineraryDetail() {
       ]);
       setItinerary(itData);
       setItineraryAttractions(Array.isArray(attData) ? attData : attData?.content || attData?.attractions || []);
-    } catch (err) {
-      console.error('Error fetching itinerary:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   const fetchAllAttractions = async () => {
@@ -62,9 +56,7 @@ export default function ItineraryDetail() {
           cityAttractions.forEach(attr => all.push({ ...attr, cityName: city.name }));
       }
       setAllAttractions(all);
-    } catch (err) {
-      console.error('Error loading attractions:', err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   useEffect(() => { fetchItinerary(); }, [id]);
@@ -96,7 +88,7 @@ export default function ItineraryDetail() {
     try {
       const res = await fetch(`${API}/itineraries/${id}/remove-attraction/${attractionId}`, { method: 'DELETE' });
       const success = await res.json();
-      if (success === true) { showNotif('success', 'Attraction removed.'); await fetchItinerary(); }
+      if (success === true) { showNotif('success', 'Removed.'); await fetchItinerary(); }
       else showNotif('error', 'Could not remove attraction.');
     } catch { showNotif('error', 'Server error.'); }
   };
@@ -106,19 +98,8 @@ export default function ItineraryDetail() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-  };
-  const formatTime = (time) => time ? time.substring(0, 5) : '';
-
-  const getTypeIcon = (type) => ({
-    Museum: 'solar:book-linear', Monument: 'solar:structures-linear',
-    Park: 'solar:leaf-linear', Beach: 'solar:waves-linear',
-    Market: 'solar:bag-linear', Religious: 'solar:moon-stars-linear',
-    Historical: 'solar:history-linear', Nature: 'solar:nature-linear',
-    Entertainment: 'solar:music-note-linear'
-  }[type] || 'solar:map-point-linear');
+  const formatDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Not set';
+  const formatTime = t => t ? t.substring(0, 5) : '';
 
   const attractionIds = itineraryAttractions.map(a => a.id);
   const filteredForAdd = allAttractions.filter(a => {
@@ -129,39 +110,41 @@ export default function ItineraryDetail() {
   });
   const uniqueTypes = ['all', ...new Set(allAttractions.map(a => a.type).filter(Boolean))];
 
-  /* ── Loading ── */
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#f8f7f5]">
-      <img src="/images/logo.png" alt="" className="w-20 h-20 animate-pulse mb-3" />
+    <div className="flex items-center justify-center min-h-screen bg-white">
+      <div style={{ width:48, height:48, border:'3px solid #C1272D', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (!itinerary) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#f8f7f5]">
-      <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center mb-5">
-        <iconify-icon icon="solar:map-linear" class="text-zinc-300 text-4xl" />
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+      <div style={{ width:64, height:64, borderRadius:'50%', background:'#f5f5f4', border:'1px solid #e7e5e4', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20 }}>
+        <span className="material-icons" style={{ fontSize:28, color:'#a8a29e' }}>map</span>
       </div>
-      <h3 className="serif text-3xl font-light text-zinc-700 mb-3">Itinerary not found</h3>
-      <p className="text-zinc-400 font-light mb-6">This itinerary doesn't exist or has been removed.</p>
+      <div style={{ fontSize:20, fontWeight:700, color:'#57534e', marginBottom:8, fontFamily:'Syne,sans-serif' }}>Itinerary not found</div>
       <button onClick={() => router.push('/itineraries')}
-        className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 transition-all">
-        <iconify-icon icon="solar:arrow-left-linear" class="text-base" />
+        style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'10px 24px', background:'linear-gradient(to right,#2d0a0e,#1a0608)', color:'#fff', border:'none', borderRadius:12, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:13, cursor:'pointer' }}>
+        <span className="material-icons" style={{ fontSize:16 }}>arrow_back</span>
         Back to Itineraries
       </button>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .syne{font-family:'Syne',sans-serif}
+      `}</style>
     </div>
-    
   );
 
   return (
     <>
       <Head>
         <title>{itinerary.title} | MoroccoFan2030</title>
-        <link rel="icon" href="/images/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-        <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" />
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=Amiri:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+        <link rel="icon" href="/images/logo.png" />
+         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
@@ -169,473 +152,484 @@ export default function ItineraryDetail() {
       </Head>
 
       <style jsx global>{`
-        body { font-family: 'DM Sans', sans-serif; background: #f8f7f5; color: #1a1a1a; }
-        .serif { font-family: 'Cormorant Garamond', serif; }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #fff; color: #1c1917; }
+        .syne  { font-family: 'Syne',  sans-serif; }
+        .serif { font-family: 'Amiri', serif; }
 
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
+        @keyframes spin    { to { transform: rotate(360deg); } }
+        @keyframes fadeUp  { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+        @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:.25} }
+        @keyframes shimmer { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
+        @keyframes slideIn { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+
+        .fu { animation: fadeUp .5s ease-out forwards; opacity: 0; }
+        .fi { animation: fadeIn .4s ease-out forwards; opacity: 0; }
+        .d1 { animation-delay:.08s } .d2 { animation-delay:.16s }
+        .d3 { animation-delay:.24s } .d4 { animation-delay:.32s }
+
+        /* ── Pills — identical to Matches page ── */
+        .pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; border:1px solid; }
+        .pill-host    { background:rgba(193,39,45,.08);  color:#C1272D; border-color:rgba(193,39,45,.25);  }
+        .pill-gold    { background:rgba(240,165,0,.1);   color:#b45309; border-color:rgba(240,165,0,.3);   }
+        .pill-green   { background:rgba(0,98,51,.1);     color:#006233; border-color:rgba(0,98,51,.3);     }
+        .pill-default { background:rgba(0,0,0,.04);      color:#a8a29e; border-color:rgba(0,0,0,.08);      }
+
+        .nosb::-webkit-scrollbar { display:none; }
+        .nosb { -ms-overflow-style:none; scrollbar-width:none; }
+
+        /* ── Filter active — Matches style ── */
+        .filter-active { background:linear-gradient(to right,#2d0a0e,#1a0608)!important; color:#fff!important; border-color:transparent!important; }
+
+        /* ── Stat cards — same as Matches ── */
+        .stat-card { background:#fff; border:1px solid #e7e5e4; border-radius:16px; padding:20px 16px; text-align:center; transition:border-color .2s,box-shadow .2s; }
+        .stat-card:hover { border-color:#C1272D; box-shadow:0 4px 20px rgba(193,39,45,.08); }
+        .stat-val { font-size:36px; font-weight:800; line-height:1; font-family:'Syne',sans-serif; }
+        .stat-lbl { font-size:11px; color:#a8a29e; text-transform:uppercase; letter-spacing:.08em; margin-top:6px; font-weight:500; }
+
+        /* ── Attraction card — match-card pattern ── */
+        .attr-card {
+          background:#fff; border:1px solid #e7e5e4; border-radius:16px;
+          overflow:hidden; transition:border-color .2s,transform .2s,box-shadow .2s;
+          border-left:3px solid transparent;
         }
-        .slide-up { animation: slideUp .6s cubic-bezier(.16,1,.3,1) both; }
-        .d1 { animation-delay:.05s } .d2 { animation-delay:.12s }
-        .d3 { animation-delay:.19s } .d4 { animation-delay:.26s }
-
-        .grain::after {
-          content: '';
-          position: absolute; inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
-          pointer-events: none; z-index: 2;
+        .attr-card:hover {
+          border-color:#C1272D; border-left-color:#C1272D;
+          transform:translateY(-2px); box-shadow:0 8px 24px rgba(193,39,45,.09);
         }
+        .attr-card .img-zoom img { transition:transform .7s cubic-bezier(.16,1,.3,1); }
+        .attr-card:hover .img-zoom img { transform:scale(1.07); }
 
-        .hero-clip { clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%); }
+        /* ── Sidebar card ── */
+        .side-card { background:#fff; border:1px solid #e7e5e4; border-radius:16px; overflow:hidden; }
 
-        .tag-pill {
-          display: inline-flex; align-items: center; gap: 4px;
-          padding: 3px 10px; border-radius: 999px;
-          font-size: 10px; font-weight: 700;
-          letter-spacing: .06em; text-transform: uppercase;
-        }
+        /* ── Toast ── */
+        .toast { animation: slideIn .3s ease-out; }
 
-        .attr-card { transition: transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s ease; }
-        .attr-card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.08); }
+        /* ── Skeleton ── */
+        .skeleton { background:linear-gradient(90deg,#e7e5e4 25%,#f5f5f4 50%,#e7e5e4 75%); background-size:600px 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
 
-        .img-zoom { overflow: hidden; }
-        .img-zoom img { transition: transform .7s cubic-bezier(.16,1,.3,1); }
-        .img-zoom:hover img { transform: scale(1.08); }
+        /* ── Modal backdrop ── */
+        .modal-backdrop { animation: fadeIn .2s ease-out; }
 
-        input:focus, textarea:focus { outline: none; border-color: #71717a !important; }
+        input:focus { outline:none; }
 
-        .no-scroll::-webkit-scrollbar { display: none; }
-        .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        @media(max-width:640px){ .stat-val{font-size:28px;} }
       `}</style>
 
       <Navbar />
 
       {/* ── TOAST ── */}
       {notification && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-medium slide-up ${
-          notification.type === 'success' ? 'bg-zinc-900' : 'bg-[#C1272D]'
-        }`}>
-          <iconify-icon icon={notification.type === 'success' ? 'solar:check-circle-bold' : 'solar:close-circle-bold'} class="text-xl" />
+        <div className="toast fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-semibold"
+          style={{ background: notification.type === 'success' ? 'linear-gradient(to right,#2d0a0e,#1a0608)' : '#C1272D', fontFamily:'Syne,sans-serif' }}>
+          <span className="material-icons" style={{ fontSize:18 }}>
+            {notification.type === 'success' ? 'check_circle' : 'error'}
+          </span>
           {notification.message}
         </div>
       )}
 
-      {/* ══ HERO ══════════════════════════════════════════════════════ */}
-      <header
-        className="relative hero-clip bg-zinc-950 overflow-hidden grain"
-        style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
-      >
+      {/* ══ HERO — same structure as Matches ══ */}
+      <header className="relative overflow-hidden" style={{ paddingTop:80, minHeight:440 }}>
         <div className="absolute inset-0">
-          <img src="/images/itin.webp" alt="" className="w-full h-full object-cover opacity-25"
-            onError={e => { e.target.style.display = 'none'; }} />
+          <img src="/images/itin.webp" alt="" className="w-full h-full object-cover"
+            onError={e => e.target.style.display = 'none'} />
           <div className="absolute inset-0"
-            style={{ background: 'linear-gradient(135deg, rgba(10,10,10,.93) 0%, rgba(30,30,30,.68) 50%, rgba(10,10,10,.82) 100%)' }} />
+            style={{ background:'linear-gradient(135deg,rgba(45,10,14,.93) 0%,rgba(26,6,8,.86) 55%,rgba(0,98,51,.22) 100%)' }} />
+          <div className="absolute inset-0 opacity-[.07] pointer-events-none"
+            style={{ backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'180px' }} />
         </div>
 
-        {/* Decorative vertical text */}
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden xl:flex flex-col items-center gap-3 z-10">
-          <div className="w-px h-16 bg-white/10" />
-          <span className="serif text-white/8 font-light"
-            style={{ fontSize: '80px', lineHeight: 1, writingMode: 'vertical-rl' }}>
-            {itinerary.dateToGo ? new Date(itinerary.dateToGo).getFullYear() : '2030'}
-          </span>
-          <div className="w-px h-16 bg-white/10" />
-        </div>
+        {/* Glows */}
+        <div className="absolute top-16 left-8 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background:'rgba(193,39,45,.14)' }} />
+        <div className="absolute bottom-0 right-8 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background:'rgba(0,98,51,.14)' }} />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 pb-20 pt-36">
-
-          {/* Back button */}
-          <button onClick={() => router.push('/itineraries')}
-            className="group flex items-center gap-2 mb-10 text-white/60 hover:text-white transition slide-up">
-            <span className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white/50 transition">
-              <iconify-icon icon="solar:arrow-left-linear" class="text-base" />
+        <div className="relative max-w-7xl mx-auto px-6 py-16">
+          {/* Back + Badge */}
+          <div className="fu mb-8 flex items-center gap-4">
+            <button onClick={() => router.push('/itineraries')}
+              style={{ display:'inline-flex', alignItems:'center', gap:6, color:'rgba(255,255,255,.55)', background:'none', border:'none', cursor:'pointer', fontSize:13, fontWeight:600, transition:'color .2s' }}
+              onMouseOver={e => e.currentTarget.style.color = '#fff'}
+              onMouseOut={e  => e.currentTarget.style.color = 'rgba(255,255,255,.55)'}>
+              <span className="material-icons" style={{ fontSize:16 }}>arrow_back</span>
+              Itineraries
+            </button>
+            <span style={{ color:'rgba(255,255,255,.2)', fontSize:14 }}>/</span>
+            <span className="pill pill-host" style={{ fontSize:11, padding:'5px 14px' }}>
+              <span className="material-icons" style={{ fontSize:12 }}>map</span>
+              Travel Itinerary
             </span>
-            <span className="text-sm font-light">Back to Itineraries</span>
-          </button>
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
-
-            {/* Left: title */}
-            <div className="lg:col-span-8">
-              <div className="flex items-center gap-3 mb-6 slide-up d1">
-                <span className="w-8 h-px bg-[#C1272D]" />
-                <span className="tag-pill bg-[#C1272D]/15 text-[#e05555] border border-[#C1272D]/30">
-                  Travel Itinerary
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
+            {/* Title */}
+            <div className="fu d1">
+              <h1 className="syne" style={{ fontSize:'clamp(36px,6vw,76px)', fontWeight:800, lineHeight:1, letterSpacing:'-.02em', color:'#fff', marginBottom:12 }}>
+                {itinerary.title?.split(' ').slice(0, -1).join(' ') || itinerary.title}<br />
+                <span className="serif italic" style={{ color:'#C1272D' }}>
+                  {itinerary.title?.split(' ').slice(-1)[0] || ''}
                 </span>
-              </div>
-
-              <h1 className="serif font-light text-white mb-5 slide-up d2"
-                style={{ fontSize: 'clamp(44px, 7vw, 84px)', lineHeight: 1.0 }}>
-                {itinerary.title}
               </h1>
-
               {itinerary.dateToGo && (
-                <div className="flex items-center gap-2 text-white/50 font-light slide-up d3"
-                  style={{ fontSize: '16px' }}>
-                  <iconify-icon icon="solar:calendar-linear" />
+                <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:14, color:'rgba(255,255,255,.5)', fontWeight:400 }}>
+                  <span className="material-icons" style={{ fontSize:14 }}>calendar_today</span>
                   {formatDate(itinerary.dateToGo)}
                 </div>
               )}
             </div>
 
-            {/* Right: stat bubble */}
-            <div className="lg:col-span-4 slide-up d3">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { val: itineraryAttractions.length, label: 'Attractions', accent: '#e05555' },
-                  { val: '🇲🇦', label: 'Morocco', accent: '#4caf7d' },
-                ].map((s, i) => (
-                  <div key={i} className="rounded-2xl p-5 backdrop-blur-sm text-center">
-                    <div className="serif font-light mb-1"
-                      style={{ fontSize: '48px', lineHeight: 1, color: s.accent }}>
-                      {s.val}
-                    </div>
-                    <div className="text-white/40 text-xs font-medium uppercase tracking-widest">{s.label}</div>
-                  </div>
-                ))}
-              </div>
+            {/* Hero stat numbers */}
+            <div className="fu d2 flex gap-8 md:gap-12">
+              {[
+                { v: itineraryAttractions.length, l:'Attractions', c:'#C1272D' },
+                { v: '🇲🇦',                       l:'Morocco',     c:'#f0a500' },
+                { v: new Date(itinerary.dateToGo || Date.now()).getFullYear(), l:'Year', c:'#3dba7a' },
+              ].map(({ v, l, c }) => (
+                <div key={l} style={{ textAlign:'center' }}>
+                  <div className="syne" style={{ fontSize: typeof v === 'string' ? 36 : 44, fontWeight:800, color:c, lineHeight:1 }}>{v}</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,.45)', textTransform:'uppercase', letterSpacing:'.1em', marginTop:4, fontWeight:600 }}>{l}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+
+        <div className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none"
+          style={{ background:'linear-gradient(to bottom,transparent,#fff)' }} />
       </header>
 
-      {/* ══ MAIN ══════════════════════════════════════════════════════ */}
-      <main className="max-w-7xl mx-auto px-6 py-14">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      {/* ══ STAT CARDS ══ */}
+      <section className="max-w-7xl mx-auto px-6" style={{ marginTop:50, marginBottom:24 }}>
+        <div className="fu d2" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))', gap:12 }}>
+          {[
+            { v: itineraryAttractions.length,                                                            l:'Stops',       c:'#C1272D' },
+            { v: itineraryAttractions.filter(a => a.priceProxim === 0).length,                          l:'Free Entry',  c:'#006233' },
+            { v: itineraryAttractions.filter(a => a.priceProxim > 0).reduce((s,a)=>s+a.priceProxim,0), l:'Total MAD',   c:'#b45309' },
+            { v: new Set(itineraryAttractions.map(a=>a.type).filter(Boolean)).size,                      l:'Categories',  c:'#7c3aed' },
+          ].map(({ v, l, c }) => (
+            <div key={l} className="stat-card fu d3">
+              <div className="stat-val" style={{ color:c }}>{v}</div>
+              <div className="stat-lbl">{l}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══ MAIN ══ */}
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6" style={{ minHeight:'50vh' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 320px', gap:24, alignItems:'start' }}
+          className="grid-cols-1 lg:grid-cols-[1fr_320px]">
 
           {/* ── LEFT: Attractions ── */}
-          <div className="lg:col-span-2 space-y-8">
-
-            {/* Section heading */}
-            <div className="flex items-end justify-between slide-up">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="w-5 h-px bg-[#C1272D]" />
-                  <span className="tag-pill bg-[#C1272D]/10 text-[#e05555] border border-[#C1272D]/20">
-                    Stops
-                  </span>
-                </div>
-                <h2 className="serif font-light text-zinc-900"
-                  style={{ fontSize: 'clamp(28px, 4vw, 42px)', lineHeight: 1.1 }}>
-                  My Attractions
-                  <span className="text-zinc-400 font-light text-2xl ml-3">({itineraryAttractions.length})</span>
-                </h2>
+          <div>
+            {/* Section header — calendar date-hdr style */}
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }} className="fu">
+              <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'7px 16px', borderRadius:10, background:'linear-gradient(to right,#2d0a0e,#1a0608)', fontSize:13, fontWeight:700, color:'#fff', fontFamily:'Syne,sans-serif', textTransform:'uppercase', letterSpacing:'.05em' }}>
+                <span className="material-icons" style={{ fontSize:14, color:'#C1272D' }}>place</span>
+                My Attractions
               </div>
-
-              <button onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 transition-all hover:shadow-lg">
-                <iconify-icon icon="solar:add-circle-linear" class="text-base" />
-                Add Attraction
+              <span style={{ fontSize:11, fontWeight:600, color:'#a8a29e', background:'#f5f5f4', padding:'3px 10px', borderRadius:99 }}>
+                {itineraryAttractions.length}
+              </span>
+              <div style={{ flex:1, height:1, background:'linear-gradient(to right,rgba(193,39,45,.2),transparent)' }} />
+              <button
+                onClick={() => setShowAddModal(true)}
+                style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'8px 16px', background:'linear-gradient(to right,#2d0a0e,#1a0608)', color:'#fff', border:'none', borderRadius:10, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:12, cursor:'pointer', textTransform:'uppercase', letterSpacing:'.04em' }}>
+                <span className="material-icons" style={{ fontSize:14 }}>add</span>
+                Add
               </button>
             </div>
 
             {/* Empty state */}
-            {itineraryAttractions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-zinc-100 text-center slide-up">
-                <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
-                  <iconify-icon icon="solar:map-point-add-linear" class="text-zinc-300 text-3xl" />
+            {itineraryAttractions.length === 0 && (
+              <div style={{ textAlign:'center', padding:'80px 24px', background:'#fff', borderRadius:16, border:'1px solid #e7e5e4' }} className="fu">
+                <div style={{ width:64, height:64, borderRadius:'50%', background:'#f5f5f4', border:'1px solid #e7e5e4', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
+                  <span className="material-icons" style={{ fontSize:28, color:'#a8a29e' }}>add_location_alt</span>
                 </div>
-                <h3 className="serif text-2xl font-light text-zinc-700 mb-2">No attractions yet</h3>
-                <p className="text-zinc-400 text-sm font-light mb-6 max-w-xs">
-                  Start building your itinerary by adding amazing places to visit.
-                </p>
+                <div className="syne" style={{ fontSize:18, fontWeight:700, color:'#57534e', marginBottom:8 }}>No attractions yet</div>
+                <div style={{ fontSize:13, color:'#a8a29e', marginBottom:24 }}>Start building your itinerary by adding amazing places to visit.</div>
                 <button onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 transition-all">
-                  <iconify-icon icon="solar:add-circle-linear" class="text-base" />
+                  style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'10px 24px', background:'linear-gradient(to right,#2d0a0e,#1a0608)', color:'#fff', border:'none', borderRadius:12, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:13, cursor:'pointer' }}>
+                  <span className="material-icons" style={{ fontSize:16 }}>add</span>
                   Browse Attractions
                 </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {itineraryAttractions.map((attraction, index) => (
-                  <div key={attraction.id}
-                    className="attr-card bg-white rounded-2xl border border-zinc-100 overflow-hidden slide-up"
-                    style={{ animationDelay: `${index * 0.05}s` }}>
-                    <div className="flex items-center gap-5 p-5">
+            )}
 
-                      {/* Step number */}
-                      <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center flex-shrink-0 text-white text-sm font-semibold">
+            {/* Attractions list — match-card structure */}
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              {itineraryAttractions.map((attraction, index) => (
+                <div key={attraction.id} className="attr-card fu" style={{ animationDelay:`${index * .05}s` }}>
+
+                  {/* Dark top strip — identical to match-card */}
+                  <div style={{ background:'linear-gradient(to right,#2d0a0e,#1a0608)', padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      {/* Step number badge */}
+                      <div style={{ width:22, height:22, borderRadius:'50%', background:'#C1272D', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color:'#fff', fontFamily:'Syne,sans-serif', flexShrink:0 }}>
                         {index + 1}
                       </div>
-
-                      {/* Image */}
-                      <div className="img-zoom w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-zinc-100">
-                        <img src={attraction.imageUrl || '/images/attraction-placeholder.jpg'}
-                          alt={attraction.name} className="w-full h-full object-cover"
-                          onError={e => { e.target.src = '/images/attraction-placeholder.jpg'; }} />
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="serif text-xl font-light text-zinc-900 mb-1 line-clamp-1">
-                          {attraction.name}
-                        </h3>
-
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                          {attraction.type && (
-                            <span className="tag-pill bg-zinc-100 text-zinc-500 border border-zinc-200">
-                              <iconify-icon icon={getTypeIcon(attraction.type)} />
-                              {attraction.type}
-                            </span>
-                          )}
-                          {attraction.address && (
-                            <span className="flex items-center gap-1 text-xs text-zinc-400 font-light">
-                              <iconify-icon icon="solar:map-point-linear" />
-                              <span className="line-clamp-1">{attraction.address}</span>
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                          {attraction.houreOfOpening && attraction.houreOfClosing && (
-                            <span className="flex items-center gap-1 text-xs text-zinc-400 font-light">
-                              <iconify-icon icon="solar:clock-circle-linear" />
-                              {formatTime(attraction.houreOfOpening)} – {formatTime(attraction.houreOfClosing)}
-                            </span>
-                          )}
-                          <button onClick={() => router.push(`/attractions/${attraction.id}`)}
-                            className="text-xs text-zinc-900 font-medium flex items-center gap-1 hover:text-zinc-600 transition">
-                            View details
-                            <iconify-icon icon="solar:arrow-right-up-linear" class="text-xs" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Price */}
-                      {attraction.priceProxim !== undefined && (
-                        <div className="text-right flex-shrink-0 hidden sm:block">
-                          <div className="text-xl font-semibold text-zinc-900">
-                            {attraction.priceProxim === 0 ? 'FREE' : attraction.priceProxim}
-                          </div>
-                          {attraction.priceProxim > 0 && (
-                            <div className="text-xs text-zinc-400">MAD</div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Remove */}
+                      <span className="material-icons" style={{ fontSize:13, color:'#C1272D' }}>place</span>
+                      <span className="syne" style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,.7)', textTransform:'uppercase', letterSpacing:'.06em' }}>
+                        {attraction.type || 'Attraction'}
+                      </span>
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      {attraction.priceProxim === 0
+                        ? <span className="pill pill-green" style={{ fontSize:9 }}>Free</span>
+                        : attraction.priceProxim > 0
+                          ? <span className="pill pill-gold" style={{ fontSize:9 }}>{attraction.priceProxim} MAD</span>
+                          : null
+                      }
+                      {/* Remove btn */}
                       <button onClick={() => removeAttraction(attraction.id)}
-                        className="flex-shrink-0 w-9 h-9 rounded-xl border border-zinc-200 text-zinc-400 flex items-center justify-center hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-700 transition-all">
-                        <iconify-icon icon="solar:trash-bin-minimalistic-linear" class="text-base" />
+                        style={{ width:26, height:26, borderRadius:'50%', background:'rgba(255,255,255,.07)', border:'1px solid rgba(255,255,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'rgba(255,255,255,.4)', transition:'all .2s' }}
+                        onMouseOver={e => { e.currentTarget.style.background='rgba(220,38,38,.55)'; e.currentTarget.style.color='#fff'; }}
+                        onMouseOut={e  => { e.currentTarget.style.background='rgba(255,255,255,.07)'; e.currentTarget.style.color='rgba(255,255,255,.4)'; }}>
+                        <span className="material-icons" style={{ fontSize:13 }}>delete</span>
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  {/* Body */}
+                  <div style={{ padding:'16px', display:'flex', alignItems:'center', gap:14 }}>
+                    {/* Image */}
+                    <div className="img-zoom" style={{ width:90, height:90, borderRadius:12, overflow:'hidden', background:'#f5f5f4', flexShrink:0 }}>
+                      <img src={attraction.imageUrl || '/images/attraction-placeholder.jpg'}
+                        alt={attraction.name} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                        onError={e => e.target.src = '/images/attraction-placeholder.jpg'} />
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div className="syne" style={{ fontSize:16, fontWeight:800, color:'#1c1917', marginBottom:4, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                        {attraction.name}
+                      </div>
+                      <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:8, marginBottom:8 }}>
+                        {attraction.address && (
+                          <div style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, color:'#78716c' }}>
+                            <span className="material-icons" style={{ fontSize:13, color:'#C1272D' }}>location_on</span>
+                            <span style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:200 }}>{attraction.address}</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Bottom — same venue row pattern */}
+                      <div style={{ paddingTop:8, borderTop:'1px solid #f5f5f4', display:'flex', alignItems:'center', gap:16 }}>
+                        {attraction.houreOfOpening && attraction.houreOfClosing && (
+                          <div style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'#78716c' }}>
+                            <span className="material-icons" style={{ fontSize:12, color:'#C1272D' }}>schedule</span>
+                            {formatTime(attraction.houreOfOpening)} – {formatTime(attraction.houreOfClosing)}
+                          </div>
+                        )}
+                        <button onClick={() => router.push(`/attractions/${attraction.id}`)}
+                          style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:700, color:'#C1272D', background:'none', border:'none', cursor:'pointer', marginLeft:'auto' }}>
+                          View details
+                          <span className="material-icons" style={{ fontSize:12 }}>arrow_forward</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* ── RIGHT: Sidebar ── */}
-          <div className="space-y-6">
+          <div style={{ position:'sticky', top:100, display:'flex', flexDirection:'column', gap:16 }} className="fu d2 hidden lg:flex">
 
-            {/* Trip Details card */}
-            <div className="bg-white rounded-3xl border border-zinc-100 overflow-hidden sticky top-24 slide-up">
+            {/* Trip Details card — match-card style */}
+            <div className="side-card">
+              {/* Dark top strip */}
+              <div style={{ background:'linear-gradient(to right,#2d0a0e,#1a0608)', padding:'12px 16px', display:'flex', alignItems:'center', gap:8 }}>
+                <span className="material-icons" style={{ fontSize:14, color:'#C1272D' }}>luggage</span>
+                <span className="syne" style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,.7)', textTransform:'uppercase', letterSpacing:'.06em' }}>Trip Details</span>
+              </div>
+              {/* Red→green accent stripe */}
+              <div style={{ height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
 
-              {/* Card top accent */}
-              <div className="h-1 bg-gradient-to-r from-[#C1272D] via-[#e05555] to-transparent" />
-
-              <div className="p-6 space-y-5">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="w-5 h-px bg-[#C1272D]" />
-                  <span className="tag-pill bg-[#C1272D]/10 text-[#e05555] border border-[#C1272D]/20">
-                    Trip Details
-                  </span>
-                </div>
-                <h3 className="serif text-2xl font-light text-zinc-900">Summary</h3>
+              <div style={{ padding:'20px 18px' }}>
+                <div className="syne" style={{ fontSize:18, fontWeight:800, color:'#1c1917', marginBottom:16 }}>{itinerary.title}</div>
 
                 {/* Attractions count */}
-                <div className="flex items-center justify-between py-3.5 border-b border-zinc-100">
-                  <div className="flex items-center gap-2.5 text-zinc-500 text-sm">
-                    <iconify-icon icon="solar:map-point-linear" class="text-base text-zinc-400" />
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingBottom:12, borderBottom:'1px solid #f5f5f4', marginBottom:12 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#78716c' }}>
+                    <span className="material-icons" style={{ fontSize:13, color:'#C1272D' }}>place</span>
                     Attractions
                   </div>
-                  <span className="font-semibold text-zinc-900">{itineraryAttractions.length}</span>
+                  <div className="syne" style={{ fontSize:20, fontWeight:800, color:'#C1272D' }}>{itineraryAttractions.length}</div>
                 </div>
 
                 {/* Date — editable */}
-                <div className="py-2 border-b border-zinc-100">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2.5 text-zinc-500 text-sm">
-                      <iconify-icon icon="solar:calendar-linear" class="text-base text-zinc-400" />
+                <div style={{ paddingBottom:12, borderBottom:'1px solid #f5f5f4', marginBottom:12 }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#78716c' }}>
+                      <span className="material-icons" style={{ fontSize:13, color:'#C1272D' }}>calendar_today</span>
                       Travel Date
                     </div>
                     <button
                       onClick={() => { setEditingDate(!editingDate); setNewDate(itinerary.dateToGo || ''); }}
-                      className="text-xs text-zinc-400 hover:text-zinc-700 flex items-center gap-1 font-medium transition">
-                      <iconify-icon icon={editingDate ? 'solar:close-circle-linear' : 'solar:pen-linear'} />
+                      style={{ display:'flex', alignItems:'center', gap:3, fontSize:11, fontWeight:700, color:'#a8a29e', background:'none', border:'none', cursor:'pointer' }}>
+                      <span className="material-icons" style={{ fontSize:12 }}>{editingDate ? 'close' : 'edit'}</span>
                       {editingDate ? 'Cancel' : 'Edit'}
                     </button>
                   </div>
 
                   {editingDate ? (
-                    <div className="space-y-2 mt-2">
-                      <input type="date" value={newDate}
-                        onChange={e => setNewDate(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm text-zinc-900 focus:border-zinc-400 transition-all" />
+                    <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                      <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
+                        style={{ width:'100%', padding:'8px 12px', border:'2px solid #e7e5e4', borderRadius:10, fontSize:13, color:'#1c1917', background:'#fafaf9', transition:'border-color .2s' }}
+                        onFocus={e => e.target.style.borderColor='#C1272D'}
+                        onBlur={e  => e.target.style.borderColor='#e7e5e4'} />
                       <button onClick={updateDate}
-                        className="w-full py-2.5 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 transition-all">
+                        style={{ width:'100%', padding:'9px', background:'linear-gradient(to right,#2d0a0e,#1a0608)', color:'#fff', border:'none', borderRadius:10, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:12, cursor:'pointer', textTransform:'uppercase', letterSpacing:'.04em' }}>
                         Save Date
                       </button>
                     </div>
                   ) : (
-                    <div className="font-medium text-zinc-900 text-sm mt-0.5">
-                      {itinerary.dateToGo ? formatDate(itinerary.dateToGo) : (
-                        <span className="text-zinc-400 font-light italic">Not set</span>
-                      )}
+                    <div style={{ fontSize:13, fontWeight:600, color:'#1c1917' }}>
+                      {itinerary.dateToGo ? formatDate(itinerary.dateToGo) : <span style={{ color:'#a8a29e', fontStyle:'italic', fontWeight:400 }}>Not set</span>}
                     </div>
                   )}
                 </div>
 
                 {/* Description */}
                 {itinerary.description && (
-                  <p className="text-zinc-500 text-sm font-light leading-relaxed pb-2 border-b border-zinc-100">
+                  <p style={{ fontSize:12, color:'#78716c', lineHeight:1.6, marginBottom:14, paddingBottom:14, borderBottom:'1px solid #f5f5f4' }}>
                     {itinerary.description}
                   </p>
                 )}
 
                 {/* CTA */}
                 <button onClick={() => setShowAddModal(true)}
-                  className="w-full py-3.5 bg-zinc-900 text-white rounded-xl text-sm font-medium hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 hover:shadow-lg">
-                  <iconify-icon icon="solar:add-circle-linear" class="text-base" />
+                  style={{ width:'100%', padding:'11px', background:'linear-gradient(to right,#2d0a0e,#1a0608)', color:'#fff', border:'none', borderRadius:12, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:12, cursor:'pointer', textTransform:'uppercase', letterSpacing:'.05em', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                  <span className="material-icons" style={{ fontSize:15 }}>add</span>
                   Add Attraction
                 </button>
               </div>
             </div>
 
-            {/* Info notice */}
-            <div className="p-5 bg-white rounded-2xl border border-zinc-100 flex items-start gap-3 slide-up d2">
-              <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
-                <iconify-icon icon="solar:lightbulb-linear" class="text-amber-500 text-base" />
+            {/* Info notice — stat-card style */}
+            <div className="stat-card" style={{ textAlign:'left', padding:'16px 18px', display:'flex', gap:12, alignItems:'flex-start' }}>
+              <div style={{ width:36, height:36, borderRadius:10, background:'rgba(240,165,0,.1)', border:'1px solid rgba(240,165,0,.2)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <span className="material-icons" style={{ fontSize:18, color:'#b45309' }}>lightbulb</span>
               </div>
               <div>
-                <div className="font-medium text-zinc-900 text-sm mb-0.5">One Itinerary Rule</div>
-                <div className="text-xs text-zinc-400 font-light leading-relaxed">
-                  Only one itinerary per account. Add as many attractions as you want to plan the perfect trip.
-                </div>
+                <div className="syne" style={{ fontSize:12, fontWeight:700, color:'#1c1917', marginBottom:4 }}>One Itinerary Rule</div>
+                <div style={{ fontSize:11, color:'#a8a29e', lineHeight:1.6 }}>Only one itinerary per account. Add as many attractions as you want to plan the perfect trip.</div>
               </div>
             </div>
-
           </div>
         </div>
       </main>
 
-      {/* ══ ADD ATTRACTION MODAL ══════════════════════════════════════ */}
+      {/* ══ ADD ATTRACTION MODAL ══ */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-zinc-100">
+        <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div style={{ background:'#fff', borderRadius:20, width:'100%', maxWidth:640, maxHeight:'90vh', display:'flex', flexDirection:'column', overflow:'hidden', border:'1px solid #e7e5e4', boxShadow:'0 24px 64px rgba(0,0,0,.18)' }}>
 
-            {/* Modal header — same dark style as create form */}
-            <div className="relative overflow-hidden grain flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, rgba(10,10,10,.97) 0%, rgba(30,30,30,.93) 100%)' }}>
-              <div className="relative z-10 px-8 py-7 flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="w-6 h-px bg-[#C1272D]" />
-                    <span className="tag-pill bg-[#C1272D]/15 text-[#e05555] border border-[#C1272D]/30">
-                      Browse
-                    </span>
-                  </div>
-                  <h2 className="serif font-light text-white" style={{ fontSize: '32px', lineHeight: 1.1 }}>
-                    Add Attractions
-                  </h2>
-                  <p className="text-white/40 text-xs font-light mt-1">Select places to add to your itinerary</p>
+            {/* Modal header — same dark gradient as card tops */}
+            <div style={{ background:'linear-gradient(to right,#2d0a0e,#1a0608)', padding:'20px 24px', display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexShrink:0 }}>
+              <div>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                  <span className="material-icons" style={{ fontSize:13, color:'#C1272D' }}>place</span>
+                  <span className="pill pill-host" style={{ fontSize:9 }}>Browse</span>
                 </div>
-                <button
-                  onClick={() => { setShowAddModal(false); setSearchAdd(''); setFilterType('all'); }}
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all">
-                  <iconify-icon icon="solar:close-linear" class="text-lg" />
-                </button>
+                <div className="syne" style={{ fontSize:22, fontWeight:800, color:'#fff', marginBottom:4 }}>Add Attractions</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,.4)' }}>Select places to add to your itinerary</div>
               </div>
+              <button
+                onClick={() => { setShowAddModal(false); setSearchAdd(''); setFilterType('all'); }}
+                style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.15)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'rgba(255,255,255,.6)', transition:'all .2s', flexShrink:0 }}
+                onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,.18)'}
+                onMouseOut={e  => e.currentTarget.style.background='rgba(255,255,255,.08)'}>
+                <span className="material-icons" style={{ fontSize:18 }}>close</span>
+              </button>
             </div>
 
+            {/* Red→green accent stripe */}
+            <div style={{ height:3, background:'linear-gradient(to right,#C1272D,#006233)', flexShrink:0 }} />
+
             {/* Filters */}
-            <div className="px-7 py-4 border-b border-zinc-100 flex-shrink-0 space-y-3">
-              <div className="relative">
-                <iconify-icon icon="solar:magnifer-linear" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-base" />
-                <input type="text"
+            <div style={{ padding:'16px 24px', borderBottom:'1px solid #f5f5f4', flexShrink:0, display:'flex', flexDirection:'column', gap:10 }}>
+              {/* Search */}
+              <div style={{ position:'relative' }}>
+                <span className="material-icons" style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:16, color:'#a8a29e' }}>search</span>
+                <input type="text" value={searchAdd} onChange={e => setSearchAdd(e.target.value)}
                   placeholder="Search by name or city…"
-                  value={searchAdd}
-                  onChange={e => setSearchAdd(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-400 transition-all" />
+                  style={{ width:'100%', paddingLeft:38, paddingRight:14, paddingTop:9, paddingBottom:9, border:'2px solid #e7e5e4', borderRadius:12, fontSize:13, color:'#1c1917', background:'#fafaf9', transition:'border-color .2s' }}
+                  onFocus={e => e.target.style.borderColor='#C1272D'}
+                  onBlur={e  => e.target.style.borderColor='#e7e5e4'} />
               </div>
 
-              <div className="flex gap-2 flex-wrap">
+              {/* Type filter — same as Matches filter pills */}
+              <div className="nosb" style={{ display:'flex', gap:6, overflowX:'auto' }}>
                 {uniqueTypes.map(type => (
                   <button key={type} onClick={() => setFilterType(type)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wide transition-all capitalize ${
-                      filterType === type ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-700'
-                    }`}>
+                    className={`flex items-center gap-1 px-3 py-1.5 border-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap capitalize ${filterType === type ? 'filter-active' : 'bg-white border-stone-200 text-stone-600 hover:border-[#C1272D]'}`}>
                     {type}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Attractions list */}
-            <div className="flex-1 overflow-y-auto no-scroll px-7 py-4 space-y-3">
+            {/* List */}
+            <div className="nosb" style={{ flex:1, overflowY:'auto', padding:'14px 24px', display:'flex', flexDirection:'column', gap:10 }}>
               {filteredForAdd.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className="w-14 h-14 bg-zinc-100 rounded-full flex items-center justify-center mb-3">
-                    <iconify-icon icon="solar:magnifer-zoom-out-linear" class="text-zinc-300 text-2xl" />
+                <div style={{ textAlign:'center', padding:'60px 0' }}>
+                  <div style={{ width:52, height:52, borderRadius:'50%', background:'#f5f5f4', border:'1px solid #e7e5e4', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
+                    <span className="material-icons" style={{ fontSize:24, color:'#a8a29e' }}>search_off</span>
                   </div>
-                  <p className="text-zinc-500 font-light">No attractions found</p>
-                  <p className="text-zinc-400 text-xs mt-1 font-light">
-                    {allAttractions.length === 0 ? 'Loading…' : 'Try adjusting your search'}
-                  </p>
+                  <div style={{ fontSize:14, color:'#57534e', fontWeight:600, marginBottom:4 }}>No results</div>
+                  <div style={{ fontSize:12, color:'#a8a29e' }}>{allAttractions.length === 0 ? 'Loading…' : 'Try adjusting your search'}</div>
                 </div>
-              ) : (
-                filteredForAdd.map(attraction => (
-                  <div key={attraction.id}
-                    className="flex items-center gap-4 p-4 rounded-2xl border border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50 transition-all group">
-
-                    <div className="img-zoom w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-zinc-100">
-                      <img src={attraction.imageUrl || '/images/attraction-placeholder.jpg'}
-                        alt={attraction.name} className="w-full h-full object-cover"
-                        onError={e => { e.target.src = '/images/attraction-placeholder.jpg'; }} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h4 className="serif text-lg font-light text-zinc-900 line-clamp-1">{attraction.name}</h4>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        {attraction.type && (
-                          <span className="tag-pill bg-zinc-100 text-zinc-500">
-                            <iconify-icon icon={getTypeIcon(attraction.type)} />
-                            {attraction.type}
-                          </span>
-                        )}
-                        {attraction.cityName && (
-                          <span className="text-xs text-zinc-400 flex items-center gap-1 font-light">
-                            <iconify-icon icon="solar:map-point-linear" />
-                            {attraction.cityName}
-                          </span>
-                        )}
-                      </div>
+              ) : filteredForAdd.map(attraction => (
+                <div key={attraction.id}
+                  style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:14, border:'1px solid #e7e5e4', transition:'border-color .2s,background .2s', cursor:'default' }}
+                  onMouseOver={e => { e.currentTarget.style.borderColor='#C1272D'; e.currentTarget.style.background='#fafaf9'; }}
+                  onMouseOut={e  => { e.currentTarget.style.borderColor='#e7e5e4'; e.currentTarget.style.background='#fff'; }}>
+                  {/* Image */}
+                  <div style={{ width:60, height:60, borderRadius:10, overflow:'hidden', background:'#f5f5f4', flexShrink:0 }}>
+                    <img src={attraction.imageUrl || '/images/attraction-placeholder.jpg'} alt={attraction.name}
+                      style={{ width:'100%', height:'100%', objectFit:'cover' }}
+                      onError={e => e.target.src = '/images/attraction-placeholder.jpg'} />
+                  </div>
+                  {/* Info */}
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div className="syne" style={{ fontSize:14, fontWeight:700, color:'#1c1917', marginBottom:3, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{attraction.name}</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                      {attraction.type && <span className="pill pill-default" style={{ fontSize:9 }}>{attraction.type}</span>}
+                      {attraction.cityName && (
+                        <span style={{ display:'flex', alignItems:'center', gap:3, fontSize:11, color:'#a8a29e' }}>
+                          <span className="material-icons" style={{ fontSize:12, color:'#C1272D' }}>location_on</span>
+                          {attraction.cityName}
+                        </span>
+                      )}
                       {attraction.priceProxim !== undefined && (
-                        <div className="text-xs font-semibold text-zinc-700 mt-1">
+                        <span style={{ fontSize:11, fontWeight:700, color:attraction.priceProxim===0?'#006233':'#b45309' }}>
                           {attraction.priceProxim === 0 ? 'FREE' : `${attraction.priceProxim} MAD`}
-                        </div>
+                        </span>
                       )}
                     </div>
-
-                    <button onClick={() => addAttraction(attraction.id)}
-                      className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-medium hover:bg-zinc-800 transition-all">
-                      <iconify-icon icon="solar:add-circle-linear" class="text-sm" />
-                      Add
-                    </button>
                   </div>
-                ))
-              )}
+                  {/* Add btn */}
+                  <button onClick={() => addAttraction(attraction.id)}
+                    style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'7px 14px', background:'linear-gradient(to right,#2d0a0e,#1a0608)', color:'#fff', border:'none', borderRadius:9, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:11, cursor:'pointer', flexShrink:0, textTransform:'uppercase', letterSpacing:'.04em' }}>
+                    <span className="material-icons" style={{ fontSize:13 }}>add</span>
+                    Add
+                  </button>
+                </div>
+              ))}
             </div>
 
             {/* Modal footer */}
-            <div className="px-7 py-4 border-t border-zinc-100 flex-shrink-0 flex items-center justify-between bg-zinc-50/80">
-              <span className="text-xs text-zinc-400 font-light">
-                <strong className="text-zinc-700 font-medium">{itineraryAttractions.length}</strong> attractions in itinerary
+            <div style={{ padding:'14px 24px', borderTop:'1px solid #f5f5f4', background:'#fafaf9', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+              <span style={{ fontSize:12, color:'#a8a29e' }}>
+                <strong style={{ color:'#1c1917', fontFamily:'Syne,sans-serif' }}>{itineraryAttractions.length}</strong> attractions in itinerary
               </span>
               <button
                 onClick={() => { setShowAddModal(false); setSearchAdd(''); setFilterType('all'); }}
-                className="px-5 py-2 bg-zinc-200 text-zinc-700 rounded-xl text-xs font-medium hover:bg-zinc-300 transition-all">
+                style={{ padding:'8px 20px', background:'#f5f5f4', border:'1px solid #e7e5e4', borderRadius:10, fontSize:12, fontWeight:700, color:'#57534e', cursor:'pointer', fontFamily:'Syne,sans-serif' }}>
                 Done
               </button>
             </div>

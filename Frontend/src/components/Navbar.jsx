@@ -7,6 +7,7 @@ import Link from "next/link";
 export default function Navbar() {
   const [menuOpen, setMenuOpen]         = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [scrolled, setScrolled]         = useState(false);
   const router = useRouter();
 
   const [user, setUser] = useState({
@@ -14,6 +15,12 @@ export default function Navbar() {
     initials: "", type: "", imageUrl: "",
   });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const loadUserData = () => {
@@ -36,12 +43,11 @@ export default function Navbar() {
     const handleStorage = (e) => {
       if (e.key === "userName" || e.key === "supporterId" || e.key === null) loadUserData();
     };
-    const handleLogin = () => loadUserData();
     window.addEventListener("storage", handleStorage);
-    window.addEventListener("userLoggedIn", handleLogin);
+    window.addEventListener("userLoggedIn", loadUserData);
     return () => {
       window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("userLoggedIn", handleLogin);
+      window.removeEventListener("userLoggedIn", loadUserData);
     };
   }, []);
 
@@ -65,307 +71,320 @@ export default function Navbar() {
     { href: "/cities",  en: "Cities",  ar: "المدن",     color: "#006233" },
     { href: "/Matches", en: "Matches", ar: "المباريات", color: "#C1272D" },
     { href: "/Teams",   en: "Teams",   ar: "الفرق",     color: "#C1272D" },
-    { href: "/Stades",  en: "Culture", ar: "الثقافة",   color: "#006233" },
     { href: "/Groups",  en: "Groups",  ar: "المجموعات", color: "#C1272D" },
-    { href: "/News",    en: "News",    ar: "الأخبار",   color: "#d97706" },
+    { href: "/News",    en: "News",    ar: "الأخبار",   color: "#b45309" },
     { href: "/Stades",  en: "Stades",  ar: "ملاعب",     color: "#7c3aed" },
   ];
 
   const MENU_ITEMS = [
-    {
-      href: "/Profil", label: "Profile", sub: "Voir mon profil",
-      icon: (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      ),
-    },
-    {
-      href: "/Message", label: "Community", sub: "Discussions & posts",
-      icon: (
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      ),
-    },
+    { href: "/Profil",   label: "Profile",   sub: "View my profile",     icon: "person"  },
+    { href: "/Message",  label: "Community", sub: "Discussions & posts",  icon: "forum"   }
   ];
 
   return (
     <>
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=Amiri:ital,wght@0,400;1,400&display=swap');
+
         @keyframes dropIn {
           from { transform: translateY(-8px) scale(0.98); opacity: 0; }
           to   { transform: translateY(0)    scale(1);    opacity: 1; }
         }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
+        @keyframes fadeInNav { from { opacity: 0; } to { opacity: 1; } }
+
+        .nav-drop  { animation: dropIn  0.18s cubic-bezier(0.16,1,0.3,1); }
+        .nav-fade  { animation: fadeInNav 0.15s ease-out; }
+
+        /* ── Navbar shell ── */
+        .navbar-shell {
+          background: rgba(45, 10, 14, 0.28);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+         
+          transition: background .3s, border-color .3s, box-shadow .3s;
         }
-        .animate-drop-in  { animation: dropIn 0.18s cubic-bezier(0.16,1,0.3,1); }
-        .animate-fade-in  { animation: fadeIn 0.15s ease-out; }
-        .glass {
-          background: rgba(255,255,255,0.95);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(0,0,0,0.05);
+        .navbar-shell.scrolled {
+          background: rgba(45, 10, 14, 0.27);
+          border-bottom-color: rgba(193, 39, 45, 0.22);
+          box-shadow: 0 2px 24px rgba(45, 10, 14, 0.35);
         }
-        .glass-dropdown {
-          background: rgba(255,255,255,0.97);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(0,0,0,0.07);
+
+        /* ── Dropdown ── */
+        .nav-dropdown {
+          background: rgba(45, 10, 14, 0.98);
+          border: 1px solid rgba(193, 39, 45, 0.2);
+          backdrop-filter: blur(24px);
         }
-        body             { font-family: 'Cairo', sans-serif; }
-        .decorative-font { font-family: 'Aref Ruqaa', serif; }
+
+        /* ── Mobile drawer ── */
+        .mobile-drawer {
+          background: rgba(45, 10, 14, 0.99);
+          border-left: 1px solid rgba(193, 39, 45, 0.18);
+        }
+
+        /* ── Nav link pill ── */
+        .nav-link-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 13px;
+          border-radius: 10px;
+          font-family: 'Syne', sans-serif;
+          font-size: 12px;
+          font-weight: 700;
+          color: rgba(255,255,255,.65);
+          text-transform: uppercase;
+          letter-spacing: .04em;
+          transition: background .18s, color .18s;
+          border: 1px solid transparent;
+        }
+        .nav-link-pill:hover {
+          background: rgba(255,255,255,.07);
+          color: #fff;
+          border-color: rgba(193,39,45,.18);
+        }
+        .nav-link-pill .material-icons { font-size: 14px; }
       `}</style>
 
-      {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 w-full z-50 glass transition-all duration-300 font-[Cairo]">
+      {/* ── NAVBAR ── */}
+      <nav className={`navbar-shell fixed top-0 w-full z-50 ${scrolled ? "scrolled" : ""} backdrop-blur-xl`}>
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
           {/* LOGO */}
           <Link href="/Acceuil" className="flex items-center gap-3 group">
-            <img src="/images/logo.png" alt="MoroccoFan2030 Logo" className="w-10 h-10 object-cover" />
-            <div className="flex flex-col">
-              <span className="font-bold tracking-tight text-stone-900 text-sm">
-                Morocco<span className="text-[#C1272D]">2030</span>
+            <img src="/images/logo.png" alt="MoroccoFan2030" className="w-10 h-10 object-cover" />
+            <div className="flex flex-col leading-none">
+              <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:14, color:'#fff', letterSpacing:'-.01em', lineHeight:1.2 }}>
+                Morocco<span style={{ color:'#C1272D' }}>2030</span>
               </span>
-              <span className="text-xs text-[#006233] decorative-font -mt-1">المغرب</span>
+              <span style={{ fontFamily:'Amiri,serif', fontStyle:'italic', fontSize:12, color:'rgba(0,98,51,.8)', lineHeight:1.4 }}>المغرب</span>
             </div>
           </Link>
 
-          {/* DESKTOP MENU */}
+          {/* DESKTOP LINKS */}
           <div className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ href, en, ar, color }) => (
-              <Link key={en} href={href} className="group px-4 py-2 hover:bg-stone-50 rounded-lg transition-all">
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-sm font-semibold text-stone-700 transition-colors group-hover:text-stone-900"
-                        onMouseEnter={e => e.target.style.color = color}
-                        onMouseLeave={e => e.target.style.color = ""}>
-                    {en}
-                  </span>
-                  <span className="text-[11px] decorative-font opacity-60 transition-opacity group-hover:opacity-90"
-                        style={{ color }}>
-                    {ar}
-                  </span>
-                </div>
+              <Link key={en} href={href}
+                className="group px-4 py-2 rounded-lg hover:bg-white/[0.08] transition-all duration-200"
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:1, textDecoration:'none' }}>
+                <span style={{ fontFamily:'Syne,sans-serif', fontSize:12, fontWeight:700, color:'rgba(255,255,255,.75)', textTransform:'uppercase', letterSpacing:'.05em', lineHeight:1.2 }}>
+                  {en}
+                </span>
+                <span style={{ fontFamily:'Amiri,serif', fontSize:11, opacity:.6, lineHeight:1.3, color }}>
+                  {ar}
+                </span>
               </Link>
             ))}
           </div>
 
           {/* USER / LOGIN — DESKTOP */}
           {isLoggedIn ? (
-            <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="hidden md:flex items-center gap-2.5 px-3 py-2 rounded-full hover:bg-stone-50 transition-all duration-200 group"
-            >
-              {/* Avatar */}
-              <div className="relative">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden ring-2 ring-offset-1 transition-all duration-200 group-hover:ring-offset-2"
-                     style={{ background: accentColor, ringColor: accentColor }}>
+            <div className="hidden md:block relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all"
+                style={{ background: userMenuOpen ? 'rgba(255,255,255,.08)' : 'transparent' }}
+                onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,.08)'}
+                onMouseOut={e  => !userMenuOpen && (e.currentTarget.style.background='transparent')}>
+                {/* Avatar */}
+                <div style={{ width:34, height:34, borderRadius:'50%', background:accentColor, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:13, color:'#fff', border:'2px solid rgba(255,255,255,.15)', flexShrink:0 }}>
                   {user.imageUrl
                     ? <img src={user.imageUrl} alt={user.name} className="w-full h-full object-cover" />
-                    : <span>{user.initials || "?"}</span>}
+                    : <span>{user.initials || "?"}</span>
+                  }
                 </div>
-                {/* Online dot */}
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-white" />
-              </div>
-              {/* Chevron */}
-             
-            </button>
+                <div className="hidden lg:block text-left">
+                  <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:12, color:'#fff', lineHeight:1.2 }}>{user.name}</div>
+                  <div style={{ fontSize:10, color:'rgba(255,255,255,.4)', textTransform:'uppercase', letterSpacing:'.06em', lineHeight:1.2 }}>
+                    {isResponsable ? 'Staff' : 'Fan'}
+                  </div>
+                </div>
+                <span className="material-icons hidden lg:block" style={{ fontSize:16, color:'rgba(255,255,255,.4)' }}>expand_more</span>
+              </button>
+            </div>
           ) : (
             <Link href="/Login"
-                  className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#C1272D] hover:bg-[#A01F24] text-white font-medium text-sm transition-all shadow-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-              </svg>
+              className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-xs font-bold transition-all"
+              style={{ background:'linear-gradient(to right,#C1272D,#a01f24)', fontFamily:'Syne,sans-serif', textTransform:'uppercase', letterSpacing:'.05em', boxShadow:'0 4px 14px rgba(193,39,45,.3)' }}>
+              <span className="material-icons" style={{ fontSize:15 }}>login</span>
               Login
             </Link>
           )}
 
-          {/* BURGER (MOBILE) */}
+          {/* BURGER */}
           <button onClick={() => setMenuOpen(true)}
-                  className="md:hidden p-2 rounded-lg hover:bg-stone-100 transition-colors">
-            <div className="w-6 h-0.5 bg-stone-800 mb-1.5 rounded-full" />
-            <div className="w-6 h-0.5 bg-stone-800 mb-1.5 rounded-full" />
-            <div className="w-6 h-0.5 bg-stone-800 rounded-full" />
+            className="md:hidden p-2 rounded-xl hover:bg-white/10 transition-colors flex flex-col gap-1.5">
+            <div style={{ width:22, height:2, background:'rgba(255,255,255,.7)', borderRadius:99 }} />
+            <div style={{ width:16, height:2, background:'rgba(255,255,255,.5)', borderRadius:99 }} />
+            <div style={{ width:22, height:2, background:'rgba(255,255,255,.7)', borderRadius:99 }} />
           </button>
         </div>
       </nav>
 
-      {/* ── CLICK OVERLAY ─────────────────────────────────────────────────── */}
+      {/* ── CLICK OVERLAY ── */}
       {userMenuOpen && (
-        <div className="fixed inset-0 z-40 animate-fade-in" onClick={() => setUserMenuOpen(false)} />
+        <div className="fixed inset-0 z-40 nav-fade" onClick={() => setUserMenuOpen(false)} />
       )}
 
-      {/* ── USER DROPDOWN (DESKTOP) ────────────────────────────────────────── */}
+      {/* ── USER DROPDOWN (DESKTOP) ── */}
       {isLoggedIn && userMenuOpen && (
-        <div className="hidden md:block fixed top-[76px] right-6 w-68 z-50 animate-drop-in"
-             style={{ width: "260px" }}>
-          {/* Same glass as navbar */}
-          <div className="glass-dropdown rounded-2xl shadow-xl shadow-black/[0.08] overflow-hidden">
+        <div className="hidden md:block fixed top-[76px] right-6 z-50 nav-drop" style={{ width:260 }}>
+          <div className="nav-dropdown rounded-2xl shadow-2xl overflow-hidden">
 
-            {/* ── User header — matches navbar height/padding rhythm */}
-            <div className="px-4 py-4 border-b border-stone-100/80">
-              <div className="flex items-center gap-3">
-                {/* Avatar — same ring style as navbar button */}
-                <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden"
-                       style={{ background: accentColor }}>
+            {/* User header */}
+            <div style={{ padding:'16px', borderBottom:'1px solid rgba(255,255,255,.07)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <div style={{ position:'relative', flexShrink:0 }}>
+                  <div style={{ width:40, height:40, borderRadius:'50%', background:accentColor, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:14, color:'#fff' }}>
                     {user.imageUrl
                       ? <img src={user.imageUrl} alt={user.name} className="w-full h-full object-cover" />
-                      : <span>{user.initials || "?"}</span>}
+                      : user.initials || "?"
+                    }
                   </div>
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-white" />
+                  <span style={{ position:'absolute', bottom:0, right:0, width:10, height:10, borderRadius:'50%', background:'#3dba7a', border:'2px solid rgba(45,10,14,.99)' }} />
                 </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-stone-900 text-sm truncate leading-tight">
-                    {user.fullName || "Utilisateur"}
-                  </p>
-                  <p className="text-xs text-stone-400 truncate mt-0.5">{user.email}</p>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:13, color:'#fff', lineHeight:1.2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {user.fullName || "User"}
+                  </div>
+                  <div style={{ fontSize:11, color:'rgba(255,255,255,.4)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginTop:2 }}>
+                    {user.email}
+                  </div>
                 </div>
-
-                {/* Role badge — same pill style as navbar login button */}
-                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full text-white"
-                      style={{ background: accentColor }}>
-                  {isResponsable ? "Staff" : "Fan"}
+                <span style={{ fontSize:9, fontFamily:'Syne,sans-serif', fontWeight:800, textTransform:'uppercase', letterSpacing:'.06em', padding:'3px 8px', borderRadius:99, background:accentColor, color:'#fff', flexShrink:0 }}>
+                  {isResponsable ? 'Staff' : 'Fan'}
                 </span>
               </div>
             </div>
 
-            {/* ── Menu items — same padding/hover as navbar links */}
-            <div className="py-1.5">
+            {/* Menu items */}
+            <div style={{ padding:'6px 0' }}>
               {MENU_ITEMS.map(({ href, label, sub, icon }) => (
-                <Link key={label} href={href}
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-stone-50 transition-all duration-150 group">
-                  <div className="w-8 h-8 rounded-xl bg-stone-100 group-hover:bg-white flex items-center justify-center transition-all shrink-0 group-hover:shadow-sm">
-                    <svg className="w-4 h-4 text-stone-500 group-hover:text-stone-800 transition-colors"
-                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      {icon}
-                    </svg>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-stone-700 group-hover:text-stone-900 transition-colors leading-tight">
-                      {label}
-                    </p>
-                    <p className="text-[11px] text-stone-400 leading-tight mt-0.5">{sub}</p>
+                <Link key={label} href={href} onClick={() => setUserMenuOpen(false)}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 16px', transition:'background .15s', cursor:'pointer' }}
+                    onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,.06)'}
+                    onMouseOut={e  => e.currentTarget.style.background='transparent'}>
+                    <div style={{ width:32, height:32, borderRadius:10, background:'rgba(255,255,255,.06)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <span className="material-icons" style={{ fontSize:16, color:'rgba(255,255,255,.5)' }}>{icon}</span>
+                    </div>
+                    <div style={{ minWidth:0 }}>
+                      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:12, color:'rgba(255,255,255,.85)', lineHeight:1.2 }}>{label}</div>
+                      <div style={{ fontSize:10, color:'rgba(255,255,255,.3)', marginTop:1 }}>{sub}</div>
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
 
-            {/* ── Divider — same as navbar bottom border */}
-            <div className="mx-4 border-t border-stone-100" />
+            {/* Divider */}
+            <div style={{ margin:'0 16px', height:1, background:'rgba(255,255,255,.07)' }} />
 
-            {/* ── Logout — same text-sm weight as nav links */}
-            <div className="py-1.5">
+            {/* Logout */}
+            <div style={{ padding:'6px 0 4px' }}>
               <button onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-all duration-150 group">
-                <div className="w-8 h-8 rounded-xl bg-stone-100 group-hover:bg-red-100 flex items-center justify-center transition-all shrink-0">
-                  <svg className="w-4 h-4 text-stone-400 group-hover:text-[#C1272D] transition-colors"
-                       fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
+                style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'10px 16px', background:'transparent', border:'none', cursor:'pointer', transition:'background .15s' }}
+                onMouseOver={e => e.currentTarget.style.background='rgba(193,39,45,.1)'}
+                onMouseOut={e  => e.currentTarget.style.background='transparent'}>
+                <div style={{ width:32, height:32, borderRadius:10, background:'rgba(255,255,255,.06)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <span className="material-icons" style={{ fontSize:16, color:'rgba(193,39,45,.7)' }}>logout</span>
                 </div>
-                <span className="text-sm font-semibold text-stone-500 group-hover:text-[#C1272D] transition-colors">
-                  Sign out
-                </span>
+                <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:12, color:'rgba(193,39,45,.8)' }}>Sign out</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── OVERLAY MOBILE ────────────────────────────────────────────────── */}
+      {/* ── MOBILE OVERLAY ── */}
       {menuOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden animate-fade-in"
-             onClick={() => setMenuOpen(false)} />
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden nav-fade" onClick={() => setMenuOpen(false)} />
       )}
 
-      {/* ── MOBILE MENU ───────────────────────────────────────────────────── */}
-      <div className={`fixed top-0 right-0 h-full w-80 bg-white z-50 transform transition-transform duration-300 md:hidden overflow-y-auto
-        ${menuOpen ? "translate-x-0" : "translate-x-full"}`}>
+      {/* ── MOBILE DRAWER ── */}
+      <div className={`mobile-drawer fixed top-0 right-0 h-full w-80 z-50 transform transition-transform duration-300 md:hidden overflow-y-auto ${menuOpen ? "translate-x-0" : "translate-x-full"}`}>
 
-        {isLoggedIn ? (
-          <div className="p-6 border-b border-stone-100">
-            <button onClick={() => setMenuOpen(false)}
-                    className="absolute top-6 right-6 w-8 h-8 rounded-full hover:bg-stone-100 flex items-center justify-center text-stone-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="flex items-center gap-3 mt-2">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden"
-                     style={{ background: accentColor }}>
-                  {user.imageUrl
-                    ? <img src={user.imageUrl} alt={user.name} className="w-full h-full object-cover" />
-                    : user.initials || "?"}
-                </div>
-                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white" />
+        {/* Header */}
+        <div style={{ padding:'20px 20px 16px', borderBottom:'1px solid rgba(255,255,255,.07)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <img src="/images/logo.png" alt="" style={{ width:36, height:36, objectFit:'cover' }} />
+            <div>
+              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:14, color:'#fff' }}>
+                Morocco<span style={{ color:'#C1272D' }}>2030</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-stone-900 truncate">{user.fullName || "Utilisateur"}</h3>
-                <p className="text-xs text-stone-500 truncate">{user.email}</p>
-                <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full text-white font-medium"
-                      style={{ background: accentColor }}>
-                  {isResponsable ? "Responsable" : "Supporter"}
-                </span>
-              </div>
+              <div style={{ fontFamily:'Amiri,serif', fontStyle:'italic', fontSize:11, color:'rgba(0,98,51,.8)' }}>المغرب</div>
             </div>
           </div>
-        ) : (
-          <div className="p-6 border-b border-stone-100">
-            <button onClick={() => setMenuOpen(false)}
-                    className="absolute top-6 right-6 w-8 h-8 rounded-full hover:bg-stone-100 flex items-center justify-center text-stone-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <Link href="/Login"
-                  className="flex items-center justify-center gap-2 mt-2 px-5 py-3 rounded-full bg-[#C1272D] hover:bg-[#A01F24] text-white font-medium text-sm transition-all shadow-sm">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-              </svg>
-              Login
-            </Link>
+          <button onClick={() => setMenuOpen(false)}
+            style={{ width:34, height:34, borderRadius:'50%', background:'rgba(255,255,255,.07)', border:'1px solid rgba(255,255,255,.1)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'rgba(255,255,255,.6)' }}>
+            <span className="material-icons" style={{ fontSize:18 }}>close</span>
+          </button>
+        </div>
+
+        {/* User info (if logged in) */}
+        {isLoggedIn && (
+          <div style={{ padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,.07)', display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:42, height:42, borderRadius:'50%', background:accentColor, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:15, color:'#fff', flexShrink:0, position:'relative' }}>
+              {user.imageUrl
+                ? <img src={user.imageUrl} alt={user.name} className="w-full h-full object-cover" />
+                : user.initials || "?"
+              }
+              <span style={{ position:'absolute', bottom:1, right:1, width:9, height:9, borderRadius:'50%', background:'#3dba7a', border:'2px solid rgba(45,10,14,.99)' }} />
+            </div>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:13, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.fullName}</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,.4)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user.email}</div>
+            </div>
           </div>
         )}
 
-        <div className="p-4">
-          <div className="mb-4">
-            {NAV_LINKS.map(({ href, en, ar, color }) => (
-              <Link key={en} href={href}
-                    className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50 transition-all">
-                <span className="text-sm font-semibold text-stone-700">{en}</span>
-                <span className="text-xs ml-auto decorative-font opacity-60" style={{ color }}>{ar}</span>
+        {/* Nav links */}
+        <div style={{ padding:'10px 12px' }}>
+          <div style={{ fontSize:9, fontFamily:'Syne,sans-serif', fontWeight:700, color:'rgba(255,255,255,.3)', textTransform:'uppercase', letterSpacing:'.1em', padding:'8px 10px 6px' }}>Navigation</div>
+          {NAV_LINKS.map(({ href, en, icon, color }) => (
+            <Link key={en} href={href} onClick={() => setMenuOpen(false)}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 10px', borderRadius:10, transition:'background .15s', cursor:'pointer' }}
+                onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,.06)'}
+                onMouseOut={e  => e.currentTarget.style.background='transparent'}>
+                <span className="material-icons" style={{ fontSize:18, color }}>{icon}</span>
+                <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:13, color:'rgba(255,255,255,.8)' }}>{en}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Account links */}
+        {isLoggedIn ? (
+          <div style={{ padding:'4px 12px', borderTop:'1px solid rgba(255,255,255,.07)' }}>
+            <div style={{ fontSize:9, fontFamily:'Syne,sans-serif', fontWeight:700, color:'rgba(255,255,255,.3)', textTransform:'uppercase', letterSpacing:'.1em', padding:'12px 10px 6px' }}>Account</div>
+            {MENU_ITEMS.map(({ href, label, icon }) => (
+              <Link key={label} href={href} onClick={() => setMenuOpen(false)}>
+                <div style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 10px', borderRadius:10, transition:'background .15s', cursor:'pointer' }}
+                  onMouseOver={e => e.currentTarget.style.background='rgba(255,255,255,.06)'}
+                  onMouseOut={e  => e.currentTarget.style.background='transparent'}>
+                  <span className="material-icons" style={{ fontSize:18, color:'rgba(255,255,255,.5)' }}>{icon}</span>
+                  <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:13, color:'rgba(255,255,255,.8)' }}>{label}</span>
+                </div>
               </Link>
             ))}
+            <div style={{ margin:'8px 0', height:1, background:'rgba(255,255,255,.07)' }} />
+            <button onClick={handleLogout}
+              style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 10px', borderRadius:10, background:'transparent', border:'none', cursor:'pointer', transition:'background .15s' }}
+              onMouseOver={e => e.currentTarget.style.background='rgba(193,39,45,.1)'}
+              onMouseOut={e  => e.currentTarget.style.background='transparent'}>
+              <span className="material-icons" style={{ fontSize:18, color:'#C1272D' }}>logout</span>
+              <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:13, color:'#C1272D' }}>Sign Out</span>
+            </button>
           </div>
-
-          {isLoggedIn && (
-            <div className="border-t border-stone-100 pt-3">
-              {MENU_ITEMS.map(({ href, label }) => (
-                <Link key={label} href={href}
-                      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50 transition-all">
-                  <span className="text-sm font-semibold text-stone-700">{label}</span>
-                </Link>
-              ))}
-              <div className="my-2 border-t border-stone-100" />
-              <button onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-red-50 transition-all">
-                <svg className="w-5 h-5 text-[#C1272D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span className="text-sm font-semibold text-[#C1272D]">Sign Out</span>
-              </button>
-            </div>
-          )}
-        </div>
+        ) : (
+          <div style={{ padding:'12px' }}>
+            <Link href="/Login" onClick={() => setMenuOpen(false)}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px', borderRadius:12, background:'linear-gradient(to right,#C1272D,#a01f24)', cursor:'pointer' }}>
+                <span className="material-icons" style={{ fontSize:16, color:'#fff' }}>login</span>
+                <span style={{ fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:13, color:'#fff', textTransform:'uppercase', letterSpacing:'.05em' }}>Login</span>
+              </div>
+            </Link>
+          </div>
+        )}
       </div>
     </>
   );

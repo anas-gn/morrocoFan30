@@ -112,7 +112,7 @@ export default function CityDetail() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50">
       <h2 className="text-2xl font-bold text-zinc-700 mb-4">City not found</h2>
       <button onClick={() => router.push('/cities')}
-        className="px-6 py-2 bg-zinc-900 text-white rounded-xl hover:bg-zinc-700 transition">
+        className="px-6 py-2 bg-zinc-900 text-white rounded-xl hover:bg-zinc-700 transition " >
         Back to cities
       </button>
     </div>

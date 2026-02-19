@@ -327,7 +327,7 @@ export default function TeamDetail() {
 
         <div className="td-hero-inner">
           {/* Back */}
-          <button onClick={() => router.push('/teams')} className="td-fi"
+          <button onClick={() => router.push('/Teams')} className="td-fi"
             style={{display:'inline-flex',alignItems:'center',gap:6,padding:'7px 16px 7px 12px',borderRadius:100,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',color:'rgba(255,255,255,.7)',fontSize:12,fontWeight:500,cursor:'pointer',marginBottom:95,transition:'all .2s'}}>
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path d="M19 12H5M12 5l-7 7 7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -534,7 +534,7 @@ export default function TeamDetail() {
                   const isDraw = done && mg===og;
                   const isLoss = done && mg<og;
                   return (
-                    <div key={m.id} className="td-match td-fu" style={{animationDelay:`${i*.04}s`}} onClick={() => router.push(`/matches/${m.id}`)}>
+                    <div key={m.id} className="td-match td-fu" style={{animationDelay:`${i*.04}s`}} onClick={() => router.push(`/match/${m.id}`)}>
                       {/* Head */}
                       <div className="td-match-head">
                         <div style={{display:'flex',alignItems:'center',gap:8}}>
