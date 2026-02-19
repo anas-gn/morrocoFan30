@@ -8,7 +8,6 @@ import com.example.demo.repositories.CityHostRepository;
 import com.example.demo.models.Images;
 import com.example.demo.repositories.ImageRepository;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/foods")
-@CrossOrigin(origins = "*")
 public class FoodController {
 
     @Autowired
@@ -34,7 +32,7 @@ public class FoodController {
     private ImageRepository imagesRepository;
 
 
-    // GET - Tous les plats
+    // GET - All dishes (with optional cityId and search filters)
     @GetMapping
     public ResponseEntity<List<FoodDTO>> getAllFoods(
             @RequestParam(required = false) Integer cityId,
@@ -43,7 +41,8 @@ public class FoodController {
         List<Foods> foods;
 
         if (cityId != null || search != null) {
-            foods = FoodRepository.findByFilters(cityId, search);
+            // Use unified @Query method — handles both params as optional
+            foods = foodRepository.findByFilters(cityId, search);
         } else {
             foods = foodRepository.findAll();
         }
@@ -55,9 +54,8 @@ public class FoodController {
         return ResponseEntity.ok(dtos);
     }
 
-    
-    // GET - Plat par ID
-    
+
+    // GET - Dish by ID
     @GetMapping("/{id}")
     public ResponseEntity<FoodDTO> getFoodById(@PathVariable Integer id) {
         Optional<Foods> food = foodRepository.findById(id);
@@ -66,9 +64,8 @@ public class FoodController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-  
-    // GET - Recherche par nom
-   
+
+    // GET - Search by name
     @GetMapping("/search")
     public ResponseEntity<List<FoodDTO>> searchFoods(@RequestParam String name) {
         List<Foods> foods = foodRepository.findByNameContainingIgnoreCase(name);
@@ -78,8 +75,7 @@ public class FoodController {
     }
 
 
-    // GET - Plats par ville
-
+    // GET - Dishes by city
     @GetMapping("/city/{cityId}")
     public ResponseEntity<List<FoodDTO>> getFoodsByCity(@PathVariable Integer cityId) {
         List<Foods> foods = foodRepository.findByCityId(cityId);
@@ -88,8 +84,8 @@ public class FoodController {
         );
     }
 
-    // POST - Créer un plat
-    
+
+    // POST - Create a dish
     @PostMapping
     public ResponseEntity<FoodDTO> createFood(@RequestBody FoodDTO dto) {
         try {
@@ -101,8 +97,8 @@ public class FoodController {
         }
     }
 
-    // PUT - Mettre à jour un plat
 
+    // PUT - Update a dish
     @PutMapping("/{id}")
     public ResponseEntity<FoodDTO> updateFood(
             @PathVariable Integer id,
@@ -123,8 +119,7 @@ public class FoodController {
     }
 
 
-    // DELETE - Supprimer un plat
-
+    // DELETE - Delete a dish
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFood(@PathVariable Integer id) {
         if (!foodRepository.existsById(id)) {
@@ -134,100 +129,95 @@ public class FoodController {
         return ResponseEntity.noContent().build();
     }
 
-    // POST - Ajouter des images à un plat existant
-@PostMapping("/{foodId}/images")
-public ResponseEntity<?> addImagesToFood(
-        @PathVariable Integer foodId,
-        @RequestBody List<String> imageUrls) {
 
-    if (!foodRepository.existsById(foodId)) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "Plat introuvable"));
+    // POST - Add images to a dish
+    @PostMapping("/{foodId}/images")
+    public ResponseEntity<?> addImagesToFood(
+            @PathVariable Integer foodId,
+            @RequestBody List<String> imageUrls) {
+
+        if (!foodRepository.existsById(foodId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Dish not found"));
+        }
+
+        for (String url : imageUrls) {
+            Images image = new Images();
+            image.setImageUrl(url);
+            image.setType("food");
+            image.setOwnerID(foodId);
+            imagesRepository.save(image);
+        }
+
+        return ResponseEntity.ok(Map.of("message", imageUrls.size() + " image(s) added"));
     }
 
-    for (String url : imageUrls) {
-        Images image = new Images();
-        image.setImageUrl(url);
-        image.setType("food");
-        image.setOwnerID(foodId);
-        imagesRepository.save(image);
+
+    // GET - Get all images of a dish
+    @GetMapping("/{foodId}/images")
+    public ResponseEntity<List<String>> getFoodImages(@PathVariable Integer foodId) {
+        List<String> images = imagesRepository
+                .findByTypeAndOwnerID("food", foodId)
+                .stream()
+                .map(Images::getImageUrl)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(images);
     }
 
-    return ResponseEntity.ok(
-            Map.of("message", imageUrls.size() + " image(s) ajoutée(s)")
-    );
-}
 
-// GET - Récupérer toutes les images d'un plat
-@GetMapping("/{foodId}/images")
-public ResponseEntity<List<String>> getFoodImages(@PathVariable Integer foodId) {
-    List<String> images = imagesRepository
-            .findByTypeAndOwnerID("food", foodId)
-            .stream()
-            .map(Images::getImageUrl)
-            .collect(Collectors.toList());
+    // DELETE - Delete images from a dish
+    @DeleteMapping("/{foodId}/images")
+    public ResponseEntity<?> deleteFoodImages(
+            @PathVariable Integer foodId,
+            @RequestBody List<String> imageUrls) {
 
-    return ResponseEntity.ok(images);
-}
+        if (!foodRepository.existsById(foodId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Dish not found"));
+        }
 
+        List<Images> foodImages = imagesRepository.findByTypeAndOwnerID("food", foodId);
+        List<Images> toDelete = foodImages.stream()
+                .filter(img -> imageUrls.contains(img.getImageUrl()))
+                .toList();
 
-// DELETE - Supprimer une ou plusieurs images d'un plat
-@DeleteMapping("/{foodId}/images")
-public ResponseEntity<?> deleteFoodImages(
-        @PathVariable Integer foodId,
-        @RequestBody List<String> imageUrls) {
+        if (toDelete.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "None of the provided images were found"));
+        }
 
-    if (!foodRepository.existsById(foodId)) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "Plat introuvable"));
+        toDelete.forEach(imagesRepository::delete);
+
+        return ResponseEntity.ok(Map.of(
+                "message", toDelete.size() + " image(s) deleted",
+                "deletedImages", toDelete.stream().map(Images::getImageUrl).toList()
+        ));
     }
 
-    List<Images> foodImages = imagesRepository.findByTypeAndOwnerID("food", foodId);
 
-    List<Images> imagesToDelete = foodImages.stream()
-            .filter(img -> imageUrls.contains(img.getImageUrl()))
-            .toList();
-
-    if (imagesToDelete.isEmpty()) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "Aucune des images fournies n'a été trouvée"));
-    }
-
-    imagesToDelete.forEach(imagesRepository::delete);
-
-    return ResponseEntity.ok(
-            Map.of("message", imagesToDelete.size() + " image(s) supprimée(s)",
-                   "deletedImages", imagesToDelete.stream().map(Images::getImageUrl).toList())
-    );
-}
- 
     // Entity -> DTO
-  
-private FoodDTO convertToDTO(Foods food) {
+    private FoodDTO convertToDTO(Foods food) {
+        List<String> images = imagesRepository
+                .findByTypeAndOwnerID("food", food.getId())
+                .stream()
+                .map(Images::getImageUrl)
+                .collect(Collectors.toList());
 
-    // Récupérer toutes les images supplémentaires du plat
-    List<String> images = imagesRepository
-            .findByTypeAndOwnerID("food", food.getId())
-            .stream()
-            .map(Images::getImageUrl)
-            .collect(Collectors.toList());
+        return new FoodDTO(
+                food.getId(),
+                food.getName(),
+                food.getCategory(),
+                food.getDescription(),
+                food.getPriceProxim(),
+                food.getImageUrl(),
+                food.getCityHost() != null ? food.getCityHost().getId() : null,
+                food.getCityHost() != null ? food.getCityHost().getName() : null,
+                images
+        );
+    }
 
-    return new FoodDTO(
-            food.getId(),
-            food.getName(),
-            food.getCategory(),
-            food.getDescription(),
-            food.getPriceProxim(),
-            food.getImageUrl(), // image principale
-            food.getCity() != null ? food.getCity().getId() : null,
-            food.getCity() != null ? food.getCity().getName() : null,
-            images //  images supplémentaires
-    );
-}
 
-   
     // DTO -> Entity
-   
     private Foods convertToEntity(FoodDTO dto) {
         Foods food = new Foods();
         food.setId(dto.getId());
@@ -239,7 +229,7 @@ private FoodDTO convertToDTO(Foods food) {
 
         if (dto.getCityId() != null) {
             Optional<CityHosts> city = cityHostRepository.findById(dto.getCityId());
-            city.ifPresent(food::setCity);
+            city.ifPresent(food::setCityHost);
         }
 
         return food;

@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cultures")
-@CrossOrigin(origins = "*")
 public class CultureController {
 
     @Autowired
