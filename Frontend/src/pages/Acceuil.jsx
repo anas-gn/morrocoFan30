@@ -112,7 +112,7 @@ export default function Acceuil() {
       </Head>
 
       <style jsx global>{`
-        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+        *, *::before, *::after { box-sizing:border-box;  }
         body { font-family:'Inter',sans-serif; background:#fff; color:#1c1917; }
         .no-scrollbar::-webkit-scrollbar { display:none; }
         .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }

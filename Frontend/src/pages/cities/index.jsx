@@ -9,100 +9,71 @@ const API = 'http://localhost:3309/api';
 async function safeFetch(url) {
   try {
     const res = await fetch(url);
-    if (!res.ok) {
-      console.warn(`[safeFetch] HTTP ${res.status} — ${url}`);
-      return null;
-    }
+    if (!res.ok) { console.warn(`[safeFetch] HTTP ${res.status} — ${url}`); return null; }
     const text = await res.text();
     if (!text || text === 'null') return null;
     return JSON.parse(text);
-  } catch (err) {
-    console.error(`[safeFetch] Erreur — ${url}`, err);
-    return null;
-  }
+  } catch (err) { console.error(`[safeFetch] Erreur — ${url}`, err); return null; }
 }
 
 export default function Cities() {
   const router = useRouter();
 
-  const [cities, setCities]         = useState([]);
+  const [cities, setCities]           = useState([]);
   const [filteredCities, setFiltered] = useState([]);
-  const [counts, setCounts]         = useState({});
-  const [selectedRegion, setRegion] = useState('all');
-  const [searchQuery, setSearch]    = useState('');
-  const [viewMode, setViewMode]     = useState('grid');
-  const [loading, setLoading]       = useState(true);
-  const [globalStats, setGlobalStats] = useState({ cities: 0, hotels: 0, stades: 0 });
-  const [hoveredCity, setHovered]   = useState(null);
+  const [counts, setCounts]           = useState({});
+  const [selectedRegion, setRegion]   = useState('all');
+  const [searchQuery, setSearch]      = useState('');
+  const [viewMode, setViewMode]       = useState('grid');
+  const [loading, setLoading]         = useState(true);
+  const [globalStats, setGlobalStats] = useState({ cities:0, hotels:0, stades:0 });
+  const [hoveredCity, setHovered]     = useState(null);
 
-  /* ── Fetch ──────────────────────────────────────────────────────── */
+  /* ── Fetch ── */
   useEffect(() => {
     (async () => {
       setLoading(true);
-
-      // ✅ Utiliser AcceuilController qui a le CORS correctement configuré
-      // /api/acceuil/CityHosts/all → retourne List<CityHostDTO> (avec imageUrl)
       const cityList = await safeFetch(`${API}/acceuil/CityHosts/all`);
       if (!Array.isArray(cityList)) { setLoading(false); return; }
-      setCities(cityList);
-      setFiltered(cityList);
+      setCities(cityList); setFiltered(cityList);
 
-      // ✅ Hotels via HotelController (@CrossOrigin présent) → filtre par cityHostId
       const allHotels = await safeFetch(`${API}/hotels/all`) ?? [];
-
-      // ✅ Stades via AcceuilController → filtre par cityId
       const allStades = await safeFetch(`${API}/acceuil/stade/all`) ?? [];
+      const attrResults = await Promise.all(cityList.map(c => safeFetch(`${API}/attractions/city/${c.id}`)));
 
-      // ✅ Attractions via AttractionController par ville
-      const attrResults = await Promise.all(
-        cityList.map(c => safeFetch(`${API}/attractions/city/${c.id}`))
-      );
-
-      // Construire la map des counts par cityId
       const countsMap = {};
-      cityList.forEach((c, i) => {
+      cityList.forEach((c,i) => {
         countsMap[c.id] = {
-          hotels:      allHotels.filter(h => h.cityHostId === c.id).length,
-          stades:      allStades.filter(s => s.cityId    === c.id).length,
+          hotels:      allHotels.filter(h=>h.cityHostId===c.id).length,
+          stades:      allStades.filter(s=>s.cityId===c.id).length,
           attractions: Array.isArray(attrResults[i]) ? attrResults[i].length : 0,
         };
       });
       setCounts(countsMap);
-
-      setGlobalStats({
-        cities: cityList.length,
-        hotels: allHotels.length,
-        stades: allStades.length,
-      });
-
+      setGlobalStats({ cities: cityList.length, hotels: allHotels.length, stades: allStades.length });
       setLoading(false);
     })();
   }, []);
 
-  /* ── Filtres ────────────────────────────────────────────────────── */
+  /* ── Filters ── */
   useEffect(() => {
     let f = [...cities];
-    if (selectedRegion !== 'all')
-      f = f.filter(c => c.region === selectedRegion);
-    if (searchQuery.trim())
-      f = f.filter(c =>
-        [c.name, c.country, c.description].some(v =>
-          v?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
+    if (selectedRegion !== 'all') f = f.filter(c => c.region === selectedRegion);
+    if (searchQuery.trim()) f = f.filter(c => [c.name,c.country,c.description].some(v=>v?.toLowerCase().includes(searchQuery.toLowerCase())));
     setFiltered(f);
   }, [selectedRegion, searchQuery, cities]);
 
-  const regions = ['all', ...new Set(cities.map(c => c.region).filter(Boolean))];
+  const regions = ['all', ...new Set(cities.map(c=>c.region).filter(Boolean))];
 
-  /* ── Loading ────────────────────────────────────────────────────── */
+  /* ── Loading ── */
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50">
-      <img src="/images/logo.png" alt="" className="w-20 h-20 animate-pulse mb-3" />
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#fff' }}>
+      <div style={{ width:40, height:40, border:'3px solid #C1272D', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
-  /* ── Page ───────────────────────────────────────────────────────── */
+  /* ── Render ── */
   return (
     <>
       <Head>
@@ -111,299 +82,265 @@ export default function Cities() {
         <link rel="icon" href="/images/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-        <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" />
-         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-        <link rel="icon" href="/images/logo.png" />
       </Head>
 
       <style jsx global>{`
-        body { font-family: 'DM Sans', sans-serif; background: #f8f7f5; color: #1a1a1a; }
-        .serif { font-family: 'Cormorant Garamond', serif; }
+        ::selection { background:#C1272D; color:#fff; }
+        @keyframes spin    { to { transform:rotate(360deg); } }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        .fu { animation:fadeUp .55s cubic-bezier(.16,1,.3,1) both; }
 
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .slide-up { animation: slideUp .6s cubic-bezier(.16,1,.3,1) both; }
-        .d1 { animation-delay: .05s } .d2 { animation-delay: .12s }
-        .d3 { animation-delay: .19s } .d4 { animation-delay: .26s }
+        .no-scroll::-webkit-scrollbar { display:none; }
+        .no-scroll { -ms-overflow-style:none; scrollbar-width:none; }
 
-        .grain::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
-          pointer-events: none;
-          z-index: 2;
-        }
+        /* Pills */
+        .pill { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border:1px solid;font-family:'Syne',sans-serif; }
+        .pill-red  { background:rgba(193,39,45,.08);color:#C1272D;border-color:rgba(193,39,45,.25); }
+        .pill-dark { background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2); }
 
-        .city-card { transition: transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s ease; }
-        .city-card:hover { transform: translateY(-6px); box-shadow: 0 32px 64px rgba(0,0,0,.12); }
+        /* Stat card hover */
+        .stat-card { transition:transform .3s,box-shadow .3s; }
+        .stat-card:hover { transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.08); }
 
-        .img-zoom img { transition: transform .8s cubic-bezier(.16,1,.3,1); }
-        .img-zoom:hover img { transform: scale(1.08); }
+        /* City card */
+        .city-card { transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s; background:#fff; border:1px solid #e7e5e4; border-radius:20px; overflow:hidden; cursor:pointer; }
+        .city-card:hover { transform:translateY(-6px); box-shadow:0 32px 64px rgba(0,0,0,.1); border-color:#d6d3d1; }
+        .city-card .c-img { transition:transform .75s cubic-bezier(.16,1,.3,1); width:100%;height:100%;object-fit:cover; }
+        .city-card:hover .c-img { transform:scale(1.07); }
 
-        .tag-pill {
-          display: inline-flex; align-items: center; gap: 4px;
-          padding: 3px 10px; border-radius: 999px;
-          font-size: 10px; font-weight: 700;
-          letter-spacing: .06em; text-transform: uppercase;
-        }
-
-        .hero-clip { clip-path: polygon(0 0, 100% 0, 100% 88%, 0 100%); }
-
-        input:focus, select:focus { outline: none; }
-
-        .no-scroll::-webkit-scrollbar { display: none; }
-        .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        /* List card */
+        .list-card { background:#fff; border:1px solid #e7e5e4; border-radius:16px; padding:18px 20px; display:flex; align-items:center; gap:16px; cursor:pointer; transition:border-color .2s,box-shadow .2s; }
+        .list-card:hover { border-color:#C1272D; box-shadow:0 8px 28px rgba(193,39,45,.06); }
+        .list-card .l-img { transition:transform .6s cubic-bezier(.16,1,.3,1); }
+        .list-card:hover .l-img { transform:scale(1.06); }
       `}</style>
 
       <Navbar />
 
-      {/* ══ HERO ══════════════════════════════════════════════════════ */}
-      <header
-        className="relative hero-clip bg-zinc-950 overflow-hidden grain"
-        style={{ minHeight: '78vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
-      >
-        {/* BG image */}
-        <div className="absolute inset-0">
-          <img
-            src="/images/cities.png"
-            alt=""
-            className="w-full h-full object-cover opacity-30"
-            onError={e => { e.target.style.display = 'none'; }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(135deg, rgba(10,10,10,.92) 0%, rgba(30,30,30,.65) 50%, rgba(10,10,10,.8) 100%)' }}
-          />
+      {/* ══ HERO ══════════════════════════════════════════════════════════ */}
+      <header style={{ position:'relative', minHeight:'78vh', display:'flex', flexDirection:'column', justifyContent:'flex-end', background:'#1c1917', overflow:'hidden', paddingTop:64 }}>
+        {/* Background */}
+        <div style={{ position:'absolute', inset:0 }}>
+          <img src="/images/cities.png" alt="" style={{ width:'100%', height:'100%', objectFit:'cover', opacity:.28 }} onError={e=>e.target.style.display='none'} />
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,rgba(10,10,10,.92) 0%,rgba(28,25,23,.65) 50%,rgba(10,10,10,.82) 100%)' }} />
+          {/* Pattern */}
+          <div style={{ position:'absolute', inset:0, opacity:.05, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'160px', pointerEvents:'none' }} />
+          {/* Glows */}
+          <div style={{ position:'absolute', bottom:-80, left:-80, width:400, height:400, borderRadius:'50%', background:'rgba(193,39,45,.14)', filter:'blur(100px)', pointerEvents:'none' }} />
+          <div style={{ position:'absolute', top:-60, right:-60, width:320, height:320, borderRadius:'50%', background:'rgba(0,98,51,.1)', filter:'blur(90px)', pointerEvents:'none' }} />
         </div>
 
-        {/* Decorative number */}
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden xl:flex flex-col items-center gap-3 z-10">
-          <div className="w-px h-24 bg-white/10" />
-          <span
-            className="serif text-white/10 font-light"
-            style={{ fontSize: '120px', lineHeight: 1, writingMode: 'vertical-rl' }}
-          >
-            2030
-          </span>
-          <div className="w-px h-24 bg-white/10" />
+        {/* Decorative 2030 */}
+        <div style={{ position:'absolute', right:32, top:'50%', transform:'translateY(-50%)', display:'none', flexDirection:'column', alignItems:'center', gap:12, zIndex:5, pointerEvents:'none' }} className="dec-2030">
+          <div style={{ width:1, height:96, background:'rgba(255,255,255,.08)' }} />
+          <div style={{ fontFamily:'Amiri,serif', fontSize:120, lineHeight:1, color:'rgba(255,255,255,.05)', writingMode:'vertical-rl', fontWeight:400 }}>2030</div>
+          <div style={{ width:1, height:96, background:'rgba(255,255,255,.08)' }} />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 pb-24 pt-40">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-end">
+        <div style={{ position:'relative', zIndex:10, maxWidth:1100, margin:'0 auto', padding:'0 24px 80px', width:'100%' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:48, alignItems:'flex-end' }}>
 
-            {/* Left: Titre */}
-            <div className="lg:col-span-7">
-              <div className="flex items-center gap-3 mb-8 slide-up">
-                <span className="w-8 h-px bg-[#C1272D]" />
-                <span className="tag-pill bg-[#C1272D]/15 text-[#e05555] border border-[#C1272D]/30">
-                  Coupe du Monde 2030
-                </span>
+            {/* Left: title */}
+            <div>
+              <div className="fu" style={{ display:'flex', alignItems:'center', gap:12, marginTop:48 , marginBottom:52, animationDelay:'0s' }}>
+                <div style={{ width:28, height:2, background:'#C1272D', borderRadius:2 }} />
+                <span className="pill pill-red">Coupe du Monde 2030</span>
               </div>
 
-              <h1
-                className="serif font-light text-white mb-6 slide-up d1"
-                style={{ fontSize: 'clamp(52px, 8vw, 96px)', lineHeight: 1.0 }}
-              >
+              <h1 className="fu" style={{ animationDelay:'.08s', fontFamily:'Amiri,serif', fontSize:'clamp(52px,8vw,96px)', fontWeight:400, color:'#fff', lineHeight:1.0, marginBottom:20 }}>
                 Les Villes<br />
-                <em className="font-light" style={{ color: '#e8d5b0' }}>Hôtes du Maroc</em>
+                <em style={{ fontStyle:'normal', color:'#e8d5b0' }}>Hôtes du Maroc</em>
               </h1>
 
-              <p
-                className="text-white/50 font-light leading-relaxed slide-up d2"
-                style={{ fontSize: '17px', maxWidth: '500px' }}
-              >
-                Six métropoles d'exception accueilleront les meilleures équipes du monde.
-                Stades monumentaux, culture riche, hospitalité légendaire.
+              <p className="fu" style={{ animationDelay:'.16s', color:'rgba(255,255,255,.48)', fontSize:17, lineHeight:1.82, maxWidth:500 }}>
+                Six métropoles d'exception accueilleront les meilleures équipes du monde. Stades monumentaux, culture riche, hospitalité légendaire.
               </p>
             </div>
 
-            {/* Right: Stats */}
-            <div className="lg:col-span-5 slide-up d3">
-              <div className="grid grid-cols-3 gap-4">
+            {/* Stats */}
+            <div className="fu" style={{ animationDelay:'.26s' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
                 {[
-                  { val: globalStats.cities, label: 'Villes',  accent: '#e05555' },
-                  { val: globalStats.hotels, label: 'Hôtels',  accent: '#d4a847' },
-                  { val: globalStats.stades, label: 'Stades',  accent: '#4caf7d' },
-                ].map((s, i) => (
-                  <div key={i} className=" rounded-2xl p-5 backdrop-blur-sm text-center">
-                    <div
-                      className="serif font-light mb-1"
-                      style={{ fontSize: '52px', lineHeight: 1, color: s.accent }}
-                    >
-                      {s.val}
-                    </div>
-                    <div className="text-white/40 text-xs font-medium uppercase tracking-widest">{s.label}</div>
+                  { val:globalStats.cities, label:'Villes',  accent:'#e05555' },
+                  { val:globalStats.hotels, label:'Hôtels',  accent:'#f0a500' },
+                  { val:globalStats.stades, label:'Stades',  accent:'#3dba7a' },
+                ].map((s,i) => (
+                  <div key={i} style={{ padding:'20px 16px', textAlign:'center', borderRadius:16, background:'rgba(255,255,255,.05)', border:'1px solid rgba(255,255,255,.08)' }}>
+                    <div style={{ fontFamily:'Syne,sans-serif', fontSize:48, fontWeight:800, lineHeight:1, color:s.accent, marginBottom:4 }}>{s.val}</div>
+                    <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', color:'rgba(255,255,255,.38)' }}>{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
         </div>
+
+        {/* Fade bottom */}
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, height:80, background:'linear-gradient(to bottom,transparent,#fff)', zIndex:6 }} />
       </header>
 
-      {/* ══ FILTERS ═══════════════════════════════════════════════════ */}
-      <div className="sticky top-16 z-40 bg-[#f8f7f5]/95 backdrop-blur-xl border-b border-zinc-200">
-        <div className="max-w-7xl mx-auto px-6 py-3.5 flex flex-wrap items-center gap-3">
+      {/* ══ FILTERS ═══════════════════════════════════════════════════════ */}
+      <div style={{ position:'sticky', top:64, zIndex:40, background:'rgba(255,255,255,.92)', backdropFilter:'blur(16px)', borderBottom:'1px solid #e7e5e4' }}>
+        <div style={{ maxWidth:1100, margin:'0 auto', padding:'12px 24px', display:'flex', flexWrap:'wrap', alignItems:'center', gap:10 }}>
 
           {/* Search */}
-          <div className="relative flex-1 min-w-[240px]">
-            
+          <div style={{ position:'relative', flex:1, minWidth:220 }}>
+            <span className="material-icons" style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:18, color:'#a8a29e' }}>search</span>
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher une ville…"
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-zinc-200 rounded-xl text-sm text-zinc-800 placeholder-zinc-400 focus:border-zinc-400 transition"
+              style={{ width:'100%', paddingLeft:40, paddingRight:16, paddingTop:10, paddingBottom:10, background:'#fafaf9', border:'1px solid #e7e5e4', borderRadius:12, outline:'none', fontFamily:'Inter,sans-serif', fontSize:14, color:'#1c1917', transition:'border-color .2s' }}
+              onFocus={e=>e.target.style.borderColor='#C1272D'}
+              onBlur={e=>e.target.style.borderColor='#e7e5e4'}
             />
           </div>
 
-          {/* Region pills — extraites dynamiquement des données réelles */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Region pills */}
+          <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
             {regions.map(r => (
-              <button
-                key={r}
-                onClick={() => setRegion(r)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all
-                  ${selectedRegion === r
-                    ? 'bg-zinc-900 text-white shadow-md'
-                    : 'bg-white border border-zinc-200 text-zinc-500 hover:border-zinc-400 hover:text-zinc-800'
-                  }`}
-              >
-                {r === 'all' ? 'Toutes' : r}
+              <button key={r} onClick={() => setRegion(r)}
+                      className="syne"
+                      style={{ padding:'7px 16px', borderRadius:999, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.07em', fontFamily:'Syne,sans-serif', cursor:'pointer', transition:'all .2s', border:'1px solid', background:selectedRegion===r?'#1c1917':'#fff', color:selectedRegion===r?'#fff':'#78716c', borderColor:selectedRegion===r?'#1c1917':'#e7e5e4' }}>
+                {r==='all'?'Toutes':r}
               </button>
             ))}
           </div>
 
-          <div className="flex-1" />
+          <div style={{ flex:1 }} />
 
-          {/* Compteur */}
-          <span className="text-xs text-zinc-400 font-medium hidden md:block">
-            {filteredCities.length} ville{filteredCities.length !== 1 ? 's' : ''}
+          {/* Count */}
+          <span style={{ fontSize:12, color:'#a8a29e', fontWeight:500, display:'none' }} className="md-show">
+            {filteredCities.length} ville{filteredCities.length!==1?'s':''}
           </span>
 
           {/* View toggle */}
-          <div className="flex items-center bg-zinc-100 rounded-xl p-1 gap-1">
-            {[
-              { mode: 'grid', icon: 'solar:grid-bold' },
-              { mode: 'list', icon: 'solar:list-bold' },
-            ].map(({ mode, icon }) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all
-                  ${viewMode === mode ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-400 hover:text-zinc-700'}`}
-              >
-                <iconify-icon icon={icon} class="text-base" />
+          <div style={{ display:'flex', background:'#fafaf9', border:'1px solid #e7e5e4', borderRadius:12, padding:3, gap:3 }}>
+            {[{mode:'grid',icon:'grid_view'},{mode:'list',icon:'view_list'}].map(({mode,icon}) => (
+              <button key={mode} onClick={() => setViewMode(mode)}
+                      style={{ width:36, height:36, borderRadius:9, display:'flex', alignItems:'center', justifyContent:'center', border:'none', cursor:'pointer', transition:'all .2s', background:viewMode===mode?'#fff':'transparent', color:viewMode===mode?'#1c1917':'#a8a29e', boxShadow:viewMode===mode?'0 1px 4px rgba(0,0,0,.08)':undefined }}>
+                <span className="material-icons" style={{ fontSize:18 }}>{icon}</span>
               </button>
             ))}
           </div>
-
         </div>
       </div>
 
-      {/* ══ CITIES ════════════════════════════════════════════════════ */}
-      <main className="max-w-7xl mx-auto px-6 py-14">
+      {/* ══ CITIES GRID / LIST ════════════════════════════════════════════ */}
+      <main style={{ maxWidth:1100, margin:'0 auto', padding:'48px 24px 96px' }}>
 
         {filteredCities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center mb-5">
-              <iconify-icon icon="solar:city-linear" class="text-zinc-300 text-4xl" />
+          /* Empty */
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'96px 0', textAlign:'center' }}>
+            <div style={{ width:72, height:72, borderRadius:'50%', background:'#fafaf9', border:'1px solid #e7e5e4', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16 }}>
+              <span className="material-icons" style={{ fontSize:32, color:'#d6d3d1' }}>location_city</span>
             </div>
-            <h3 className="serif text-3xl font-light text-zinc-700 mb-2">Aucune ville trouvée</h3>
-            <p className="text-zinc-400 text-sm">Essayez de modifier votre recherche ou vos filtres</p>
+            <div style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:800, color:'#1c1917', marginBottom:8 }}>Aucune ville trouvée</div>
+            <p style={{ fontSize:14, color:'#a8a29e' }}>Essayez de modifier votre recherche ou vos filtres</p>
           </div>
 
         ) : viewMode === 'grid' ? (
 
-          /* ── GRID VIEW ─────────────────────────────────────────────── */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
-            {filteredCities.map((city, i) => {
-              const c = counts[city.id] ?? { hotels: 0, stades: 0, attractions: 0 };
+          /* ── GRID VIEW — immersive dark cards ── */
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:16 }}>
+            {filteredCities.map((city,i) => {
+              const c   = counts[city.id] ?? { hotels:0, stades:0, attractions:0 };
+              const hot = hoveredCity === city.id;
               return (
                 <article
                   key={city.id}
+                  className="fu"
                   onClick={() => router.push(`/cities/${city.id}`)}
                   onMouseEnter={() => setHovered(city.id)}
                   onMouseLeave={() => setHovered(null)}
-                  className="city-card bg-white rounded-3xl overflow-hidden cursor-pointer border border-zinc-100 slide-up"
-                  style={{ animationDelay: `${i * 0.07}s` }}
-                >
-                  {/* Image */}
-                  <div className="img-zoom relative h-60 bg-zinc-200 overflow-hidden">
+                  style={{
+                    animationDelay:`${i*.07}s`,
+                    position:'relative', borderRadius:22, overflow:'hidden',
+                    minHeight:420, cursor:'pointer',
+                    transition:'transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s',
+                    transform: hot ? 'translateY(-6px)' : 'translateY(0)',
+                    boxShadow: hot ? '0 32px 72px rgba(0,0,0,.28)' : '0 4px 20px rgba(0,0,0,.12)',
+                  }}>
+
+                  {/* Background image */}
+                  <div style={{ position:'absolute', inset:0, overflow:'hidden' }}>
                     {city.imageUrl ? (
                       <img
-                        src={city.imageUrl}
-                        alt={city.name}
-                        className="w-full h-full object-cover"
-                        onError={e => { e.target.style.display = 'none'; e.target.parentElement.style.background = '#d4d4d8'; }}
+                        src={city.imageUrl} alt={city.name}
+                        style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform .75s cubic-bezier(.16,1,.3,1)', transform: hot ? 'scale(1.07)' : 'scale(1)', filter:'brightness(.3)' }}
+                        onError={e=>e.target.style.display='none'}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-zinc-200">
-                        <iconify-icon icon="solar:city-linear" class="text-zinc-400 text-5xl" />
-                      </div>
+                      <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#2d0a0e,#1a0608)' }} />
                     )}
-                    <div
-                      className="absolute inset-0"
-                      style={{ background: 'linear-gradient(to top, rgba(0,0,0,.65) 0%, rgba(0,0,0,0) 55%)' }}
-                    />
-
-                    {/* Region pill */}
-                    {city.region && (
-                      <div className="absolute top-4 left-4">
-                        <span className="tag-pill bg-black/30 text-white border border-white/20 backdrop-blur-sm">
-                          {city.region}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Country + arrow */}
-                    <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
-                      <div className="text-white/80 text-xs font-medium flex items-center gap-1.5">
-                        <iconify-icon icon="solar:map-point-linear" />
-                        {city.country}
-                      </div>
-                      <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300
-                          ${hoveredCity === city.id ? 'bg-white text-zinc-900 scale-110' : 'bg-white/20 text-white'}`}
-                      >
-                        <iconify-icon icon="solar:arrow-right-up-linear" class="text-sm" />
-                      </div>
-                    </div>
                   </div>
 
-                  {/* Body */}
-                  <div className="p-6">
-                    <h2 className="serif text-3xl font-light text-zinc-900 mb-2 leading-none">
-                      {city.name}
-                    </h2>
+                  {/* Gradient overlay */}
+                  <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.35) 100%)', transition:'opacity .4s', opacity: hot ? .82 : 1 }} />
 
-                    {city.description && (
-                      <p className="text-zinc-500 text-sm leading-relaxed line-clamp-2 mb-5 font-light">
-                        {city.description}
-                      </p>
-                    )}
+                  {/* Moroccan pattern */}
+                  <div style={{ position:'absolute', inset:0, opacity:.05, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'80px', pointerEvents:'none' }} />
 
-                    {/* Stats bar */}
-                    <div className="grid grid-cols-3 gap-2 pt-4 border-t border-zinc-100">
-                      {[
-                        { icon: 'solar:bed-linear',                val: c.hotels,      label: 'Hôtels',      color: 'text-amber-500'  },
-                        { icon: 'solar:map-point-school-linear',   val: c.attractions, label: 'Attractions', color: 'text-emerald-500'},
-                        { icon: 'solar:structure-linear',          val: c.stades,      label: 'Stades',      color: 'text-rose-500'   },
-                      ].map((s, j) => (
-                        <div key={j} className="flex flex-col items-center gap-1 py-2 rounded-xl bg-zinc-50">
-                          <iconify-icon icon={s.icon} class={`text-lg ${s.color}`} />
-                          <span className="text-base font-semibold text-zinc-800">{s.val}</span>
-                          <span className="text-[10px] text-zinc-400 font-medium">{s.label}</span>
+                  {/* Top accent bar */}
+                  <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
+
+                  {/* Glow orb on hover */}
+                  <div style={{ position:'absolute', bottom:-60, right:-60, width:220, height:220, borderRadius:'50%', background:'rgba(193,39,45,.12)', filter:'blur(60px)', transition:'opacity .4s', opacity: hot ? 1 : 0, pointerEvents:'none' }} />
+
+                  {/* Content */}
+                  <div style={{ position:'relative', zIndex:2, height:'100%', minHeight:420, display:'flex', flexDirection:'column', justifyContent:'space-between', padding:'20px 24px 24px' }}>
+
+                    {/* Top row */}
+                    <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between' }}>
+                      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                        {city.region && (
+                          <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'3px 10px', borderRadius:99, fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em', fontFamily:'Syne,sans-serif', background:'rgba(255,255,255,.1)', color:'rgba(255,255,255,.7)', border:'1px solid rgba(255,255,255,.15)' }}>
+                            {city.region}
+                          </span>
+                        )}
+                        <div style={{ display:'flex', alignItems:'center', gap:6, color:'rgba(255,255,255,.45)', fontSize:12 }}>
+                          <span className="material-icons" style={{ fontSize:13 }}>place</span>
+                          {city.country}
                         </div>
-                      ))}
+                      </div>
+
+                      {/* Arrow */}
+                      <div style={{ width:38, height:38, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', transition:'all .3s', background: hot ? '#fff' : 'rgba(255,255,255,.12)', color: hot ? '#1c1917' : '#fff', transform: hot ? 'scale(1.1) rotate(-5deg)' : 'scale(1)' }}>
+                        <span className="material-icons" style={{ fontSize:18 }}>north_east</span>
+                      </div>
+                    </div>
+
+                    {/* Bottom: city name + stats */}
+                    <div>
+                      {/* Description */}
+                      {city.description && (
+                        <p style={{ fontSize:12, color:'rgba(255,255,255,.45)', lineHeight:1.7, marginBottom:14, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', transition:'color .3s', ...(hot ? {color:'rgba(255,255,255,.6)'} : {}) }}>
+                          {city.description}
+                        </p>
+                      )}
+
+                      {/* City name */}
+                      <div style={{ fontFamily:'Amiri,serif', fontSize:'clamp(32px,4vw,46px)', fontWeight:700, color:'#fff', lineHeight:.95, marginBottom:20, letterSpacing:'-.01em' }}>
+                        {city.name}
+                      </div>
+
+                      {/* Stats row */}
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, borderTop:'1px solid rgba(255,255,255,.1)', paddingTop:16 }}>
+                        {[
+                          { icon:'hotel',   val:c.hotels,      label:'Hôtels',      color:'#f0a500' },
+                          { icon:'place',   val:c.attractions, label:'Attractions', color:'#3dba7a' },
+                          { icon:'stadium', val:c.stades,      label:'Stades',      color:'#e05555' },
+                        ].map((s,j) => (
+                          <div key={j} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'10px 6px', borderRadius:12, background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.08)' }}>
+                            <span className="material-icons" style={{ fontSize:16, color:s.color }}>{s.icon}</span>
+                            <span style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:800, color:'#fff', lineHeight:1 }}>{s.val}</span>
+                            <span style={{ fontSize:9, color:'rgba(255,255,255,.4)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em' }}>{s.label}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -413,79 +350,70 @@ export default function Cities() {
 
         ) : (
 
-          /* ── LIST VIEW ─────────────────────────────────────────────── */
-          <div className="space-y-3">
-            {filteredCities.map((city, i) => {
-              const c = counts[city.id] ?? { hotels: 0, stades: 0, attractions: 0 };
+          /* ── LIST VIEW ── */
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {filteredCities.map((city,i) => {
+              const c = counts[city.id] ?? { hotels:0, stades:0, attractions:0 };
               return (
-                <div
-                  key={city.id}
-                  onClick={() => router.push(`/cities/${city.id}`)}
-                  className="group bg-white border border-zinc-100 rounded-2xl p-5 flex items-center gap-6 cursor-pointer hover:border-zinc-300 hover:shadow-lg transition-all slide-up"
-                  style={{ animationDelay: `${i * 0.05}s` }}
-                >
-                  {/* Image */}
-                  <div className="img-zoom w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-zinc-100">
+                <div key={city.id} className="list-card fu" style={{ animationDelay:`${i*.05}s` }}
+                     onClick={() => router.push(`/cities/${city.id}`)}>
+
+                  {/* Thumbnail */}
+                  <div style={{ width:88, height:88, borderRadius:14, overflow:'hidden', flexShrink:0, background:'#f5f5f4' }}>
                     {city.imageUrl ? (
-                      <img
-                        src={city.imageUrl}
-                        alt={city.name}
-                        className="w-full h-full object-cover"
-                        onError={e => { e.target.style.display = 'none'; }}
-                      />
+                      <img src={city.imageUrl} alt={city.name} className="l-img" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-zinc-200">
-                        <iconify-icon icon="solar:city-linear" class="text-zinc-400 text-2xl" />
+                      <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', background:'#e7e5e4' }}>
+                        <span className="material-icons" style={{ fontSize:28, color:'#a8a29e' }}>location_city</span>
                       </div>
                     )}
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-3 mb-1.5">
-                      <h2 className="serif text-2xl font-light text-zinc-900 leading-none">{city.name}</h2>
-                      {city.region && (
-                        <span className="tag-pill bg-zinc-100 text-zinc-500 mt-1 flex-shrink-0">{city.region}</span>
-                      )}
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4, flexWrap:'wrap' }}>
+                      <span style={{ fontFamily:'Amiri,serif', fontSize:24, fontWeight:400, color:'#1c1917', lineHeight:1.1 }}>{city.name}</span>
+                      {city.region && <span className="pill" style={{ background:'#fafaf9', color:'#78716c', borderColor:'#e7e5e4', fontSize:9 }}>{city.region}</span>}
                     </div>
-                    <p className="text-xs text-zinc-400 mb-2 flex items-center gap-1">
-                      <iconify-icon icon="solar:map-point-linear" />
+                    <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#a8a29e', marginBottom:6 }}>
+                      <span className="material-icons" style={{ fontSize:13 }}>place</span>
                       {city.country}
-                    </p>
+                    </div>
                     {city.description && (
-                      <p className="text-sm text-zinc-500 font-light line-clamp-1">{city.description}</p>
+                      <p style={{ fontSize:13, color:'#78716c', overflow:'hidden', display:'-webkit-box', WebkitLineClamp:1, WebkitBoxOrient:'vertical' }}>{city.description}</p>
                     )}
                   </div>
 
                   {/* Counts */}
-                  <div className="hidden md:flex items-center gap-6 flex-shrink-0">
+                  <div style={{ display:'flex', alignItems:'center', gap:24, flexShrink:0 }}>
                     {[
-                      { icon: 'solar:bed-linear',                val: c.hotels,      label: 'Hôtels',  color: 'text-amber-500'  },
-                      { icon: 'solar:map-point-school-linear',   val: c.attractions, label: 'Sites',   color: 'text-emerald-500'},
-                      { icon: 'solar:structure-linear',          val: c.stades,      label: 'Stades',  color: 'text-rose-500'   },
-                    ].map((s, j) => (
-                      <div key={j} className="flex flex-col items-center gap-0.5 text-center">
-                        <iconify-icon icon={s.icon} class={`text-xl ${s.color}`} />
-                        <span className="text-base font-semibold text-zinc-800">{s.val}</span>
-                        <span className="text-[10px] text-zinc-400">{s.label}</span>
+                      { icon:'hotel',   val:c.hotels,      label:'Hôtels',  color:'#f0a500' },
+                      { icon:'place',   val:c.attractions, label:'Sites',   color:'#006233' },
+                      { icon:'stadium', val:c.stades,      label:'Stades',  color:'#C1272D' },
+                    ].map((s,j) => (
+                      <div key={j} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
+                        <span className="material-icons" style={{ fontSize:20, color:s.color }}>{s.icon}</span>
+                        <span style={{ fontFamily:'Syne,sans-serif', fontSize:15, fontWeight:800, color:'#1c1917', lineHeight:1 }}>{s.val}</span>
+                        <span style={{ fontSize:9, color:'#a8a29e', fontWeight:700, textTransform:'uppercase', letterSpacing:'.06em' }}>{s.label}</span>
                       </div>
                     ))}
                   </div>
 
                   {/* Arrow */}
-                  <iconify-icon
-                    icon="solar:arrow-right-linear"
-                    class="text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-1 transition-all text-xl flex-shrink-0"
-                  />
+                  <span className="material-icons" style={{ fontSize:22, color:'#d6d3d1', transition:'all .2s', flexShrink:0 }}>arrow_forward</span>
                 </div>
               );
             })}
           </div>
-
         )}
       </main>
 
       <Footer />
+
+      <style jsx>{`
+        @media (min-width: 1024px) { .dec-2030 { display:flex !important; } }
+        @media (min-width: 768px)  { .md-show { display:block !important; } }
+      `}</style>
     </>
   );
 }

@@ -172,7 +172,7 @@ export default function TeamDetail() {
         .td-page *{box-sizing:border-box}
 
         /* ── HERO ── */
-        .td-page .td-hero{position:relative;width:100%;min-height:520px;display:flex;align-items:flex-end;overflow:hidden;padding-top:80px;margin-top:80px}
+        .td-page .td-hero{position:relative;width:100%;min-height:520px;display:flex;align-items:flex-end;overflow:hidden;padding-top:80px;}
         .td-page .td-hero-bg{position:absolute;inset:0;background-size:cover;background-position:center top;transform:scale(1.06)}
         .td-page .td-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(45,6,8,.5) 0%,rgba(26,4,5,.8) 60%,#1a0405 100%)}
         .td-page .td-hero-noise{position:absolute;inset:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
@@ -328,7 +328,7 @@ export default function TeamDetail() {
         <div className="td-hero-inner">
           {/* Back */}
           <button onClick={() => router.push('/Teams')} className="td-fi"
-            style={{display:'inline-flex',alignItems:'center',gap:6,padding:'7px 16px 7px 12px',borderRadius:100,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',color:'rgba(255,255,255,.7)',fontSize:12,fontWeight:500,cursor:'pointer',marginBottom:95,transition:'all .2s'}}>
+            style={{display:'inline-flex',alignItems:'center',gap:6,padding:'7px 16px 7px 12px',borderRadius:100,background:'rgba(255,255,255,.08)',border:'1px solid rgba(255,255,255,.12)',color:'rgba(255,255,255,.7)',fontSize:12,fontWeight:500,cursor:'pointer',marginBottom:95,transition:'all .2s',marginTop:30}}>
             <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path d="M19 12H5M12 5l-7 7 7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>

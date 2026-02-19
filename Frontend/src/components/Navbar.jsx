@@ -68,12 +68,14 @@ export default function Navbar() {
   const accentColor   = isResponsable ? "#006233" : "#C1272D";
 
   const NAV_LINKS = [
-    { href: "/cities",  en: "Cities",  ar: "المدن",     color: "#006233" },
     { href: "/Matches", en: "Matches", ar: "المباريات", color: "#C1272D" },
     { href: "/Teams",   en: "Teams",   ar: "الفرق",     color: "#C1272D" },
     { href: "/Groups",  en: "Groups",  ar: "المجموعات", color: "#C1272D" },
-    { href: "/News",    en: "News",    ar: "الأخبار",   color: "#b45309" },
-    { href: "/Stades",  en: "Stades",  ar: "ملاعب",     color: "#7c3aed" },
+     { href: "/Stades",  en: "Stades",  ar: "ملاعب",     color: "#7c3aed" },
+    
+     { href: "/cities",  en: "Cities",  ar: "المدن",     color: "#006233" },
+   { href: "/News",    en: "News",    ar: "الأخبار",   color: "#b45309" },
+    {href:"/Culture", en:"Culture", ar:"الثقافة", color:"#047857"},
   ];
 
   const MENU_ITEMS = [

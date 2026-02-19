@@ -9,17 +9,11 @@ const API = 'http://localhost:3309/api';
 async function safeFetch(url) {
   try {
     const res = await fetch(url);
-    if (!res.ok) {
-      console.warn(`[safeFetch] HTTP ${res.status} — ${url}`);
-      return null;
-    }
+    if (!res.ok) { console.warn(`[safeFetch] HTTP ${res.status} — ${url}`); return null; }
     const text = await res.text();
     if (!text || text === 'null') return null;
     return JSON.parse(text);
-  } catch (err) {
-    console.error(`[safeFetch] Error — ${url}`, err);
-    return null;
-  }
+  } catch (err) { console.error(`[safeFetch] Error — ${url}`, err); return null; }
 }
 
 export default function CityDetail() {
@@ -43,36 +37,26 @@ export default function CityDetail() {
       setLoading(true);
       try {
         const allCities = await safeFetch(`${API}/acceuil/CityHosts/all`);
-        const cityData  = Array.isArray(allCities)
-          ? allCities.find(c => c.id === cityId) ?? null
-          : null;
+        const cityData  = Array.isArray(allCities) ? allCities.find(c=>c.id===cityId) ?? null : null;
         setCity(cityData);
 
         const attrData = await safeFetch(`${API}/attractions/city/${id}`);
         setAttractions(Array.isArray(attrData) ? attrData : []);
 
-        const allHotels = await safeFetch(`${API}/hotels/all`);
-        const cityHotels = Array.isArray(allHotels)
-          ? allHotels.filter(h => h.cityHostId === cityId)
-          : [];
-        setHotels(cityHotels);
+        const allHotels  = await safeFetch(`${API}/hotels/all`);
+        setHotels(Array.isArray(allHotels) ? allHotels.filter(h=>h.cityHostId===cityId) : []);
 
         const allStades  = await safeFetch(`${API}/acceuil/stade/all`);
-        const cityStades = Array.isArray(allStades)
-          ? allStades.filter(s => s.cityId === cityId)
-          : [];
+        const cityStades = Array.isArray(allStades) ? allStades.filter(s=>s.cityId===cityId) : [];
         setStadiums(cityStades);
 
         if (cityStades.length > 0) {
-          const mResults = await Promise.all(
-            cityStades.map(st => safeFetch(`${API}/matches/matches/stade/${st.id}`))
-          );
+          const mResults = await Promise.all(cityStades.map(st => safeFetch(`${API}/matches/matches/stade/${st.id}`)));
           setMatches(mResults.flat().filter(Boolean));
         }
 
         const imgs = await safeFetch(`${API}/cities/images/city/${id}`);
         setImages(Array.isArray(imgs) ? imgs : []);
-
       } catch (err) {
         console.error('Error loading city:', err);
       } finally {
@@ -82,194 +66,196 @@ export default function CityDetail() {
   }, [id]);
 
   const getStatus = (s) => ({
-    'LIVE':     { label: 'Live', cls: 'bg-red-500/10 text-red-600 border-red-200' },
-    'started':  { label: 'Live', cls: 'bg-red-500/10 text-red-600 border-red-200' },
-    'commence': { label: 'Live', cls: 'bg-red-500/10 text-red-600 border-red-200' },
-    'termine':  { label: 'Finished',   cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' },
-    'Finished': { label: 'Finished',   cls: 'bg-zinc-100 text-zinc-600 border-zinc-200' },
-    'upcoming': { label: 'Upcoming',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  }[s] || { label: 'Scheduled', cls: 'bg-zinc-50 text-zinc-500 border-zinc-200' });
+    'LIVE':     { label:'Live',      cls:'live'   },
+    'started':  { label:'Live',      cls:'live'   },
+    'commence': { label:'Live',      cls:'live'   },
+    'termine':  { label:'Finished',  cls:'done'   },
+    'Finished': { label:'Finished',  cls:'done'   },
+    'upcoming': { label:'Upcoming',  cls:'soon'   },
+  }[s] || { label:'Scheduled', cls:'soon' });
 
-  const isLive = (s) => ['LIVE', 'started', 'commence'].includes(s);
+  const isLive = (s) => ['LIVE','started','commence'].includes(s);
 
   const TABS = [
-    { key: 'overview',    label: 'Overview',      icon: 'solar:widget-linear',               badge: null              },
-    { key: 'hotels',      label: 'Stay',          icon: 'solar:bed-linear',                  badge: hotels.length     },
-    { key: 'attractions', label: 'Discover',      icon: 'solar:map-point-school-linear',     badge: attractions.length},
-    { key: 'stadiums',    label: 'Stadiums',      icon: 'solar:structure-linear',            badge: stadiums.length   },
-    { key: 'matches',     label: 'Matches',       icon: 'solar:calendar-linear',             badge: matches.length    },
-    { key: 'gallery',     label: 'Gallery',       icon: 'solar:gallery-minimalistic-linear', badge: images.length     },
+    { key:'overview',    label:'Overview',  icon:'widgets',           badge:null              },
+    { key:'hotels',      label:'Stay',      icon:'hotel',             badge:hotels.length     },
+    { key:'attractions', label:'Discover',  icon:'place',             badge:attractions.length},
+    { key:'stadiums',    label:'Stadiums',  icon:'stadium',           badge:stadiums.length   },
+    { key:'matches',     label:'Matches',   icon:'calendar_today',    badge:matches.length    },
+    { key:'gallery',     label:'Gallery',   icon:'photo_library',     badge:images.length     },
   ];
 
   /* ── Loading ── */
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50">
-      <img src="/images/logo.png" alt="" className="w-20 h-20 animate-pulse mb-4" />
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#fff' }}>
+      <div style={{ width:40, height:40, border:'3px solid #C1272D', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (!city) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50">
-      <h2 className="text-2xl font-bold text-zinc-700 mb-4">City not found</h2>
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#fafaf9' }}>
+      <div style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:800, color:'#1c1917', marginBottom:16 }}>City not found</div>
       <button onClick={() => router.push('/cities')}
-        className="px-6 py-2 bg-zinc-900 text-white rounded-xl hover:bg-zinc-700 transition " >
+              style={{ padding:'10px 24px', background:'#1c1917', color:'#fff', border:'none', borderRadius:12, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}>
         Back to cities
       </button>
     </div>
   );
 
-  /* ── Render ── */
   return (
     <>
       <Head>
         <title>{city.name} — Host City | MoroccoFan2030</title>
-        <meta name="description" content={city.description || `Discover ${city.name}`} />
+        <meta name="description" content={city.description||`Discover ${city.name}`} />
         <link rel="icon" href="/images/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-        <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" />
-        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa:wght@400;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
       </Head>
 
       <style jsx global>{`
-        body { font-family: 'Outfit', sans-serif; background: #fafafa; color: #18181b; }
-        .font-serif { font-family: 'Playfair Display', serif; }
-        .no-scroll::-webkit-scrollbar { display: none; }
-        .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        body { font-family:'Inter',sans-serif; background:#fff; color:#1c1917; -webkit-font-smoothing:antialiased; }
+        ::selection { background:#C1272D; color:#fff; }
 
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(14px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .fade-up { animation: fadeUp .55s cubic-bezier(.16,1,.3,1) both; }
-        .d1 { animation-delay:.08s } .d2 { animation-delay:.16s }
-        .d3 { animation-delay:.24s } .d4 { animation-delay:.32s }
+        @keyframes spin    { to{transform:rotate(360deg)} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulseDot{ 0%,100%{opacity:1} 50%{opacity:.35} }
 
-        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .live-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+        .fu  { animation:fadeUp .55s cubic-bezier(.16,1,.3,1) both; }
+        .d1  { animation-delay:.08s } .d2 { animation-delay:.16s }
+        .d3  { animation-delay:.24s } .d4 { animation-delay:.32s }
+        .live-dot { animation:pulseDot 1.4s ease-in-out infinite; }
 
-        .card-lift { transition: transform .25s ease, box-shadow .25s ease; }
-        .card-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,.08); }
-        
-        .stadium-card-bg {
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-        }
-        
-        .stadium-card-overlay {
-          background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.4) 100%);
-        }
-        
-        @media (max-width: 1024px) {
-          .stadium-card-overlay {
-            background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 60%);
-          }
-        }
+        .no-scroll::-webkit-scrollbar { display:none; }
+        .no-scroll { -ms-overflow-style:none; scrollbar-width:none; }
 
-        /* Overview card backgrounds */
-        .overview-card-bg {
-          position: absolute;
-          inset: 0;
-          background-size: cover;
-          background-position: center;
-          transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        
-        .overview-card-bg::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: inherit;
-          filter: blur(20px);
-          opacity: 0.3;
-        }
+        /* Pills */
+        .pill { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border:1px solid;font-family:'Syne',sans-serif; }
+        .pill-dark  { background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2); }
+
+        /* Card lift */
+        .card-lift { transition:transform .28s ease,box-shadow .28s ease; }
+        .card-lift:hover { transform:translateY(-4px); box-shadow:0 20px 40px rgba(0,0,0,.08); }
+
+        /* Image zoom */
+        .img-z img { transition:transform .7s cubic-bezier(.16,1,.3,1); }
+        .img-z:hover img { transform:scale(1.06); }
+
+        /* Match status */
+        .badge-live { background:rgba(193,39,45,.08);color:#C1272D;border:1px solid rgba(193,39,45,.25); }
+        .badge-done { background:#fafaf9;color:#78716c;border:1px solid #e7e5e4; }
+        .badge-soon { background:rgba(0,98,51,.07);color:#006233;border:1px solid rgba(0,98,51,.2); }
+
+        /* Stat mini cards in overview */
+        .ov-stat { background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:18px;cursor:pointer;transition:all .2s; }
+        .ov-stat:hover { border-color:#C1272D;box-shadow:0 8px 28px rgba(193,39,45,.06); }
+
+        /* Hotel / attraction / gallery cards */
+        .item-card { background:#fff;border:1px solid #e7e5e4;border-radius:18px;overflow:hidden;transition:border-color .2s,transform .3s,box-shadow .3s;cursor:pointer; }
+        .item-card:hover { border-color:#C1272D;transform:translateY(-4px);box-shadow:0 16px 40px rgba(193,39,45,.08); }
+        .item-card img { transition:transform .7s cubic-bezier(.16,1,.3,1); }
+        .item-card:hover img { transform:scale(1.06); }
+
+        /* Stadium card */
+        .stad-card { border-radius:24px;overflow:hidden;position:relative;min-height:380px;cursor:pointer;transition:transform .35s,box-shadow .35s; }
+        .stad-card:hover { transform:translateY(-5px);box-shadow:0 28px 64px rgba(0,0,0,.22); }
+
+        /* Match card */
+        .match-card { background:#fff;border:1px solid #e7e5e4;border-radius:18px;overflow:hidden;cursor:pointer;transition:border-color .2s,box-shadow .2s; }
+        .match-card:hover { border-color:#d6d3d1;box-shadow:0 8px 24px rgba(0,0,0,.06); }
+
+        /* Gallery item */
+        .gal-item { position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;cursor:pointer; }
+        .gal-item img { width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.16,1,.3,1); }
+        .gal-item:hover img { transform:scale(1.1); }
+        .gal-item .gal-over { position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .25s;display:flex;align-items:center;justify-content:center; }
+        .gal-item:hover .gal-over { background:rgba(0,0,0,.32); }
+        .gal-item .gal-eye { opacity:0;transition:opacity .25s;color:#fff;font-size:32px; }
+        .gal-item:hover .gal-eye { opacity:1; }
       `}</style>
 
       <Navbar />
 
-      {/* ══ HERO ══ */}
-      <header className="relative min-h-[80vh] flex flex-col justify-end overflow-hidden bg-zinc-900 pt-24">
-        <div className="absolute inset-0">
+      {/* ══ HERO ════════════════════════════════════════════════════════════ */}
+      <header style={{ position:'relative', minHeight:'80vh', display:'flex', flexDirection:'column', justifyContent:'flex-end', overflow:'hidden', background:'#1c1917', paddingTop:96 }}>
+        <div style={{ position:'absolute', inset:0 }}>
           {city.imageUrl
-            ? <img src={city.imageUrl} alt={city.name} className="w-full h-full object-cover opacity-45" />
-            : <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-950" />
-          }
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-900/60 to-zinc-900/20" />
+            ? <img src={city.imageUrl} alt={city.name} style={{ width:'100%', height:'100%', objectFit:'cover', opacity:.42 }} />
+            : <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#2d2926,#1c1917)' }} />}
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(28,25,23,.98) 0%,rgba(28,25,23,.55) 55%,rgba(28,25,23,.18) 100%)' }} />
+          {/* Pattern */}
+          <div style={{ position:'absolute', inset:0, opacity:.04, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'160px', pointerEvents:'none' }} />
         </div>
 
-        <div className="relative z-10 max-w-[1400px] mx-auto w-full px-6 pb-14">
+        <div style={{ position:'relative', zIndex:5, maxWidth:1100, margin:'0 auto', width:'100%', padding:'0 24px 56px' }}>
+          {/* Back button */}
           <button onClick={() => router.push('/cities')}
-            className="group flex items-center gap-2 mb-10 text-white/70 hover:text-white transition fade-up">
-            <span className="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white/50 transition">
-              <iconify-icon icon="solar:arrow-left-linear" class="text-lg" />
-            </span>
-            <span className="text-sm font-medium">Back to cities</span>
+                  className="fu"
+                  style={{ display:'inline-flex', alignItems:'center', gap:8, color:'rgba(255,255,255,.6)', background:'none', border:'none', cursor:'pointer', marginBottom:36, fontFamily:'Inter,sans-serif', fontSize:14, fontWeight:500, transition:'color .2s' }}
+                  onMouseEnter={e=>e.currentTarget.style.color='#fff'}
+                  onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.6)'}>
+            <div style={{ width:36, height:36, borderRadius:'50%', border:'1px solid rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <span className="material-icons" style={{ fontSize:18 }}>arrow_back</span>
+            </div>
+            Back to cities
           </button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-end">
+          <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:32, alignItems:'flex-end' }}>
             <div>
-              <div className="flex items-center gap-3 mb-5 fade-up d1">
-                <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wider text-white/90">
-                  Host City
-                </span>
+              {/* Badges */}
+              <div className="fu d1" style={{ display:'flex', alignItems:'center', gap:10, marginBottom:18, flexWrap:'wrap' }}>
+                <span className="pill pill-dark">Host City</span>
                 {city.region && (
-                  <span className="flex items-center gap-1.5 text-white/60 text-sm">
-                    <iconify-icon icon="solar:map-point-linear" />
+                  <span style={{ display:'flex', alignItems:'center', gap:6, color:'rgba(255,255,255,.5)', fontSize:13 }}>
+                    <span className="material-icons" style={{ fontSize:14 }}>place</span>
                     {city.region}
                   </span>
                 )}
               </div>
 
-              <h1 className="font-serif text-7xl lg:text-9xl font-bold text-white leading-none mb-4 fade-up d2">
+              {/* City name */}
+              <h1 className="fu d2" style={{ fontFamily:'Amiri,serif', fontSize:'clamp(60px,10vw,110px)', fontWeight:400, color:'#fff', lineHeight:.95, marginBottom:14 }}>
                 {city.name}
               </h1>
 
-              <div className="flex items-center gap-2 text-white/60 text-lg fade-up d3">
-                <iconify-icon icon="solar:globe-linear" class="text-xl" />
-                <span className="font-light">{city.country}</span>
+              <div className="fu d3" style={{ display:'flex', alignItems:'center', gap:8, color:'rgba(255,255,255,.5)', fontSize:16 }}>
+                <span className="material-icons" style={{ fontSize:18 }}>public</span>
+                {city.country}
               </div>
             </div>
 
-            <div className="fade-up d4">
-              <div className="flex items-end justify-end gap-8">
-                {[
-                  { val: hotels.length,      label:'HOTELS',      color:'text-red-500'     },
-                  { val: attractions.length, label:'ATTRACTIONS', color:'text-amber-500'   },
-                  { val: stadiums.length,    label:'STADIUMS',    color:'text-emerald-500' },
-                ].map((s, i) => (
-                  <div key={i} className="text-right">
-                    <div className={`text-6xl lg:text-7xl font-bold ${s.color} mb-1`}>
-                      {s.val}
-                    </div>
-                    <div className="text-xs text-white/50 font-bold uppercase tracking-widest">
-                      {s.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {/* Stats right */}
+            <div className="fu d4" style={{ display:'flex', gap:32, justifyContent:'flex-start' }}>
+              {[
+                { val:hotels.length,      label:'HOTELS',      color:'#C1272D' },
+                { val:attractions.length, label:'ATTRACTIONS', color:'#f0a500' },
+                { val:stadiums.length,    label:'STADIUMS',    color:'#3dba7a' },
+              ].map((s,i) => (
+                <div key={i}>
+                  <div style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(40px,7vw,70px)', fontWeight:800, color:s.color, lineHeight:1, marginBottom:4 }}>{s.val}</div>
+                  <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', color:'rgba(255,255,255,.4)' }}>{s.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </header>
 
-      {/* ══ STICKY TABS ══ */}
-      <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-zinc-200 shadow-sm">
-        <div className="max-w-[1400px] mx-auto px-6">
-          <nav className="flex items-center gap-1 overflow-x-auto no-scroll py-3">
+      {/* ══ STICKY TABS ═════════════════════════════════════════════════════ */}
+      <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(255,255,255,.92)', backdropFilter:'blur(16px)', borderBottom:'1px solid #e7e5e4', boxShadow:'0 1px 12px rgba(0,0,0,.05)' }}>
+        <div style={{ maxWidth:1100, margin:'0 auto', padding:'0 24px' }}>
+          <nav style={{ display:'flex', gap:4, overflowX:'auto', padding:'10px 0' }} className="no-scroll">
             {TABS.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap
-                  ${activeTab === tab.key
-                    ? 'bg-zinc-900 text-white shadow-md'
-                    : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'}`}>
-                <iconify-icon icon={tab.icon} class="text-base" />
+                      style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:999, fontFamily:'Syne,sans-serif', fontSize:13, fontWeight:700, cursor:'pointer', transition:'all .2s', border:'none', whiteSpace:'nowrap', background:activeTab===tab.key?'#1c1917':'transparent', color:activeTab===tab.key?'#fff':'#78716c' }}
+                      onMouseEnter={e=>{ if(activeTab!==tab.key) e.currentTarget.style.background='#fafaf9'; }}
+                      onMouseLeave={e=>{ if(activeTab!==tab.key) e.currentTarget.style.background='transparent'; }}>
+                <span className="material-icons" style={{ fontSize:17 }}>{tab.icon}</span>
                 {tab.label}
-                {tab.badge !== null && tab.badge > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold
-                    ${activeTab === tab.key ? 'bg-white text-zinc-900' : 'bg-zinc-200 text-zinc-600'}`}>
+                {tab.badge!==null && tab.badge>0 && (
+                  <span style={{ fontSize:10, padding:'1px 7px', borderRadius:999, fontWeight:800, background:activeTab===tab.key?'#fff':'#f0efed', color:activeTab===tab.key?'#1c1917':'#78716c' }}>
                     {tab.badge}
                   </span>
                 )}
@@ -279,553 +265,338 @@ export default function CityDetail() {
         </div>
       </div>
 
-      {/* ══ CONTENT ══ */}
-      <main className="max-w-[1400px] mx-auto px-6 py-12 min-h-[60vh]">
+      {/* ══ CONTENT ══════════════════════════════════════════════════════════ */}
+      <main style={{ maxWidth:1100, margin:'0 auto', padding:'44px 24px 96px', minHeight:'60vh' }}>
 
         {/* ── OVERVIEW ── */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 fade-up">
-            <div className="md:col-span-8 bg-zinc-50 border border-zinc-100 rounded-[28px] p-8 lg:p-12">
-              <h2 className="font-serif text-3xl font-semibold text-zinc-900 mb-5">
-                About {city.name}
-              </h2>
-              <p className="text-zinc-600 text-lg leading-relaxed font-light">
-                {city.description || `${city.name} is one of the magnificent host cities for the 2030 World Cup. Discover its culture, infrastructure, and warm hospitality.`}
-              </p>
-              <div className="mt-8 pt-8 border-t border-zinc-200 grid grid-cols-2 md:grid-cols-3 gap-6">
+        {activeTab==='overview' && (
+          <div className="fu">
+            <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:16 }}>
+
+              {/* About block */}
+              <div style={{ background:'#fafaf9', border:'1px solid #e7e5e4', borderRadius:24, padding:'36px 40px' }}>
+                {/* Accent */}
+                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
+                  <div style={{ width:3, height:24, background:'linear-gradient(to bottom,#C1272D,#006233)', borderRadius:2 }} />
+                  <span style={{ fontFamily:'Syne,sans-serif', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', color:'#a8a29e' }}>About</span>
+                </div>
+                <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:26, fontWeight:800, color:'#1c1917', marginBottom:14 }}>About {city.name}</h2>
+                <p style={{ color:'#78716c', fontSize:16, lineHeight:1.82, marginBottom:28 }}>
+                  {city.description||`${city.name} is one of the magnificent host cities for the 2030 World Cup. Discover its culture, infrastructure, and warm hospitality.`}
+                </p>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20, paddingTop:24, borderTop:'1px solid #e7e5e4' }}>
+                  {[
+                    { l:'Region',  v:city.region||'—'            },
+                    { l:'Country', v:city.country||'—'           },
+                    { l:'Matches', v:`${matches.length} scheduled` },
+                  ].map((s,i) => (
+                    <div key={i}>
+                      <div style={{ fontFamily:'Syne,sans-serif', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.1em', color:'#a8a29e', marginBottom:5 }}>{s.l}</div>
+                      <div style={{ fontFamily:'Syne,sans-serif', fontSize:18, fontWeight:800, color:'#1c1917' }}>{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stat grid */}
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12 }}>
                 {[
-                  { l:'Region', v: city.region  || '—'              },
-                  { l:'Country',   v: city.country  || '—'          },
-                  { l:'Matches', v: `${matches.length} scheduled`   },
-                ].map((s, i) => (
-                  <div key={i}>
-                    <div className="text-[11px] text-zinc-400 uppercase tracking-widest font-semibold mb-1">{s.l}</div>
-                    <div className="text-xl font-semibold text-zinc-900">{s.v}</div>
+                  { icon:'hotel',          val:hotels.length,      label:'Hotels',      color:'#f0a500', bg:'rgba(240,165,0,.08)',   tab:'hotels'      },
+                  { icon:'place',          val:attractions.length, label:'Attractions', color:'#006233', bg:'rgba(0,98,51,.08)',     tab:'attractions' },
+                  { icon:'stadium',        val:stadiums.length,    label:'Stadiums',    color:'#C1272D', bg:'rgba(193,39,45,.08)',   tab:'stadiums'    },
+                  { icon:'calendar_today', val:matches.length,     label:'Matches',     color:'#3b82f6', bg:'rgba(59,130,246,.08)', tab:'matches'     },
+                ].map((s,i) => (
+                  <div key={i} className="ov-stat" onClick={() => setActiveTab(s.tab)}>
+                    <div style={{ width:40, height:40, borderRadius:12, background:s.bg, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>
+                      <span className="material-icons" style={{ fontSize:22, color:s.color }}>{s.icon}</span>
+                    </div>
+                    <div style={{ fontFamily:'Syne,sans-serif', fontSize:28, fontWeight:800, color:'#1c1917', lineHeight:1, marginBottom:4 }}>{s.val}</div>
+                    <div style={{ fontSize:12, color:'#a8a29e', fontWeight:500 }}>{s.label}</div>
                   </div>
                 ))}
               </div>
-            </div>
 
-            <div className="md:col-span-4 grid grid-cols-2 gap-4">
-              {[
-                { icon:'solar:bed-linear',                val: hotels.length,      label:'Hotels',      ring:'ring-amber-100',   bg:'bg-amber-50',   ic:'text-amber-500',   tab:'hotels'      },
-                { icon:'solar:map-point-school-linear',   val: attractions.length, label:'Attractions', ring:'ring-emerald-100', bg:'bg-emerald-50', ic:'text-emerald-500', tab:'attractions' },
-                { icon:'solar:structure-linear',          val: stadiums.length,    label:'Stadiums',    ring:'ring-rose-100',    bg:'bg-rose-50',    ic:'text-rose-500',    tab:'stadiums'    },
-                { icon:'solar:calendar-linear',           val: matches.length,     label:'Matches',     ring:'ring-blue-100',    bg:'bg-blue-50',    ic:'text-blue-500',    tab:'matches'     },
-              ].map((s, i) => (
-                <div key={i}
-                  className={`bg-white border border-zinc-200 rounded-2xl p-5 hover:ring-2 ${s.ring} transition group card-lift cursor-pointer`}
-                  onClick={() => setActiveTab(s.tab)}>
-                  <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                    <iconify-icon icon={s.icon} class={`text-xl ${s.ic}`} />
-                  </div>
-                  <div className="text-2xl font-bold text-zinc-900 tracking-tight">{s.val}</div>
-                  <div className="text-xs text-zinc-500 font-medium mt-0.5">{s.label}</div>
+              {/* Dark explore card */}
+              <div onClick={() => setActiveTab('stadiums')} style={{ background:'linear-gradient(135deg,#2d0a0e,#1a0608)', borderRadius:24, padding:'32px 36px', cursor:'pointer', position:'relative', overflow:'hidden', minHeight:180, display:'flex', flexDirection:'column', justifyContent:'space-between', transition:'transform .3s,box-shadow .3s' }}
+                   onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 20px 48px rgba(193,39,45,.2)'; }}
+                   onMouseLeave={e=>{ e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='none'; }}>
+                {stadiums[0]?.imageUrl && (
+                  <div style={{ position:'absolute', inset:0, backgroundImage:`url(${stadiums[0].imageUrl})`, backgroundSize:'cover', backgroundPosition:'center', opacity:.15 }} />
+                )}
+                <div style={{ position:'absolute', inset:0, opacity:.06, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'80px' }} />
+                <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
+                <div style={{ width:40, height:40, borderRadius:'50%', background:'rgba(255,255,255,.1)', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', zIndex:2 }}>
+                  <span className="material-icons" style={{ fontSize:20, color:'#fff' }}>north_east</span>
                 </div>
-              ))}
-            </div>
+                <div style={{ position:'relative', zIndex:2 }}>
+                  <div style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:800, color:'#fff', marginBottom:6 }}>Explore stadiums</div>
+                  <p style={{ fontSize:13, color:'rgba(255,255,255,.55)' }}>World-class infrastructure for the 2030 World Cup</p>
+                </div>
+              </div>
 
-            {/* Explore Stadiums Card with Background */}
-            <div onClick={() => setActiveTab('stadiums')}
-              className="md:col-span-6 text-white rounded-[28px] p-8 cursor-pointer group overflow-hidden relative card-lift"
-              style={{ minHeight: '200px' }}>
-              {/* Background Image */}
-              {stadiums[0]?.imageUrl && (
-                <div 
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{ backgroundImage: `url(${stadiums[0].imageUrl})` }}
-                />
-              )}
-              {/* Dark Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-zinc-950/90 via-zinc-900/85 to-zinc-800/80" />
-              
-              <div className="relative z-10 flex flex-col justify-between min-h-[160px]">
-                <div className="w-11 h-11 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white group-hover:text-zinc-900 transition-all">
-                  <iconify-icon icon="solar:arrow-right-up-linear" class="text-xl" />
+              {/* Match schedule card */}
+              <div onClick={() => setActiveTab('matches')} style={{ background:'#fafaf9', border:'1px solid #e7e5e4', borderRadius:24, padding:'32px 36px', cursor:'pointer', minHeight:160, display:'flex', flexDirection:'column', justifyContent:'space-between', transition:'all .2s' }}
+                   onMouseEnter={e=>{ e.currentTarget.style.borderColor='#C1272D'; e.currentTarget.style.boxShadow='0 8px 28px rgba(193,39,45,.06)'; }}
+                   onMouseLeave={e=>{ e.currentTarget.style.borderColor='#e7e5e4'; e.currentTarget.style.boxShadow='none'; }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                  <div style={{ width:40, height:40, borderRadius:'50%', background:'#fff', border:'1px solid #e7e5e4', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <span className="material-icons" style={{ fontSize:22, color:'#1c1917' }}>calendar_month</span>
+                  </div>
+                  <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em', padding:'4px 12px', background:'#f0efed', color:'#78716c', borderRadius:999, fontFamily:'Syne,sans-serif' }}>Schedule</span>
                 </div>
                 <div>
-                  <h4 className="text-2xl font-semibold mb-1.5">Explore stadiums</h4>
-                  <p className="text-white/70 text-sm font-light">World-class infrastructure for the 2030 World Cup</p>
+                  <div style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:800, color:'#1c1917', marginBottom:4 }}>Match schedule</div>
+                  <p style={{ fontSize:13, color:'#a8a29e' }}>Complete calendar of matches in {city.name}</p>
                 </div>
-              </div>
-              <div className="absolute -right-12 -bottom-12 w-56 h-56 bg-white/5 rounded-full blur-3xl" />
-            </div>
-
-            {/* Match Schedule Card with Background */}
-            <div onClick={() => setActiveTab('matches')}
-              className="md:col-span-6 bg-white border border-zinc-200 rounded-[28px] p-8 cursor-pointer group card-lift hover:border-zinc-300 hover:shadow-lg overflow-hidden relative"
-              style={{ minHeight: '200px' }}>
-              {/* Subtle Football/Soccer Pattern Background */}
-              <div className="absolute inset-0 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity pointer-events-none">
-                <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <pattern id="soccer-pattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-                      <circle cx="40" cy="40" r="25" fill="none" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M 40 15 L 40 20 M 40 60 L 40 65 M 15 40 L 20 40 M 60 40 L 65 40" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M 25 25 L 29 29 M 51 51 L 55 55 M 55 25 L 51 29 M 29 51 L 25 55" stroke="currentColor" strokeWidth="1.5"/>
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#soccer-pattern)" className="text-zinc-900"/>
-                </svg>
-              </div>
-              
-              {/* Optional: Add a gradient overlay from corner */}
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5 pointer-events-none" />
-              
-              <div className="relative z-10">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-11 h-11 bg-zinc-50 border border-zinc-100 rounded-full flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-50 group-hover:border-emerald-200 transition-all">
-                    <iconify-icon icon="solar:calendar-mark-linear" class="text-xl text-zinc-900 group-hover:text-emerald-600 transition-colors" />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-zinc-100 text-zinc-500 rounded-lg group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">Schedule</span>
-                </div>
-                <h4 className="text-2xl font-semibold text-zinc-900 mb-1.5 group-hover:text-emerald-900 transition-colors">Match schedule</h4>
-                <p className="text-zinc-500 text-sm font-light">Complete calendar of matches scheduled in {city.name}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* ── HOTELS ── */}
-        {activeTab === 'hotels' && (
-          <div className="fade-up">
-            <SectionHeader title={`Stay in ${city.name}`} subtitle="Selected accommodations for your comfort" />
-            {hotels.length === 0
-              ? <EmptyState icon="solar:bed-linear" msg="No accommodations available" />
-              : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {hotels.map((h, i) => (
-                    <div key={h.id}
-                      onClick={() => router.push(`/hotel/${h.id}`)}
-                      className="bg-white rounded-2xl border border-zinc-200 overflow-hidden card-lift group fade-up cursor-pointer"
-                      style={{ animationDelay: `${i * 0.07}s` }}>
-                      <div className="relative h-52 bg-zinc-100 overflow-hidden">
-                        <img
-                          src={h.imageUrl || '/images/hotel-placeholder.jpg'}
-                          alt={h.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          onError={e => { e.target.style.display = 'none'; }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                      </div>
-                      <div className="p-6">
-                        <h3 className="text-lg font-bold text-zinc-900 mb-2">{h.name}</h3>
-                        {h.address && (
-                          <p className="flex items-start gap-1.5 text-sm text-zinc-500 mb-3">
-                            <iconify-icon icon="solar:map-point-linear" class="mt-0.5 flex-shrink-0" />
-                            <span className="line-clamp-2">{h.address}</span>
-                          </p>
-                        )}
-                        {h.description && <p className="text-sm text-zinc-500 mb-4 line-clamp-2 font-light">{h.description}</p>}
-                        <div className="pt-4 border-t border-zinc-100 space-y-2">
-                          {h.phone && (
-                            <div className="flex items-center gap-2 text-sm text-zinc-600">
-                              <iconify-icon icon="solar:phone-linear" />
-                              <span>{h.phone}</span>
-                            </div>
-                          )}
-                          {h.email && (
-                            <div className="flex items-center gap-2 text-sm text-zinc-600">
-                              <iconify-icon icon="solar:letter-linear" />
-                              <span className="truncate">{h.email}</span>
-                            </div>
-                          )}
-                          {h.urlReservation && (
-                            <a href={h.urlReservation} target="_blank" rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-900 hover:text-zinc-600 transition mt-1">
-                              <iconify-icon icon="solar:link-linear" />
-                              Book now
-                              <iconify-icon icon="solar:arrow-right-up-linear" />
-                            </a>
-                          )}
+        {activeTab==='hotels' && (
+          <div className="fu">
+            <SectionHeader title={`Stay in ${city.name}`} sub="Selected accommodations for your comfort" />
+            {hotels.length===0 ? <EmptyState icon="hotel" msg="No accommodations available" /> : (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:16 }}>
+                {hotels.map((h,i) => (
+                  <div key={h.id} className="item-card fu" style={{ animationDelay:`${i*.07}s` }} onClick={() => router.push(`/hotel/${h.id}`)}>
+                    <div className="img-z" style={{ position:'relative', height:200, background:'#f5f5f4', overflow:'hidden' }}>
+                      <img src={h.imageUrl||'/images/hotel-placeholder.jpg'} alt={h.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
+                      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.4),transparent)' }} />
+                    </div>
+                    <div style={{ padding:'18px 20px' }}>
+                      <div style={{ fontFamily:'Syne,sans-serif', fontSize:16, fontWeight:800, color:'#1c1917', marginBottom:8 }}>{h.name}</div>
+                      {h.address && (
+                        <div style={{ display:'flex', alignItems:'flex-start', gap:6, fontSize:12, color:'#78716c', marginBottom:8 }}>
+                          <span className="material-icons" style={{ fontSize:14, marginTop:1, flexShrink:0 }}>place</span>
+                          <span style={{ overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{h.address}</span>
                         </div>
+                      )}
+                      {h.description && <p style={{ fontSize:12, color:'#a8a29e', lineHeight:1.7, marginBottom:12, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{h.description}</p>}
+                      <div style={{ paddingTop:12, borderTop:'1px solid #f5f5f4', display:'flex', flexDirection:'column', gap:6 }}>
+                        {h.phone && <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, color:'#57534e' }}><span className="material-icons" style={{ fontSize:14 }}>phone</span>{h.phone}</div>}
+                        {h.email && <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, color:'#57534e' }}><span className="material-icons" style={{ fontSize:14 }}>mail</span><span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{h.email}</span></div>}
+                        {h.urlReservation && (
+                          <a href={h.urlReservation} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
+                             style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:700, color:'#1c1917', textDecoration:'none', fontFamily:'Syne,sans-serif', marginTop:4 }}>
+                            <span className="material-icons" style={{ fontSize:14 }}>link</span>Book now
+                            <span className="material-icons" style={{ fontSize:14 }}>north_east</span>
+                          </a>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-            }
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* ── ATTRACTIONS ── */}
-        {activeTab === 'attractions' && (
-          <div className="fade-up">
-            <SectionHeader title={`Discover ${city.name}`} subtitle="Cultural, natural, and tourist sites" />
-            {attractions.length === 0
-              ? <EmptyState icon="solar:map-point-school-linear" msg="No attractions available" />
-              : <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {attractions.map((a, i) => (
-                    <div key={a.id}
-                      onClick={() => router.push(`/attractions/${a.id}`)}
-                      className="bg-white border border-zinc-200 rounded-2xl overflow-hidden card-lift group fade-up md:flex cursor-pointer"
-                      style={{ animationDelay: `${i * 0.07}s` }}>
-                      <div className="relative md:w-[42%] h-56 md:h-auto bg-zinc-100 flex-shrink-0 overflow-hidden">
-                        <img
-                          src={a.imageUrl || '/images/attraction-placeholder.jpg'}
-                          alt={a.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          onError={e => { e.target.style.display = 'none'; }}
-                        />
-                        {a.type && (
-                          <span className="absolute top-4 left-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 bg-white/90 backdrop-blur rounded-full text-zinc-700">
-                            {a.type}
-                          </span>
+        {activeTab==='attractions' && (
+          <div className="fu">
+            <SectionHeader title={`Discover ${city.name}`} sub="Cultural, natural, and tourist sites" />
+            {attractions.length===0 ? <EmptyState icon="place" msg="No attractions available" /> : (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))', gap:16 }}>
+                {attractions.map((a,i) => (
+                  <div key={a.id} className="item-card fu" style={{ animationDelay:`${i*.07}s`, display:'flex' }} onClick={() => router.push(`/attractions/${a.id}`)}>
+                    <div className="img-z" style={{ width:140, flexShrink:0, position:'relative', background:'#f5f5f4', overflow:'hidden' }}>
+                      <img src={a.imageUrl||'/images/attraction-placeholder.jpg'} alt={a.name} style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} onError={e=>e.target.style.display='none'} />
+                      {a.type && (
+                        <span style={{ position:'absolute', top:10, left:10, padding:'3px 10px', background:'rgba(255,255,255,.9)', backdropFilter:'blur(6px)', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.07em', fontFamily:'Syne,sans-serif', color:'#1c1917', borderRadius:999 }}>
+                          {a.type}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ flex:1, padding:'16px 18px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
+                      <div>
+                        <div style={{ fontFamily:'Syne,sans-serif', fontSize:15, fontWeight:800, color:'#1c1917', marginBottom:6 }}>{a.name}</div>
+                        {a.description && <p style={{ fontSize:12, color:'#78716c', lineHeight:1.7, marginBottom:10, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical' }}>{a.description}</p>}
+                      </div>
+                      <div style={{ display:'flex', flexDirection:'column', gap:5, fontSize:12, color:'#78716c' }}>
+                        {a.address && <div style={{ display:'flex', gap:6 }}><span className="material-icons" style={{ fontSize:13, flexShrink:0 }}>place</span>{a.address}</div>}
+                        {a.houreOfOpening && a.houreOfClosing && <div style={{ display:'flex', gap:6 }}><span className="material-icons" style={{ fontSize:13 }}>schedule</span>{a.houreOfOpening} — {a.houreOfClosing}</div>}
+                        {a.priceProxim>0 && <div style={{ display:'flex', gap:6 }}><span className="material-icons" style={{ fontSize:13 }}>payments</span><strong style={{ color:'#1c1917' }}>{Number(a.priceProxim).toFixed(0)} MAD</strong></div>}
+                        {a.latitude && a.longitude && (
+                          <a href={`https://www.google.com/maps?q=${a.latitude},${a.longitude}`} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
+                             style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, color:'#1c1917', textDecoration:'none', fontFamily:'Syne,sans-serif', marginTop:4 }}>
+                            <span className="material-icons" style={{ fontSize:13 }}>map</span>View on map
+                          </a>
                         )}
                       </div>
-                      <div className="p-6 flex flex-col justify-between">
-                        <div>
-                          <h3 className="font-serif text-xl font-semibold text-zinc-900 mb-2">{a.name}</h3>
-                          {a.description && <p className="text-sm text-zinc-500 font-light line-clamp-3 mb-4">{a.description}</p>}
-                        </div>
-                        <div className="space-y-2 text-sm text-zinc-600">
-                          {a.address && (
-                            <div className="flex items-start gap-2">
-                              <iconify-icon icon="solar:map-point-linear" class="mt-0.5 flex-shrink-0 text-zinc-400" />
-                              {a.address}
-                            </div>
-                          )}
-                          {a.houreOfOpening && a.houreOfClosing && (
-                            <div className="flex items-center gap-2">
-                              <iconify-icon icon="solar:clock-circle-linear" class="text-zinc-400" />
-                              {a.houreOfOpening} — {a.houreOfClosing}
-                            </div>
-                          )}
-                          {a.priceProxim > 0 && (
-                            <div className="flex items-center gap-2">
-                              <iconify-icon icon="solar:wallet-linear" class="text-zinc-400" />
-                              <span className="font-semibold text-zinc-800">{Number(a.priceProxim).toFixed(0)} MAD</span>
-                            </div>
-                          )}
-                          {a.latitude && a.longitude && (
-                            <a href={`https://www.google.com/maps?q=${a.latitude},${a.longitude}`}
-                              target="_blank" rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 font-semibold text-zinc-900 hover:text-zinc-600 transition mt-1">
-                              <iconify-icon icon="solar:map-linear" />
-                              View on map
-                            </a>
-                          )}
-                        </div>
-                      </div>
                     </div>
-                  ))}
-                </div>
-            }
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── STADIUMS ── WITH BACKGROUND IMAGES */}
-        {activeTab === 'stadiums' && (
-          <div className="fade-up">
-            <SectionHeader title={`${city.name} Stadiums`} subtitle="World-class sports infrastructure" />
-            {stadiums.length === 0
-              ? <EmptyState icon="solar:structure-linear" msg="No stadiums available" />
-              : <div className="space-y-6">
-                  {stadiums.map((st, i) => (
-                    <div
-                      key={st.id}
-                      onClick={() => router.push(`/stade/${st.id}`)}
-                      className="rounded-[28px] overflow-hidden group card-lift fade-up cursor-pointer relative"
-                      style={{ 
-                        animationDelay: `${i * 0.1}s`,
-                        minHeight: '400px'
-                      }}
-                    >
-                      {/* Background Image */}
-                      <div 
-                        className="absolute inset-0 stadium-card-bg"
-                        style={{
-                          backgroundImage: `url(${st.imageUrl || '/images/stadium-placeholder.jpg'})`
-                        }}
-                      />
-                      
-                      {/* Gradient Overlay */}
-                      <div className="absolute inset-0 stadium-card-overlay" />
-                      
-                      {/* Content */}
-                      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 min-h-[400px]">
-                        <div className="p-8 lg:p-12 flex flex-col justify-center">
-                          <div className="flex items-center gap-2 text-white/70 text-xs uppercase tracking-widest font-semibold mb-4">
-                            <iconify-icon icon="solar:structure-linear" />
-                            Infrastructure — {city.name}
-                          </div>
-                          
-                          <h3 className="font-serif text-3xl lg:text-5xl font-bold mb-4 text-white leading-tight">
-                            {st.name}
-                          </h3>
-                          
-                          {st.description && (
-                            <p className="text-white/80 font-light leading-relaxed mb-8 max-w-md text-lg">
-                              {st.description}
-                            </p>
-                          )}
-                          
-                          <div className="grid grid-cols-2 gap-6 border-t border-white/20 pt-6 mb-6">
-                            {st.capacity && (
-                              <div>
-                                <div className="text-white/60 text-[11px] uppercase tracking-widest font-semibold mb-2">Capacity</div>
-                                <div className="text-4xl font-bold text-white">{Number(st.capacity).toLocaleString()}</div>
-                              </div>
-                            )}
-                            {st.dateOfConstruction && (
-                              <div>
-                                <div className="text-white/60 text-[11px] uppercase tracking-widest font-semibold mb-2">Built</div>
-                                <div className="text-4xl font-bold text-white">{new Date(st.dateOfConstruction).getFullYear()}</div>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {st.adresse && (
-                            <p className="flex items-start gap-2 text-sm text-white/70 mb-6">
-                              <iconify-icon icon="solar:map-point-linear" class="mt-0.5 flex-shrink-0" />
-                              {st.adresse}
-                            </p>
-                          )}
-                          
-                          <button
-                            onClick={e => { e.stopPropagation(); router.push(`/stade/${st.id}`); }}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-zinc-900 rounded-xl text-sm font-semibold hover:bg-zinc-100 transition w-max group-hover:scale-105"
-                          >
-                            <iconify-icon icon="solar:arrow-right-up-linear" class="text-lg" />
-                            View stadium
-                          </button>
+        {/* ── STADIUMS ── */}
+        {activeTab==='stadiums' && (
+          <div className="fu">
+            <SectionHeader title={`${city.name} Stadiums`} sub="World-class sports infrastructure" />
+            {stadiums.length===0 ? <EmptyState icon="stadium" msg="No stadiums available" /> : (
+              <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+                {stadiums.map((st,i) => (
+                  <div key={st.id} className="stad-card fu" style={{ animationDelay:`${i*.1}s` }} onClick={() => router.push(`/stade/${st.id}`)}>
+                    {/* BG */}
+                    <div style={{ position:'absolute', inset:0, backgroundImage:`url(${st.imageUrl||'/images/stadium-placeholder.jpg'})`, backgroundSize:'cover', backgroundPosition:'center', transition:'transform .7s', filter:'brightness(.32)' }} className="stad-bg" />
+                    <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.38) 100%)' }} />
+                    <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
+                    {/* Pattern */}
+                    <div style={{ position:'absolute', inset:0, opacity:.05, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'80px' }} />
+
+                    <div style={{ position:'relative', zIndex:2, display:'grid', gridTemplateColumns:'1fr', minHeight:380, padding:'36px 40px' }}>
+                      <div style={{ display:'flex', flexDirection:'column', justifyContent:'center' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', color:'rgba(255,255,255,.55)', marginBottom:16, fontFamily:'Syne,sans-serif' }}>
+                          <span className="material-icons" style={{ fontSize:14 }}>stadium</span>
+                          Infrastructure — {city.name}
                         </div>
-                        
-                        {/* Right side - Let background show through */}
-                        <div className="hidden lg:flex items-center justify-center p-8">
-                          <div className="w-16 h-16 bg-white/10 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110">
-                            <iconify-icon icon="solar:arrow-right-up-linear" class="text-white text-3xl" />
-                          </div>
+                        <div style={{ fontFamily:'Amiri,serif', fontSize:'clamp(28px,4vw,48px)', fontWeight:700, color:'#fff', lineHeight:1.1, marginBottom:12 }}>{st.name}</div>
+                        {st.description && <p style={{ color:'rgba(255,255,255,.65)', fontSize:15, lineHeight:1.8, marginBottom:24, maxWidth:520 }}>{st.description}</p>}
+                        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,max-content)', gap:'0 40px', borderTop:'1px solid rgba(255,255,255,.15)', paddingTop:20, marginBottom:24 }}>
+                          {st.capacity && (
+                            <div>
+                              <div style={{ fontFamily:'Syne,sans-serif', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', color:'rgba(255,255,255,.45)', marginBottom:4 }}>Capacity</div>
+                              <div style={{ fontFamily:'Syne,sans-serif', fontSize:36, fontWeight:800, color:'#fff' }}>{Number(st.capacity).toLocaleString()}</div>
+                            </div>
+                          )}
+                          {st.dateOfConstruction && (
+                            <div>
+                              <div style={{ fontFamily:'Syne,sans-serif', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', color:'rgba(255,255,255,.45)', marginBottom:4 }}>Built</div>
+                              <div style={{ fontFamily:'Syne,sans-serif', fontSize:36, fontWeight:800, color:'#fff' }}>{new Date(st.dateOfConstruction).getFullYear()}</div>
+                            </div>
+                          )}
                         </div>
+                        {st.adresse && (
+                          <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:13, color:'rgba(255,255,255,.55)', marginBottom:20 }}>
+                            <span className="material-icons" style={{ fontSize:15 }}>place</span>{st.adresse}
+                          </div>
+                        )}
+                        <button onClick={e=>{ e.stopPropagation(); router.push(`/stade/${st.id}`); }}
+                                style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 22px', background:'#fff', color:'#1c1917', borderRadius:12, border:'none', fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:13, cursor:'pointer', width:'max-content', transition:'all .2s' }}
+                                onMouseEnter={e=>e.currentTarget.style.background='#f5f5f4'}
+                                onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
+                          <span className="material-icons" style={{ fontSize:16 }}>north_east</span>View stadium
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
-            }
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── MATCHES ── MOBILE-OPTIMIZED STRUCTURE */}
-        {activeTab === 'matches' && (
-          <div className="fade-up">
-            <SectionHeader title={`Matches in ${city.name}`} subtitle="Complete schedule of matches in this city" />
-            {matches.length === 0
-              ? <EmptyState icon="solar:calendar-linear" msg="No matches scheduled" />
-              : <div className="max-w-4xl mx-auto space-y-3">
-                  {[...matches]
-                    .sort((a, b) => new Date(a.dateOfMatch) - new Date(b.dateOfMatch))
-                    .map((m, i) => {
-                      const status = getStatus(m.statut);
-                      const live   = isLive(m.statut);
-                      const team1  = m.matchTeams?.[0];
-                      const team2  = m.matchTeams?.[1];
-                      const date   = new Date(m.dateOfMatch);
-                      
-                      return (
-                        <div 
-                          key={m.id}
-                          onClick={() => router.push(`/match/${m.id}`)}
-                          className="bg-white border border-zinc-200 hover:border-zinc-300 rounded-2xl overflow-hidden cursor-pointer transition group fade-up hover:shadow-lg"
-                          style={{ animationDelay: `${i * 0.05}s` }}
-                        >
-                          {/* Match Header - Optimized for mobile */}
-                          <div className="bg-zinc-50 border-b border-zinc-200 px-4 py-2.5 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="font-semibold text-zinc-700">
-                                {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </span>
-                              <span className="text-zinc-300">•</span>
-                              <span className="font-bold text-zinc-900">
-                                {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            
-                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-bold border ${status.cls}`}>
-                              {live && <span className="w-1 h-1 rounded-full bg-red-500 live-dot" />}
-                              {status.label}
+        {/* ── MATCHES ── */}
+        {activeTab==='matches' && (
+          <div className="fu">
+            <SectionHeader title={`Matches in ${city.name}`} sub="Complete schedule of matches in this city" />
+            {matches.length===0 ? <EmptyState icon="calendar_today" msg="No matches scheduled" /> : (
+              <div style={{ maxWidth:760, margin:'0 auto', display:'flex', flexDirection:'column', gap:10 }}>
+                {[...matches].sort((a,b)=>new Date(a.dateOfMatch)-new Date(b.dateOfMatch)).map((m,i) => {
+                  const status = getStatus(m.statut);
+                  const live   = isLive(m.statut);
+                  const t1     = m.matchTeams?.[0], t2 = m.matchTeams?.[1];
+                  const date   = new Date(m.dateOfMatch);
+                  return (
+                    <div key={m.id} className="match-card fu" style={{ animationDelay:`${i*.05}s` }} onClick={() => router.push(`/match/${m.id}`)}>
+                      {/* Match header */}
+                      <div style={{ background:'#fafaf9', borderBottom:'1px solid #f0efed', padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:12 }}>
+                          <span style={{ fontWeight:600, color:'#57534e' }}>{date.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+                          <span style={{ color:'#d6d3d1' }}>•</span>
+                          <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, color:'#1c1917' }}>{date.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span>
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:5, padding:'3px 10px', borderRadius:999, fontSize:9, fontWeight:700, fontFamily:'Syne,sans-serif', textTransform:'uppercase', letterSpacing:'.07em' }} className={`badge-${status.cls}`}>
+                          {live && <span className="live-dot" style={{ width:5, height:5, borderRadius:'50%', background:'#C1272D', display:'inline-block' }} />}
+                          {status.label}
+                        </div>
+                      </div>
+
+                      {/* Teams */}
+                      <div style={{ padding:'16px 20px' }}>
+                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+                          {/* T1 */}
+                          <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0 }}>
+                            <img src={t1?.imageUrl||''} alt={t1?.teamName} style={{ width:48, height:48, borderRadius:'50%', objectFit:'cover', border:'2px solid #f0efed', flexShrink:0 }} onError={e=>e.target.style.display='none'} />
+                            <div style={{ minWidth:0 }}>
+                              <div style={{ fontFamily:'Syne,sans-serif', fontSize:14, fontWeight:800, color:'#1c1917', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t1?.teamName||'TBD'}</div>
+                              {t1?.country && <div style={{ fontSize:11, color:'#a8a29e' }}>{t1.country}</div>}
                             </div>
                           </div>
-                          
-                          {/* Match Content - Mobile Layout */}
-                          <div className="p-4">
-                            {/* Desktop Layout */}
-                            <div className="hidden md:flex items-center justify-between gap-6">
-                              {/* Team 1 */}
-                              <div className="flex items-center gap-3 flex-1">
-                                <img
-                                  src={team1?.imageUrl || '/images/team-placeholder.png'}
-                                  alt={team1?.teamName}
-                                  className="w-14 h-14 rounded-full object-cover border-2 border-zinc-100 flex-shrink-0"
-                                  onError={e => { e.target.style.display = 'none'; }}
-                                />
-                                <div className="min-w-0">
-                                  <div className="font-bold text-zinc-900 text-base truncate">
-                                    {team1?.teamName || 'TBD'}
-                                  </div>
-                                  {team1?.country && (
-                                    <div className="text-xs text-zinc-500">{team1.country}</div>
-                                  )}
-                                </div>
+                          {/* Score / VS */}
+                          <div style={{ textAlign:'center', flexShrink:0, padding:'0 12px' }}>
+                            {m.statut!=='upcoming' ? (
+                              <div style={{ fontFamily:'Syne,sans-serif', fontSize:26, fontWeight:800, color:live?'#C1272D':'#1c1917', lineHeight:1 }}>
+                                {t1?.goals??0} – {t2?.goals??0}
                               </div>
-                              
-                              {/* Score/VS */}
-                              <div className="flex flex-col items-center justify-center px-4">
-                                {m.statut !== 'upcoming' ? (
-                                  <>
-                                    <div className={`text-3xl font-bold tracking-tight ${live ? 'text-red-600' : 'text-zinc-900'}`}>
-                                      {team1?.goals ?? 0} – {team2?.goals ?? 0}
-                                    </div>
-                                    {live && (
-                                      <div className="text-xs text-red-600 font-semibold mt-1 uppercase">Live</div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <div className="text-2xl font-light text-zinc-300">VS</div>
-                                )}
-                                {m.type && (
-                                  <div className="text-[9px] text-zinc-400 font-medium mt-1.5 uppercase tracking-wider">
-                                    {m.type}
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Team 2 */}
-                              <div className="flex items-center gap-3 flex-1 flex-row-reverse">
-                                <img
-                                  src={team2?.imageUrl || '/images/team-placeholder.png'}
-                                  alt={team2?.teamName}
-                                  className="w-14 h-14 rounded-full object-cover border-2 border-zinc-100 flex-shrink-0"
-                                  onError={e => { e.target.style.display = 'none'; }}
-                                />
-                                <div className="min-w-0 text-right">
-                                  <div className="font-bold text-zinc-900 text-base truncate">
-                                    {team2?.teamName || 'TBD'}
-                                  </div>
-                                  {team2?.country && (
-                                    <div className="text-xs text-zinc-500">{team2.country}</div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Mobile Layout - Vertical Stack */}
-                            <div className="md:hidden space-y-3">
-                              {/* Teams Container */}
-                              <div className="flex items-center justify-between">
-                                {/* Team 1 - Left */}
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <img
-                                    src={team1?.imageUrl || '/images/team-placeholder.png'}
-                                    alt={team1?.teamName}
-                                    className="w-12 h-12 rounded-full object-cover border-2 border-zinc-100 flex-shrink-0"
-                                    onError={e => { e.target.style.display = 'none'; }}
-                                  />
-                                  <div className="min-w-0 flex-1">
-                                    <div className="font-bold text-zinc-900 text-sm truncate">
-                                      {team1?.teamName || 'TBD'}
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                {/* Score - Center */}
-                                <div className="flex flex-col items-center justify-center px-3 flex-shrink-0">
-                                  {m.statut !== 'upcoming' ? (
-                                    <div className={`text-xl font-bold ${live ? 'text-red-600' : 'text-zinc-900'}`}>
-                                      {team1?.goals ?? 0} – {team2?.goals ?? 0}
-                                    </div>
-                                  ) : (
-                                    <div className="text-lg font-light text-zinc-300">VS</div>
-                                  )}
-                                </div>
-                                
-                                {/* Team 2 - Right */}
-                                <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse">
-                                  <img
-                                    src={team2?.imageUrl || '/images/team-placeholder.png'}
-                                    alt={team2?.teamName}
-                                    className="w-12 h-12 rounded-full object-cover border-2 border-zinc-100 flex-shrink-0"
-                                    onError={e => { e.target.style.display = 'none'; }}
-                                  />
-                                  <div className="min-w-0 flex-1 text-right">
-                                    <div className="font-bold text-zinc-900 text-sm truncate">
-                                      {team2?.teamName || 'TBD'}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Match Type - Mobile */}
-                              {m.type && (
-                                <div className="text-center">
-                                  <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider px-2 py-1 bg-zinc-50 rounded-full">
-                                    {m.type}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Stadium Info - Same for both */}
-                            {m.stadeName && (
-                              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-xs text-zinc-600 min-w-0">
-                                  <iconify-icon icon="solar:structure-linear" class="text-zinc-400 flex-shrink-0" />
-                                  <span className="font-medium truncate">{m.stadeName}</span>
-                                </div>
-                                <iconify-icon 
-                                  icon="solar:arrow-right-linear"
-                                  class="text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-1 transition-all text-lg flex-shrink-0" 
-                                />
-                              </div>
+                            ) : (
+                              <div style={{ fontFamily:'Amiri,serif', fontSize:22, color:'#d6d3d1', fontStyle:'italic' }}>vs</div>
                             )}
+                            {m.type && <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em', color:'#a8a29e', marginTop:3 }}>{m.type}</div>}
+                          </div>
+                          {/* T2 */}
+                          <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0, flexDirection:'row-reverse' }}>
+                            <img src={t2?.imageUrl||''} alt={t2?.teamName} style={{ width:48, height:48, borderRadius:'50%', objectFit:'cover', border:'2px solid #f0efed', flexShrink:0 }} onError={e=>e.target.style.display='none'} />
+                            <div style={{ minWidth:0, textAlign:'right' }}>
+                              <div style={{ fontFamily:'Syne,sans-serif', fontSize:14, fontWeight:800, color:'#1c1917', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t2?.teamName||'TBD'}</div>
+                              {t2?.country && <div style={{ fontSize:11, color:'#a8a29e' }}>{t2.country}</div>}
+                            </div>
                           </div>
                         </div>
-                      );
-                    })}
-                </div>
-            }
+                        {/* Stadium */}
+                        {m.stadeName && (
+                          <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid #f5f5f4', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                            <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#78716c' }}>
+                              <span className="material-icons" style={{ fontSize:14, color:'#a8a29e' }}>stadium</span>
+                              {m.stadeName}
+                            </div>
+                            <span className="material-icons" style={{ fontSize:18, color:'#d6d3d1' }}>arrow_forward</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
         {/* ── GALLERY ── */}
-        {activeTab === 'gallery' && (
-          <div className="fade-up">
-            <SectionHeader title={`${city.name} Gallery`} subtitle="Discover the city in images" />
-            {images.length === 0
-              ? <EmptyState icon="solar:gallery-minimalistic-linear" msg="No images available" />
-              : <>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {images.map((img, i) => (
-                      <div key={img.id}
-                        onClick={() => setLightbox(img.imageUrl)}
-                        className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer group card-lift fade-up"
-                        style={{ animationDelay: `${i * 0.04}s` }}>
-                        <img src={img.imageUrl} alt={`${city.name} ${i + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
-                          <iconify-icon icon="solar:eye-linear" class="text-white text-3xl opacity-0 group-hover:opacity-100 transition" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {lightbox && (
-                    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-6"
-                      onClick={() => setLightbox(null)}>
-                      <button
-                        className="absolute top-6 right-6 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition"
-                        onClick={() => setLightbox(null)}>
-                        <iconify-icon icon="solar:close-circle-linear" class="text-2xl" />
-                      </button>
-                      <img src={lightbox} alt="Full view"
-                        className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl"
-                        onClick={e => e.stopPropagation()} />
+        {activeTab==='gallery' && (
+          <div className="fu">
+            <SectionHeader title={`${city.name} Gallery`} sub="Discover the city in images" />
+            {images.length===0 ? <EmptyState icon="photo_library" msg="No images available" /> : (
+              <>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:12 }}>
+                  {images.map((img,i) => (
+                    <div key={img.id} className="gal-item fu" style={{ animationDelay:`${i*.04}s` }} onClick={() => setLightbox(img.imageUrl)}>
+                      <img src={img.imageUrl} alt={`${city.name} ${i+1}`} />
+                      <div className="gal-over"><span className="material-icons gal-eye">visibility</span></div>
                     </div>
-                  )}
-                </>
-            }
+                  ))}
+                </div>
+
+                {lightbox && (
+                  <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,.92)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}
+                       onClick={() => setLightbox(null)}>
+                    <button onClick={() => setLightbox(null)}
+                            style={{ position:'absolute', top:20, right:20, width:44, height:44, borderRadius:'50%', background:'rgba(255,255,255,.1)', border:'none', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background .2s' }}
+                            onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,.2)'}
+                            onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,.1)'}>
+                      <span className="material-icons" style={{ fontSize:22 }}>close</span>
+                    </button>
+                    <img src={lightbox} alt="Full view" style={{ maxWidth:'100%', maxHeight:'90vh', borderRadius:12, boxShadow:'0 40px 100px rgba(0,0,0,.6)' }} onClick={e=>e.stopPropagation()} />
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
-
       </main>
 
       <Footer />
@@ -834,22 +605,25 @@ export default function CityDetail() {
 }
 
 /* ── Sub-components ── */
-function SectionHeader({ title, subtitle }) {
+function SectionHeader({ title, sub }) {
   return (
-    <div className="mb-8">
-      <h2 className="font-serif text-4xl font-semibold text-zinc-900 mb-2">{title}</h2>
-      <p className="text-zinc-500 text-lg font-light">{subtitle}</p>
+    <div style={{ marginBottom:28 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+        <div style={{ width:3, height:20, background:'linear-gradient(to bottom,#C1272D,#006233)', borderRadius:2 }} />
+        <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(22px,3vw,30px)', fontWeight:800, color:'#1c1917', lineHeight:1.1 }}>{title}</h2>
+      </div>
+      <p style={{ fontSize:14, color:'#a8a29e', marginLeft:13 }}>{sub}</p>
     </div>
   );
 }
 
 function EmptyState({ icon, msg }) {
   return (
-    <div className="flex flex-col items-center justify-center py-24 bg-zinc-50 rounded-2xl border border-zinc-100">
-      <div className="w-20 h-20 bg-white border border-zinc-200 rounded-full flex items-center justify-center mb-4">
-        <iconify-icon icon={icon} class="text-zinc-300 text-4xl" />
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'72px 0', background:'#fafaf9', border:'1px solid #e7e5e4', borderRadius:20 }}>
+      <div style={{ width:72, height:72, borderRadius:'50%', background:'#fff', border:'1px solid #e7e5e4', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }}>
+        <span className="material-icons" style={{ fontSize:32, color:'#d6d3d1' }}>{icon}</span>
       </div>
-      <p className="text-zinc-500 font-medium">{msg}</p>
+      <p style={{ fontFamily:'Syne,sans-serif', fontSize:13, fontWeight:700, color:'#a8a29e', textTransform:'uppercase', letterSpacing:'.1em' }}>{msg}</p>
     </div>
   );
 }
