@@ -11,14 +11,10 @@ import java.util.List;
 @Repository
 public interface FoodRepository extends JpaRepository<Foods, Integer> {
 
-    
-    // Recherche par nom 
-
+    // Search by name only
     List<Foods> findByNameContainingIgnoreCase(String name);
 
-    
-    // Recherche par ville
-   
+    // Search with optional cityId + search filters (used by GET /api/foods?cityId=&search=)
     @Query("""
         SELECT f FROM Foods f
         WHERE (:cityId IS NULL OR f.cityHost.id = :cityId)
@@ -29,23 +25,19 @@ public interface FoodRepository extends JpaRepository<Foods, Integer> {
         )
         ORDER BY f.name
     """)
-    static
     List<Foods> findByFilters(
             @Param("cityId") Integer cityId,
             @Param("search") String search
-    ) {
-        return null;
-    }       
+    );
 
-    
-    // Récupérer les plats d'une ville
-
+    // Get dishes by city
     @Query("SELECT f FROM Foods f WHERE f.cityHost.id = :cityId")
     List<Foods> findByCityId(@Param("cityId") Integer cityId);
 
-    
-    // Récupérer les villes distinctes (pour filtres)
+    // Get dishes by city + name search (replaces the broken derived method)
+    List<Foods> findByCityHost_IdAndNameContainingIgnoreCase(Integer cityId, String name);
 
+    // Get distinct city names (for filters)
     @Query("SELECT DISTINCT c.name FROM Foods f JOIN f.cityHost c ORDER BY c.name")
     List<String> findDistinctCityNames();
 }

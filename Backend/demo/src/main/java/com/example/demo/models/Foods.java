@@ -10,7 +10,7 @@ public class Foods {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "name", length = 100)
+    @Column(name = "name", length = 100, nullable = false)
     private String name;
 
     @Column(name = "category", length = 100)
@@ -25,21 +25,33 @@ public class Foods {
     @Column(name = "imageUrl", length = 255)
     private String imageUrl;
 
-    @ManyToOne
+    // Relation avec CityHosts
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cityID", referencedColumnName = "id")
     private CityHosts cityHost;
+
+    // ===== Constructors =====
 
     public Foods() {
     }
 
-    public Foods(String name, String category, String description, Float priceProxim, String imageUrl, CityHosts city) {
+    public Foods(
+            String name,
+            String category,
+            String description,
+            Float priceProxim,
+            String imageUrl,
+            CityHosts cityHost
+    ) {
         this.name = name;
         this.category = category;
         this.description = description;
         this.priceProxim = priceProxim;
         this.imageUrl = imageUrl;
-        this.cityHost = city;
+        this.cityHost = cityHost;
     }
+
+    // ===== Getters & Setters =====
 
     public Integer getId() {
         return id;
@@ -89,11 +101,11 @@ public class Foods {
         this.imageUrl = imageUrl;
     }
 
-    public CityHosts getCity() {
+    public CityHosts getCityHost() {
         return cityHost;
     }
 
-    public void setCity(CityHosts city) {
-        this.cityHost = city;
+    public void setCityHost(CityHosts cityHost) {
+        this.cityHost = cityHost;
     }
 }
