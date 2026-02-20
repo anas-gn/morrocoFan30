@@ -30,7 +30,7 @@ export default function HotelDetail() {
   if (!hotel) return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#fafaf9' }}>
       <div style={{ fontFamily:'Syne,sans-serif', fontSize:22, fontWeight:800, color:'#1c1917', marginBottom:16 }}>Hotel not found</div>
-      <button onClick={() => router.push('/hotels')} style={{ padding:'10px 24px', background:'#C1272D', color:'#fff', border:'none', borderRadius:12, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}>Back to Hotels</button>
+      <button onClick={() => router.push('/cities')} style={{ padding:'10px 24px', background:'#C1272D', color:'#fff', border:'none', borderRadius:12, fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:14, cursor:'pointer' }}>Back to City</button>
     </div>
   );
 
@@ -78,14 +78,14 @@ export default function HotelDetail() {
         <div style={{ position:'absolute', inset:0, zIndex:10, display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
           <div style={{ maxWidth:1100, margin:'0 auto', width:'100%', padding:'0 24px 48px' }}>
             {/* Back */}
-            <button onClick={() => router.push('/hotels')} className="fu"
+            <button onClick={() => router.push('/cities')} className="fu"
               style={{ display:'inline-flex', alignItems:'center', gap:8, color:'rgba(255,255,255,.55)', background:'none', border:'none', cursor:'pointer', marginBottom:158, fontFamily:'Inter,sans-serif', fontSize:14, fontWeight:500, transition:'color .2s' }}
               onMouseEnter={e=>e.currentTarget.style.color='#fff'}
               onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.55)'}>
               <div style={{ width:36, height:36, borderRadius:'50%', border:'1px solid rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <span className="material-icons" style={{ fontSize:18 }}>arrow_back</span>
               </div>
-              Back to Hotels
+              Back to City
             </button>
 
             {/* Badge */}
@@ -197,7 +197,6 @@ export default function HotelDetail() {
 
             {/* Book Your Stay card */}
             <div className="fu d2" style={{ background:'linear-gradient(135deg,#2d0a0e,#1a0608)', borderRadius:22, overflow:'hidden', border:'1px solid rgba(193,39,45,.2)', position:'relative' }}>
-              <div style={{ height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
               <div style={{ position:'absolute', top:-40, right:-40, width:160, height:160, borderRadius:'50%', background:'rgba(193,39,45,.15)', filter:'blur(40px)', pointerEvents:'none' }} />
               <div style={{ position:'relative', zIndex:1, padding:'24px' }}>
                 <div style={{ fontFamily:'Amiri,serif', fontSize:26, fontWeight:700, color:'#fff', marginBottom:20 }}>Book Your Stay</div>

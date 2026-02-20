@@ -26,9 +26,13 @@ export default function CityDetail() {
   const [stadiums, setStadiums]       = useState([]);
   const [matches, setMatches]         = useState([]);
   const [images, setImages]           = useState([]);
+  const [transports, setTransports]   = useState([]);
+  const [foods, setFoods]             = useState([]);
+  const [guides, setGuides]           = useState([]);
   const [activeTab, setActiveTab]     = useState('overview');
   const [loading, setLoading]         = useState(true);
   const [lightbox, setLightbox]       = useState(null);
+  const [loadedTabs, setLoadedTabs]   = useState({});
 
   useEffect(() => {
     if (!id) return;
@@ -65,6 +69,31 @@ export default function CityDetail() {
     })();
   }, [id]);
 
+  useEffect(() => {
+    if (!id || loadedTabs[activeTab]) return;
+
+    if (activeTab === 'transports') {
+      safeFetch(`${API}/transports/city/${id}`).then(d => {
+        setTransports(Array.isArray(d) ? d : []);
+        setLoadedTabs(p => ({ ...p, transports: true }));
+      });
+    }
+    if (activeTab === 'foods') {
+      safeFetch(`${API}/foods/city/${id}`).then(d => {
+        setFoods(Array.isArray(d) ? d : []);
+        setLoadedTabs(p => ({ ...p, foods: true }));
+      });
+    }
+    if (activeTab === 'guides') {
+      safeFetch(`${API}/guides/all`).then(d => {
+        const cityId = parseInt(id);
+        const filtered = Array.isArray(d) ? d.filter(g => g.cityId === cityId) : [];
+        setGuides(filtered);
+        setLoadedTabs(p => ({ ...p, guides: true }));
+      });
+    }
+  }, [activeTab, id]);
+
   const getStatus = (s) => ({
     'LIVE':     { label:'Live',      cls:'live'   },
     'started':  { label:'Live',      cls:'live'   },
@@ -83,9 +112,11 @@ export default function CityDetail() {
     { key:'stadiums',    label:'Stadiums',  icon:'stadium',           badge:stadiums.length   },
     { key:'matches',     label:'Matches',   icon:'calendar_today',    badge:matches.length    },
     { key:'gallery',     label:'Gallery',   icon:'photo_library',     badge:images.length     },
+    { key:'transports',  label:'Transport', icon:'commute',           badge:null              },
+    { key:'foods',       label:'Food',      icon:'restaurant',        badge:null              },
+    { key:'guides',      label:'Guides',    icon:'record_voice_over', badge:null              },
   ];
 
-  /* ── Loading ── */
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#fff' }}>
       <div style={{ width:40, height:40, border:'3px solid #C1272D', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
@@ -120,53 +151,44 @@ export default function CityDetail() {
         ::selection { background:#C1272D; color:#fff; }
 
         @keyframes spin    { to{transform:rotate(360deg)} }
-        @keyframes fadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulseDot{ 0%,100%{opacity:1} 50%{opacity:.35} }
 
-        .fu  { animation:fadeUp .55s cubic-bezier(.16,1,.3,1) both; }
-        .d1  { animation-delay:.08s } .d2 { animation-delay:.16s }
-        .d3  { animation-delay:.24s } .d4 { animation-delay:.32s }
+        .fu  { animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both; }
+        .d1  { animation-delay:.08s } .d2 { animation-delay:.18s }
+        .d3  { animation-delay:.28s } .d4 { animation-delay:.38s }
         .live-dot { animation:pulseDot 1.4s ease-in-out infinite; }
 
         .no-scroll::-webkit-scrollbar { display:none; }
         .no-scroll { -ms-overflow-style:none; scrollbar-width:none; }
 
-        /* Pills */
         .pill { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;border:1px solid;font-family:'Syne',sans-serif; }
         .pill-dark  { background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2); }
 
-        /* Card lift */
         .card-lift { transition:transform .28s ease,box-shadow .28s ease; }
         .card-lift:hover { transform:translateY(-4px); box-shadow:0 20px 40px rgba(0,0,0,.08); }
 
-        /* Image zoom */
         .img-z img { transition:transform .7s cubic-bezier(.16,1,.3,1); }
         .img-z:hover img { transform:scale(1.06); }
 
-        /* Match status */
         .badge-live { background:rgba(193,39,45,.08);color:#C1272D;border:1px solid rgba(193,39,45,.25); }
         .badge-done { background:#fafaf9;color:#78716c;border:1px solid #e7e5e4; }
         .badge-soon { background:rgba(0,98,51,.07);color:#006233;border:1px solid rgba(0,98,51,.2); }
 
-        /* Stat mini cards in overview */
         .ov-stat { background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:18px;cursor:pointer;transition:all .2s; }
         .ov-stat:hover { border-color:#C1272D;box-shadow:0 8px 28px rgba(193,39,45,.06); }
 
-        /* Hotel / attraction / gallery cards */
         .item-card { background:#fff;border:1px solid #e7e5e4;border-radius:18px;overflow:hidden;transition:border-color .2s,transform .3s,box-shadow .3s;cursor:pointer; }
         .item-card:hover { border-color:#C1272D;transform:translateY(-4px);box-shadow:0 16px 40px rgba(193,39,45,.08); }
         .item-card img { transition:transform .7s cubic-bezier(.16,1,.3,1); }
         .item-card:hover img { transform:scale(1.06); }
 
-        /* Stadium card */
         .stad-card { border-radius:24px;overflow:hidden;position:relative;min-height:380px;cursor:pointer;transition:transform .35s,box-shadow .35s; }
         .stad-card:hover { transform:translateY(-5px);box-shadow:0 28px 64px rgba(0,0,0,.22); }
 
-        /* Match card */
         .match-card { background:#fff;border:1px solid #e7e5e4;border-radius:18px;overflow:hidden;cursor:pointer;transition:border-color .2s,box-shadow .2s; }
         .match-card:hover { border-color:#d6d3d1;box-shadow:0 8px 24px rgba(0,0,0,.06); }
 
-        /* Gallery item */
         .gal-item { position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;cursor:pointer; }
         .gal-item img { width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.16,1,.3,1); }
         .gal-item:hover img { transform:scale(1.1); }
@@ -174,71 +196,190 @@ export default function CityDetail() {
         .gal-item:hover .gal-over { background:rgba(0,0,0,.32); }
         .gal-item .gal-eye { opacity:0;transition:opacity .25s;color:#fff;font-size:32px; }
         .gal-item:hover .gal-eye { opacity:1; }
+
+        .extra-card { background:#fff;border:1px solid #e7e5e4;border-radius:18px;overflow:hidden;transition:border-color .2s,transform .28s,box-shadow .28s;cursor:pointer; }
+        .extra-card:hover { border-color:#C1272D;transform:translateY(-3px);box-shadow:0 14px 36px rgba(193,39,45,.08); }
+        .extra-card img { transition:transform .6s cubic-bezier(.16,1,.3,1); }
+        .extra-card:hover img { transform:scale(1.05); }
+
+        @media (max-width: 768px) {
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .hero-stadium-card { display: none !important; }
+          .stats-bar { grid-template-columns: repeat(2,1fr) !important; }
+        }
       `}</style>
 
       <Navbar />
 
       {/* ══ HERO ════════════════════════════════════════════════════════════ */}
-      <header style={{ position:'relative', minHeight:'80vh', display:'flex', flexDirection:'column', justifyContent:'flex-end', overflow:'hidden', background:'#1c1917', paddingTop:96 }}>
-        <div style={{ position:'absolute', inset:0 }}>
+      <header style={{
+        position: 'relative',
+        minHeight: '100vh',
+        display: 'grid',
+        gridTemplateRows: '1fr auto',
+        overflow: 'hidden',
+        background: '#0d0b09',
+        paddingTop: 72,
+      }}>
+
+        {/* Background */}
+        <div style={{ position: 'absolute', inset: 0 }}>
           {city.imageUrl
-            ? <img src={city.imageUrl} alt={city.name} style={{ width:'100%', height:'100%', objectFit:'cover', opacity:.42 }} />
-            : <div style={{ width:'100%', height:'100%', background:'linear-gradient(135deg,#2d2926,#1c1917)' }} />}
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(28,25,23,.98) 0%,rgba(28,25,23,.55) 55%,rgba(28,25,23,.18) 100%)' }} />
-          {/* Pattern */}
-          <div style={{ position:'absolute', inset:0, opacity:.04, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'160px', pointerEvents:'none' }} />
+            ? <img src={city.imageUrl} alt={city.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .35, transform: 'scale(1.04)' }} />
+            : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e0a0c,#0d0b09)' }} />}
+
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(110deg, rgba(13,11,9,.97) 0%, rgba(13,11,9,.7) 50%, rgba(13,11,9,.4) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,11,9,1) 0%, rgba(13,11,9,.6) 40%, transparent 80%)' }} />
+          <div style={{ position: 'absolute', inset: 0, opacity: .035, backgroundImage: "url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize: '180px', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: -60, left: -60, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(193,39,45,.22) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: -80, right: -80, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,98,51,.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
         </div>
 
-        <div style={{ position:'relative', zIndex:5, maxWidth:1100, margin:'0 auto', width:'100%', padding:'0 24px 56px' }}>
+        {/* Main content */}
+        <div style={{ position: 'relative', zIndex: 5, maxWidth: 1100, margin: '0 auto', width: '100%', padding: '48px 24px 0', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+
           {/* Back button */}
           <button onClick={() => router.push('/cities')}
-                  className="fu"
-                  style={{ display:'inline-flex', alignItems:'center', gap:8, color:'rgba(255,255,255,.6)', background:'none', border:'none', cursor:'pointer', marginBottom:36, fontFamily:'Inter,sans-serif', fontSize:14, fontWeight:500, transition:'color .2s' }}
-                  onMouseEnter={e=>e.currentTarget.style.color='#fff'}
-                  onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,.6)'}>
-            <div style={{ width:36, height:36, borderRadius:'50%', border:'1px solid rgba(255,255,255,.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <span className="material-icons" style={{ fontSize:18 }}>arrow_back</span>
-            </div>
-            Back to cities
+            className="fu"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,.45)', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 99, padding: '7px 16px 7px 10px', cursor: 'pointer', width: 'max-content', marginBottom: 48, fontFamily: 'Inter,sans-serif', fontSize: 13, fontWeight: 500, transition: 'all .2s', backdropFilter: 'blur(8px)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.1)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = 'rgba(255,255,255,.45)'; }}>
+            <span className="material-icons" style={{ fontSize: 16 }}>arrow_back</span>
+            All cities
           </button>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:32, alignItems:'flex-end' }}>
+          {/* Two-column grid */}
+          <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 48, alignItems: 'center' }}>
+
+            {/* LEFT: City identity */}
             <div>
-              {/* Badges */}
-              <div className="fu d1" style={{ display:'flex', alignItems:'center', gap:10, marginBottom:18, flexWrap:'wrap' }}>
-                <span className="pill pill-dark">Host City</span>
+              {/* Tags */}
+              <div className="fu d1" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22, flexWrap: 'wrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'rgba(193,39,45,.18)', border: '1px solid rgba(193,39,45,.35)', fontFamily: 'Syne,sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#f87171' }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />
+                  FIFA World Cup 2030
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 99, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.14)', fontFamily: 'Syne,sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.5)' }}>
+                  Host City
+                </span>
                 {city.region && (
-                  <span style={{ display:'flex', alignItems:'center', gap:6, color:'rgba(255,255,255,.5)', fontSize:13 }}>
-                    <span className="material-icons" style={{ fontSize:14 }}>place</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'rgba(255,255,255,.35)', fontFamily: 'Inter,sans-serif' }}>
+                    <span className="material-icons" style={{ fontSize: 13 }}>place</span>
                     {city.region}
                   </span>
                 )}
               </div>
 
               {/* City name */}
-              <h1 className="fu d2" style={{ fontFamily:'Amiri,serif', fontSize:'clamp(60px,10vw,110px)', fontWeight:400, color:'#fff', lineHeight:.95, marginBottom:14 }}>
+              <h1 className="fu d2" style={{ fontFamily: 'Amiri,serif', fontSize: 'clamp(56px,9vw,108px)', fontWeight: 700, color: '#fff', lineHeight: .92, marginBottom: 10, letterSpacing: '-1px' }}>
                 {city.name}
               </h1>
 
-              <div className="fu d3" style={{ display:'flex', alignItems:'center', gap:8, color:'rgba(255,255,255,.5)', fontSize:16 }}>
-                <span className="material-icons" style={{ fontSize:18 }}>public</span>
-                {city.country}
+              {/* Separator + country */}
+              <div className="fu d3" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36 }}>
+                <span style={{ display: 'block', width: 32, height: 2, background: 'linear-gradient(to right,#C1272D,#006233)', borderRadius: 2 }} />
+                <span style={{ fontFamily: 'Inter,sans-serif', fontSize: 15, color: 'rgba(255,255,255,.45)', fontWeight: 400 }}>
+                  {city.country || 'Morocco'}
+                </span>
+              </div>
+
+              {/* Description */}
+              {city.description && (
+                <p className="fu d4" style={{ color: 'rgba(255,255,255,.5)', fontSize: 15, lineHeight: 1.85, maxWidth: 480, marginBottom: 40 }}>
+                  {city.description.length > 180 ? city.description.slice(0, 177) + '…' : city.description}
+                </p>
+              )}
+
+              {/* CTA buttons */}
+              <div className="fu" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', animationDelay: '.44s' }}>
+                <button onClick={() => setActiveTab('matches')}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px', background: '#C1272D', color: '#fff', border: 'none', borderRadius: 12, fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all .2s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#a01f25'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#C1272D'}>
+                  <span className="material-icons" style={{ fontSize: 17 }}>calendar_today</span>
+                  Match schedule
+                </button>
+                <button onClick={() => setActiveTab('stadiums')}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px', background: 'rgba(255,255,255,.08)', color: '#fff', border: '1px solid rgba(255,255,255,.16)', borderRadius: 12, fontFamily: 'Syne,sans-serif', fontWeight: 800, fontSize: 13, cursor: 'pointer', transition: 'all .2s', backdropFilter: 'blur(8px)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.14)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,.08)'}>
+                  <span className="material-icons" style={{ fontSize: 17 }}>stadium</span>
+                  Explore stadiums
+                </button>
               </div>
             </div>
 
-            {/* Stats right */}
-            <div className="fu d4" style={{ display:'flex', gap:32, justifyContent:'flex-start' }}>
-              {[
-                { val:hotels.length,      label:'HOTELS',      color:'#C1272D' },
-                { val:attractions.length, label:'ATTRACTIONS', color:'#f0a500' },
-                { val:stadiums.length,    label:'STADIUMS',    color:'#3dba7a' },
-              ].map((s,i) => (
-                <div key={i}>
-                  <div style={{ fontFamily:'Syne,sans-serif', fontSize:'clamp(40px,7vw,70px)', fontWeight:800, color:s.color, lineHeight:1, marginBottom:4 }}>{s.val}</div>
-                  <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', color:'rgba(255,255,255,.4)' }}>{s.label}</div>
+            {/* RIGHT: Featured stadium card */}
+            {stadiums[0] && (
+              <div className="hero-stadium-card fu" style={{ animationDelay: '.22s', position: 'relative' }}
+                onClick={() => router.push(`/stade/${stadiums[0].id}`)}>
+                <div style={{ borderRadius: 24, overflow: 'hidden', position: 'relative', height: 400, cursor: 'pointer', border: '1px solid rgba(255,255,255,.1)', transition: 'transform .35s, box-shadow .35s', boxShadow: '0 32px 80px rgba(0,0,0,.5)' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px) scale(1.01)'; e.currentTarget.style.boxShadow = '0 48px 100px rgba(193,39,45,.25)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = '0 32px 80px rgba(0,0,0,.5)'; }}>
+                  {stadiums[0].imageUrl
+                    ? <img src={stadiums[0].imageUrl} alt={stadiums[0].name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#2d1e1a,#1a1412)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <span className="material-icons" style={{ fontSize: 80, color: 'rgba(255,255,255,.08)' }}>stadium</span>
+                      </div>}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.3) 55%, transparent 100%)' }} />
+                  <div style={{ position: 'absolute', inset: 0, padding: '20px 22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span style={{ padding: '4px 12px', background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)', borderRadius: 99, fontFamily: 'Syne,sans-serif', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,.7)', border: '1px solid rgba(255,255,255,.12)' }}>
+                        Main Venue
+                      </span>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span className="material-icons" style={{ fontSize: 18, color: '#fff' }}>north_east</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: 'Amiri,serif', fontSize: 30, fontWeight: 700, color: '#fff', marginBottom: 10, lineHeight: 1.1 }}>{stadiums[0].name}</div>
+                      <div style={{ display: 'flex', gap: 24 }}>
+                        {stadiums[0].capacity && (
+                          <div>
+                            <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.4)', marginBottom: 2 }}>Capacity</div>
+                            <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 22, fontWeight: 800, color: '#fff' }}>{Number(stadiums[0].capacity).toLocaleString()}</div>
+                          </div>
+                        )}
+                        {stadiums[0].dateOfConstruction && (
+                          <div>
+                            <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: 'rgba(255,255,255,.4)', marginBottom: 2 }}>Built</div>
+                            <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 22, fontWeight: 800, color: '#fff' }}>{new Date(stadiums[0].dateOfConstruction).getFullYear()}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
+                {/* Dot decoration */}
+                <div style={{ position: 'absolute', top: -18, right: -18, width: 110, height: 110, backgroundImage: 'radial-gradient(circle, rgba(193,39,45,.4) 1px, transparent 1px)', backgroundSize: '14px 14px', borderRadius: 12, zIndex: -1, pointerEvents: 'none' }} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Stats bar ── */}
+        <div style={{ position: 'relative', zIndex: 5, borderTop: '1px solid rgba(255,255,255,.08)', marginTop: 56, backdropFilter: 'blur(12px)', background: 'rgba(13,11,9,.7)' }}>
+          <div className="stats-bar" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)' }}>
+            {[
+              { val: hotels.length,      label: 'Hotels',      icon: 'hotel',          color: '#f0a500', tab: 'hotels'      },
+              { val: attractions.length, label: 'Attractions', icon: 'place',           color: '#3dba7a', tab: 'attractions' },
+              { val: stadiums.length,    label: 'Stadiums',    icon: 'stadium',         color: '#C1272D', tab: 'stadiums'    },
+              { val: matches.length,     label: 'Matches',     icon: 'calendar_today',  color: '#60a5fa', tab: 'matches'     },
+            ].map((s, i) => (
+              <button key={i} onClick={() => setActiveTab(s.tab)}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '22px 0', background: 'none', border: 'none', cursor: 'pointer', borderRight: i < 3 ? '1px solid rgba(255,255,255,.08)' : 'none', transition: 'background .2s', borderRadius: 0, justifyContent: 'center' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,.04)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: `${s.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span className="material-icons" style={{ fontSize: 20, color: s.color }}>{s.icon}</span>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 28, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{s.val}</div>
+                  <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: 'rgba(255,255,255,.35)', marginTop: 3 }}>{s.label}</div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       </header>
@@ -272,10 +413,7 @@ export default function CityDetail() {
         {activeTab==='overview' && (
           <div className="fu">
             <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:16 }}>
-
-              {/* About block */}
               <div style={{ background:'#fafaf9', border:'1px solid #e7e5e4', borderRadius:24, padding:'36px 40px' }}>
-                {/* Accent */}
                 <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
                   <div style={{ width:3, height:24, background:'linear-gradient(to bottom,#C1272D,#006233)', borderRadius:2 }} />
                   <span style={{ fontFamily:'Syne,sans-serif', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', color:'#a8a29e' }}>About</span>
@@ -298,7 +436,6 @@ export default function CityDetail() {
                 </div>
               </div>
 
-              {/* Stat grid */}
               <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12 }}>
                 {[
                   { icon:'hotel',          val:hotels.length,      label:'Hotels',      color:'#f0a500', bg:'rgba(240,165,0,.08)',   tab:'hotels'      },
@@ -316,7 +453,6 @@ export default function CityDetail() {
                 ))}
               </div>
 
-              {/* Dark explore card */}
               <div onClick={() => setActiveTab('stadiums')} style={{ background:'linear-gradient(135deg,#2d0a0e,#1a0608)', borderRadius:24, padding:'32px 36px', cursor:'pointer', position:'relative', overflow:'hidden', minHeight:180, display:'flex', flexDirection:'column', justifyContent:'space-between', transition:'transform .3s,box-shadow .3s' }}
                    onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 20px 48px rgba(193,39,45,.2)'; }}
                    onMouseLeave={e=>{ e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='none'; }}>
@@ -324,7 +460,6 @@ export default function CityDetail() {
                   <div style={{ position:'absolute', inset:0, backgroundImage:`url(${stadiums[0].imageUrl})`, backgroundSize:'cover', backgroundPosition:'center', opacity:.15 }} />
                 )}
                 <div style={{ position:'absolute', inset:0, opacity:.06, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'80px' }} />
-                <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
                 <div style={{ width:40, height:40, borderRadius:'50%', background:'rgba(255,255,255,.1)', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', zIndex:2 }}>
                   <span className="material-icons" style={{ fontSize:20, color:'#fff' }}>north_east</span>
                 </div>
@@ -334,7 +469,6 @@ export default function CityDetail() {
                 </div>
               </div>
 
-              {/* Match schedule card */}
               <div onClick={() => setActiveTab('matches')} style={{ background:'#fafaf9', border:'1px solid #e7e5e4', borderRadius:24, padding:'32px 36px', cursor:'pointer', minHeight:160, display:'flex', flexDirection:'column', justifyContent:'space-between', transition:'all .2s' }}
                    onMouseEnter={e=>{ e.currentTarget.style.borderColor='#C1272D'; e.currentTarget.style.boxShadow='0 8px 28px rgba(193,39,45,.06)'; }}
                    onMouseLeave={e=>{ e.currentTarget.style.borderColor='#e7e5e4'; e.currentTarget.style.boxShadow='none'; }}>
@@ -441,13 +575,10 @@ export default function CityDetail() {
               <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
                 {stadiums.map((st,i) => (
                   <div key={st.id} className="stad-card fu" style={{ animationDelay:`${i*.1}s` }} onClick={() => router.push(`/stade/${st.id}`)}>
-                    {/* BG */}
-                    <div style={{ position:'absolute', inset:0, backgroundImage:`url(${st.imageUrl||'/images/stadium-placeholder.jpg'})`, backgroundSize:'cover', backgroundPosition:'center', transition:'transform .7s', filter:'brightness(.32)' }} className="stad-bg" />
+                    <div style={{ position:'absolute', inset:0, backgroundImage:`url(${st.imageUrl||'/images/stadium-placeholder.jpg'})`, backgroundSize:'cover', backgroundPosition:'center', filter:'brightness(.32)' }} />
                     <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.6) 55%,rgba(0,0,0,.38) 100%)' }} />
                     <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
-                    {/* Pattern */}
                     <div style={{ position:'absolute', inset:0, opacity:.05, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'80px' }} />
-
                     <div style={{ position:'relative', zIndex:2, display:'grid', gridTemplateColumns:'1fr', minHeight:380, padding:'36px 40px' }}>
                       <div style={{ display:'flex', flexDirection:'column', justifyContent:'center' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'.12em', color:'rgba(255,255,255,.55)', marginBottom:16, fontFamily:'Syne,sans-serif' }}>
@@ -503,7 +634,6 @@ export default function CityDetail() {
                   const date   = new Date(m.dateOfMatch);
                   return (
                     <div key={m.id} className="match-card fu" style={{ animationDelay:`${i*.05}s` }} onClick={() => router.push(`/match/${m.id}`)}>
-                      {/* Match header */}
                       <div style={{ background:'#fafaf9', borderBottom:'1px solid #f0efed', padding:'10px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:12 }}>
                           <span style={{ fontWeight:600, color:'#57534e' }}>{date.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
@@ -515,11 +645,8 @@ export default function CityDetail() {
                           {status.label}
                         </div>
                       </div>
-
-                      {/* Teams */}
                       <div style={{ padding:'16px 20px' }}>
                         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
-                          {/* T1 */}
                           <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0 }}>
                             <img src={t1?.imageUrl||''} alt={t1?.teamName} style={{ width:48, height:48, borderRadius:'50%', objectFit:'cover', border:'2px solid #f0efed', flexShrink:0 }} onError={e=>e.target.style.display='none'} />
                             <div style={{ minWidth:0 }}>
@@ -527,7 +654,6 @@ export default function CityDetail() {
                               {t1?.country && <div style={{ fontSize:11, color:'#a8a29e' }}>{t1.country}</div>}
                             </div>
                           </div>
-                          {/* Score / VS */}
                           <div style={{ textAlign:'center', flexShrink:0, padding:'0 12px' }}>
                             {m.statut!=='upcoming' ? (
                               <div style={{ fontFamily:'Syne,sans-serif', fontSize:26, fontWeight:800, color:live?'#C1272D':'#1c1917', lineHeight:1 }}>
@@ -538,7 +664,6 @@ export default function CityDetail() {
                             )}
                             {m.type && <div style={{ fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em', color:'#a8a29e', marginTop:3 }}>{m.type}</div>}
                           </div>
-                          {/* T2 */}
                           <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0, flexDirection:'row-reverse' }}>
                             <img src={t2?.imageUrl||''} alt={t2?.teamName} style={{ width:48, height:48, borderRadius:'50%', objectFit:'cover', border:'2px solid #f0efed', flexShrink:0 }} onError={e=>e.target.style.display='none'} />
                             <div style={{ minWidth:0, textAlign:'right' }}>
@@ -547,7 +672,6 @@ export default function CityDetail() {
                             </div>
                           </div>
                         </div>
-                        {/* Stadium */}
                         {m.stadeName && (
                           <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid #f5f5f4', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                             <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#78716c' }}>
@@ -597,6 +721,181 @@ export default function CityDetail() {
             )}
           </div>
         )}
+
+        {/* ── TRANSPORTS ── */}
+        {activeTab==='transports' && (
+          <div className="fu">
+            <SectionHeader title={`Getting around ${city.name}`} sub="Transport options available in and around the city" />
+            <div style={{ marginBottom:28, background:'linear-gradient(135deg,#2d0a0e,#1a0608)', borderRadius:20, padding:'24px 28px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:20, position:'relative', overflow:'hidden', border:'1px solid rgba(193,39,45,.2)' }}>
+              <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, borderRadius:'50%', background:'rgba(193,39,45,.18)', filter:'blur(50px)', pointerEvents:'none' }} />
+              <div style={{ position:'absolute', bottom:-30, left:-30, width:140, height:140, borderRadius:'50%', background:'rgba(0,98,51,.12)', filter:'blur(40px)', pointerEvents:'none' }} />
+              <div style={{ position:'absolute', inset:0, opacity:.04, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'80px', pointerEvents:'none' }} />
+              <div style={{ position:'relative', zIndex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                  <span className="material-icons" style={{ fontSize:20, color:'#f0a500' }}>route</span>
+                  <span style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:15, color:'#fff' }}>Travel between cities?</span>
+                </div>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,.55)', lineHeight:1.65, maxWidth:400, margin:0 }}>
+                  Find the best train, bus & taxi routes between all World Cup host cities — with real prices and schedules.
+                </p>
+              </div>
+              <button onClick={() => router.push('/Routes')}
+                style={{ flexShrink:0, display:'inline-flex', alignItems:'center', gap:8, padding:'11px 22px', borderRadius:12, background:'#fff', color:'#1c1917', border:'none', fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:13, cursor:'pointer', transition:'all .2s', position:'relative', zIndex:1, whiteSpace:'nowrap' }}
+                onMouseEnter={e=>{ e.currentTarget.style.background='#f0a500'; }}
+                onMouseLeave={e=>{ e.currentTarget.style.background='#fff'; }}>
+                <span className="material-icons" style={{ fontSize:16 }}>directions</span>
+                View Routes
+              </button>
+            </div>
+
+            {!loadedTabs.transports ? <TabLoading /> : transports.length === 0 ? (
+              <EmptyState icon="commute" msg="No transports available for this city" />
+            ) : (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:16 }}>
+                {transports.map((t, i) => (
+                  <div key={t.id} className="extra-card fu" style={{ animationDelay:`${i*.07}s` }}>
+                    <div style={{ height:160, background:'#f5f5f4', overflow:'hidden', position:'relative' }}>
+                      {t.imageUrl
+                        ? <img src={t.imageUrl} alt={t.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
+                        : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#f5f5f4,#ebe9e8)' }}>
+                            <span className="material-icons" style={{ fontSize:44, color:'#d6d3d1' }}>commute</span>
+                          </div>
+                      }
+                      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.35),transparent)' }} />
+                      {t.priceProxim != null && (
+                        <div style={{ position:'absolute', top:10, right:10, padding:'4px 11px', background:'rgba(0,0,0,.6)', backdropFilter:'blur(8px)', borderRadius:99, fontFamily:'Syne,sans-serif', fontSize:12, fontWeight:800, color:'#f0a500' }}>
+                          {t.priceProxim} MAD
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ padding:'16px 18px' }}>
+                      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:15, color:'#1c1917', marginBottom:6 }}>{t.name}</div>
+                      {t.description && <p style={{ fontSize:12, color:'#78716c', lineHeight:1.65, marginBottom:10, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{t.description}</p>}
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:8 }}>
+                        {t.capacity && (
+                          <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:'#57534e', background:'#f5f5f4', padding:'3px 10px', borderRadius:99 }}>
+                            <span className="material-icons" style={{ fontSize:13 }}>people</span>
+                            {t.capacity} seats
+                          </span>
+                        )}
+                        {t.trajetName && (
+                          <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:'#006233', background:'rgba(0,98,51,.07)', border:'1px solid rgba(0,98,51,.18)', padding:'3px 10px', borderRadius:99 }}>
+                            <span className="material-icons" style={{ fontSize:13 }}>route</span>
+                            {t.trajetName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── FOODS ── */}
+        {activeTab==='foods' && (
+          <div className="fu">
+            <SectionHeader title={`Taste of ${city.name}`} sub="Local dishes and culinary specialties to try" />
+            {!loadedTabs.foods ? <TabLoading /> : foods.length === 0 ? (
+              <EmptyState icon="restaurant" msg="No dishes listed for this city" />
+            ) : (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:16 }}>
+                {foods.map((f, i) => (
+                  <div key={f.id} className="extra-card fu" style={{ animationDelay:`${i*.07}s`, cursor:'pointer' }} onClick={() => router.push(`/Food?id=${f.id}`)}>
+                    <div style={{ height:170, background:'#fdf8f0', overflow:'hidden', position:'relative' }}>
+                      {f.imageUrl
+                        ? <img src={f.imageUrl} alt={f.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
+                        : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#fdf8f0,#faf0e0)' }}>
+                            <span className="material-icons" style={{ fontSize:48, color:'#e8d5b7' }}>restaurant</span>
+                          </div>
+                      }
+                      <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.4),transparent)' }} />
+                      {f.category && (
+                        <div style={{ position:'absolute', top:10, left:10, padding:'3px 10px', background:'rgba(240,165,0,.9)', borderRadius:99, fontFamily:'Syne,sans-serif', fontSize:9, fontWeight:800, color:'#1c1917', textTransform:'uppercase', letterSpacing:'.07em' }}>
+                          {f.category}
+                        </div>
+                      )}
+                      {f.priceProxim != null && (
+                        <div style={{ position:'absolute', bottom:10, right:10, padding:'4px 11px', background:'rgba(0,0,0,.6)', backdropFilter:'blur(8px)', borderRadius:99, fontFamily:'Syne,sans-serif', fontSize:12, fontWeight:800, color:'#f0a500' }}>
+                          {f.priceProxim === 0 ? 'Free' : `${f.priceProxim} MAD`}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ padding:'16px 18px' }}>
+                      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:15, color:'#1c1917', marginBottom:6 }}>{f.name}</div>
+                      {f.description && <p style={{ fontSize:12, color:'#78716c', lineHeight:1.65, margin:0, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical' }}>{f.description}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── GUIDES ── */}
+        {activeTab==='guides' && (
+          <div className="fu">
+            <SectionHeader title={`Local Guides in ${city.name}`} sub="Expert guides to help you make the most of your visit" />
+            {!loadedTabs.guides ? <TabLoading /> : guides.length === 0 ? (
+              <EmptyState icon="record_voice_over" msg="No guides available for this city" />
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                {guides.map((g, i) => (
+                  <div key={g.id} className="fu" style={{ animationDelay:`${i*.06}s`, background:'#fff', border:'1px solid #e7e5e4', borderRadius:18, padding:'20px 24px', display:'flex', alignItems:'center', gap:18, transition:'border-color .2s, box-shadow .2s' }}
+                    onMouseEnter={e=>{ e.currentTarget.style.borderColor='#C1272D'; e.currentTarget.style.boxShadow='0 8px 28px rgba(193,39,45,.06)'; }}
+                    onMouseLeave={e=>{ e.currentTarget.style.borderColor='#e7e5e4'; e.currentTarget.style.boxShadow='none'; }}>
+                    <div style={{ width:64, height:64, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:'#f0efed', border:'2px solid #e7e5e4', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      {g.imageUrl
+                        ? <img src={g.imageUrl} alt={g.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
+                        : <span className="material-icons" style={{ fontSize:30, color:'#a8a29e' }}>person</span>
+                      }
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontFamily:'Syne,sans-serif', fontWeight:800, fontSize:16, color:'#1c1917', marginBottom:4 }}>{g.name}</div>
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:6 }}>
+                        {g.languages && (
+                          <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:'#006233', background:'rgba(0,98,51,.07)', border:'1px solid rgba(0,98,51,.18)', padding:'3px 10px', borderRadius:99, fontFamily:'Syne,sans-serif', fontWeight:700 }}>
+                            <span className="material-icons" style={{ fontSize:12 }}>translate</span>
+                            {g.languages}
+                          </span>
+                        )}
+                        {g.address && (
+                          <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:'#78716c', background:'#f5f5f4', padding:'3px 10px', borderRadius:99 }}>
+                            <span className="material-icons" style={{ fontSize:12 }}>place</span>
+                            {g.address}
+                          </span>
+                        )}
+                      </div>
+                      {g.description && <p style={{ fontSize:12, color:'#a8a29e', lineHeight:1.65, margin:0, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>{g.description}</p>}
+                    </div>
+                    <div style={{ flexShrink:0, display:'flex', flexDirection:'column', gap:8, alignItems:'flex-end' }}>
+                      {g.phone && (
+                        <a href={`tel:${g.phone}`}
+                          style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:99, background:'rgba(0,98,51,.07)', border:'1px solid rgba(0,98,51,.2)', fontSize:12, fontWeight:700, color:'#006233', textDecoration:'none', transition:'all .2s' }}
+                          onMouseEnter={e=>{ e.currentTarget.style.background='rgba(0,98,51,.15)'; }}
+                          onMouseLeave={e=>{ e.currentTarget.style.background='rgba(0,98,51,.07)'; }}>
+                          <span className="material-icons" style={{ fontSize:14 }}>phone</span>
+                          {g.phone}
+                        </a>
+                      )}
+                      {g.email && (
+                        <a href={`mailto:${g.email}`}
+                          style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:99, background:'rgba(193,39,45,.07)', border:'1px solid rgba(193,39,45,.2)', fontSize:12, fontWeight:700, color:'#C1272D', textDecoration:'none', transition:'all .2s', maxWidth:200, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}
+                          onMouseEnter={e=>{ e.currentTarget.style.background='rgba(193,39,45,.14)'; }}
+                          onMouseLeave={e=>{ e.currentTarget.style.background='rgba(193,39,45,.07)'; }}>
+                          <span className="material-icons" style={{ fontSize:14 }}>mail</span>
+                          {g.email}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </main>
 
       <Footer />
@@ -624,6 +923,15 @@ function EmptyState({ icon, msg }) {
         <span className="material-icons" style={{ fontSize:32, color:'#d6d3d1' }}>{icon}</span>
       </div>
       <p style={{ fontFamily:'Syne,sans-serif', fontSize:13, fontWeight:700, color:'#a8a29e', textTransform:'uppercase', letterSpacing:'.1em' }}>{msg}</p>
+    </div>
+  );
+}
+
+function TabLoading() {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'72px 0', flexDirection:'column', gap:14 }}>
+      <div style={{ width:36, height:36, border:'3px solid #C1272D', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
+      <span style={{ fontFamily:'Syne,sans-serif', fontSize:12, color:'#a8a29e', textTransform:'uppercase', letterSpacing:'.1em' }}>Loading…</span>
     </div>
   );
 }

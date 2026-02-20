@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Head from "next/head";
+import Link from "next/link";
 
 export default function Predictions() {
   const [myPredictions, setMyPredictions] = useState([]);
@@ -36,8 +37,8 @@ export default function Predictions() {
   const statusStyle = (s) => {
     if (!s) return { bg:"rgba(255,255,255,.07)", color:"rgba(255,255,255,.5)", label:"Pending" };
     const lower = s.toLowerCase();
-    if (lower === "correct")   return { bg:"rgba(0,200,120,.15)", color:"#3dba7a", label:"✓ Correct" };
-    if (lower === "incorrect") return { bg:"rgba(193,39,45,.15)",  color:"#e85d65", label:"✗ Wrong" };
+    if (lower === "correct")   return { bg:"rgba(0,200,120,.15)", color:"#3dba7a", label:" Correct" };
+    if (lower === "incorrect") return { bg:"rgba(193,39,45,.15)",  color:"#e85d65", label:" Wrong" };
     return { bg:"rgba(240,165,0,.12)", color:"#f0a500", label:"⏳ Pending" };
   };
 
@@ -168,7 +169,8 @@ export default function Predictions() {
           <div style={{ maxWidth:1200, margin:"0 auto", padding:"48px 24px 40px", position:"relative", zIndex:2 }}>
             {/* breadcrumb */}
             <div className="au" style={{ display:"flex", alignItems:"center", gap:6, marginBottom:20, fontSize:11, fontFamily:"Syne,sans-serif", color:"rgba(255,255,255,.35)", textTransform:"uppercase", letterSpacing:".1em" }}>
-             
+              <Link href="/Profil" style={{ color:"rgba(255,255,255,.3)", textDecoration:"none" }}>Profil</Link>
+             <span className="material-icons" style={{ fontSize:12, color:"rgba(255,255,255,.25)" }}>chevron_right</span>
               <span style={{ color:"#C1272D" }}>Predictions</span>
             </div>
 
@@ -215,7 +217,7 @@ export default function Predictions() {
             )}
 
             {/* ── TABS ── */}
-            <div className="au d4" style={{ display:"flex", gap:8, marginTop:90, borderTop:"1px solid rgba(255,255,255,.06)", paddingTop:24 }}>
+            <div className="au d4" style={{ display:"flex", gap:8, marginTop:95, borderTop:"1px solid rgba(255,255,255,.06)", paddingTop:24 }}>
               <button className={`tab-btn ${activeTab==="predictions"?"tab-active":"tab-inactive"}`} onClick={() => setActiveTab("predictions")}>
                 <span className="material-icons" style={{ fontSize:16 }}>sports_soccer</span>
                 My Predictions

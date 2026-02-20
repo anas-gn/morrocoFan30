@@ -295,7 +295,6 @@ function CultureModal({ culture, onClose, onPrev, onNext, hasPrev, hasNext }) {
       {/* Modal card */}
       <div style={{ position:'relative', background:'#fff', width:'100%', maxWidth:960, maxHeight:'90vh', overflow:'hidden', display:'flex', flexDirection:'column', zIndex:205, boxShadow:'0 40px 100px rgba(0,0,0,.4)' }}>
         {/* Top accent bar */}
-        <div style={{ height:3, background:'linear-gradient(to right,#006233,#C1272D)', flexShrink:0 }} />
 
         {/* Close button */}
         <button onClick={onClose}

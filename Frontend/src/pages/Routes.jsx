@@ -585,18 +585,38 @@ export default function RoutesPage() {
 
       {/* ══════════ ROUTE DETAIL MODAL ══════════ */}
       {selectedRoute && (
-        <div className="rp modal-bg" onClick={e => e.target === e.currentTarget && setSelectedRoute(null)}>
-          <div className="modal">
+        <div
+          onClick={e => e.target === e.currentTarget && setSelectedRoute(null)}
+          style={{
+            position:"fixed", inset:0, zIndex:99999,
+            background:"rgba(0,0,0,.82)",
+            backdropFilter:"blur(8px)",
+            WebkitBackdropFilter:"blur(8px)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            padding:16,
+            animation:"rp-fade .2s ease",
+          }}>
+          <div style={{
+            background:"#120406",
+            border:"1px solid rgba(193,39,45,.28)",
+            borderRadius:20,
+            width:"100%", maxWidth:640,
+            maxHeight:"90vh", overflowY:"auto",
+            boxShadow:"0 32px 80px rgba(0,0,0,.85)",
+            animation:"rp-up .22s cubic-bezier(.22,.68,0,1.2)",
+            fontFamily:"'Inter',sans-serif",
+            color:"#fff",
+          }}>
 
             {selectedRoute._loading ? (
               <div style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:"72px 0", flexDirection:"column", gap:14 }}>
                 <span className="material-icons spin" style={{ fontSize:36, color:"rgba(255,255,255,.2)" }}>route</span>
-                <span style={{ fontFamily:"Inter,sans-serif", fontSize:13, color:"rgba(255,255,255,.3)" }}>Loading route…</span>
+                <span style={{ fontFamily:"Syne,sans-serif", fontSize:13, color:"rgba(255,255,255,.3)" }}>Loading route…</span>
               </div>
             ) : (
               <>
                 {/* ── Modal header ── */}
-                <div style={{ padding:"20px 24px 18px", borderBottom:"1px solid rgba(255,255,255,.07)", position:"sticky", top:0, background:"rgba(18,4,6,.98)", zIndex:5 }}>
+                <div style={{ padding:"20px 24px 18px", borderBottom:"1px solid rgba(255,255,255,.07)", position:"sticky", top:0, background:"#120406", zIndex:5, borderRadius:"20px 20px 0 0" }}>
                   <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
                     <div>
                       <div style={{ fontSize:9, fontFamily:"Syne,sans-serif", fontWeight:700, color:"rgba(193,39,45,.8)", textTransform:"uppercase", letterSpacing:".1em", marginBottom:6 }}>Route Detail</div>
@@ -673,7 +693,9 @@ export default function RoutesPage() {
                     </div>
                   ) : (
                     selectedRoute.transports.map((t, i) => (
-                      <div key={t.id} className="ti">
+                      <div key={t.id} style={{ display:"flex", alignItems:"flex-start", gap:14, padding:"16px 20px", borderBottom:"1px solid rgba(255,255,255,.05)", transition:"background .15s" }}
+                        onMouseEnter={e => e.currentTarget.style.background="rgba(255,255,255,.03)"}
+                        onMouseLeave={e => e.currentTarget.style.background="transparent"}>
 
                         {/* Icon circle */}
                         <div style={{ width:46, height:46, borderRadius:13, background:"rgba(193,39,45,.1)", border:"1px solid rgba(193,39,45,.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
@@ -684,9 +706,13 @@ export default function RoutesPage() {
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
                             <span style={{ fontFamily:"Syne,sans-serif", fontWeight:800, fontSize:14, color:"#fff" }}>{t.name}</span>
-                            {i === 0 && <span className="tag t-grn">🏆 Best price</span>}
+                            {i === 0 && (
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:999, background:"rgba(0,98,51,.14)", border:"1px solid rgba(0,98,51,.28)", color:"#3dba7a", fontFamily:"Syne,sans-serif", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:".07em" }}>
+                                🏆 Best price
+                              </span>
+                            )}
                             {t.capacity > 0 && (
-                              <span className="tag t-pur">
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:999, background:"rgba(124,58,237,.14)", border:"1px solid rgba(124,58,237,.28)", color:"#a78bfa", fontFamily:"Syne,sans-serif", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:".07em" }}>
                                 <span className="material-icons" style={{ fontSize:10 }}>people</span>
                                 {t.capacity}
                               </span>
@@ -732,7 +758,11 @@ export default function RoutesPage() {
 
                 {/* ── Modal footer ── */}
                 <div style={{ padding:"14px 24px 16px", borderTop:"1px solid rgba(255,255,255,.06)", display:"flex", justifyContent:"flex-end", gap:10 }}>
-                  <button className="btn-ghost" onClick={() => setSelectedRoute(null)}>
+                  <button
+                    onClick={() => setSelectedRoute(null)}
+                    style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"10px 16px", borderRadius:10, background:"rgba(255,255,255,.06)", color:"rgba(255,255,255,.55)", fontFamily:"Syne,sans-serif", fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em", border:"1px solid rgba(255,255,255,.09)", cursor:"pointer", transition:"all .2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background="rgba(255,255,255,.1)"; e.currentTarget.style.color="#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,.06)"; e.currentTarget.style.color="rgba(255,255,255,.55)"; }}>
                     Close
                   </button>
                 </div>
