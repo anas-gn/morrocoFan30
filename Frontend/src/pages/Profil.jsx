@@ -270,9 +270,10 @@ export default function Profile() {
                   <div style={{ fontSize:10, fontWeight:700, color:'#a8a29e', textTransform:'uppercase', letterSpacing:'.08em', padding:'4px 8px 10px' }}>Navigation</div>
                   {[
                     { icon:'person',        label:'General Info',    action:() => setActiveTab('general'), tab:'general' },
-                    { icon:'sports_soccer', label:'My Predictions',  action:() => router.push('/predictions') },
+                    { icon:'sports_soccer', label:'My Predictions',  action:() => router.push('/Prediction') },
                     { icon:'favorite',      label:'Favorites',       action:() => router.push('/Favorite') },
                     { icon:'calendar_today',label:'Itineraries',     action:() => router.push('/itineraries') },
+                    { icon:'directions',label:'Trajet',     action:() => router.push('/Routes') },
                   ].map(({ icon, label, action, tab }) => (
                     <button key={label} onClick={action}
                             className={`nav-item ${tab && activeTab === tab ? 'active' : ''}`}>

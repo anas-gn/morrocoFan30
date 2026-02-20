@@ -101,12 +101,12 @@ export default function Cities() {
         .pill-dark { background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2); }
 
         /* Stat card hover */
-        .stat-card { transition:transform .3s,box-shadow .3s; }
-        .stat-card:hover { transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.08); }
+        
+        .stat-card:hover { transform:translateY(-4px); }
 
         /* City card */
-        .city-card { transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s; background:#fff; border:1px solid #e7e5e4; border-radius:20px; overflow:hidden; cursor:pointer; }
-        .city-card:hover { transform:translateY(-6px); box-shadow:0 32px 64px rgba(0,0,0,.1); border-color:#d6d3d1; }
+        .city-card {  background:#fff; border:1px solid #e7e5e4; border-radius:20px; overflow:hidden; cursor:pointer; }
+        .city-card:hover { transform:translateY(-6px);  border-color:#d6d3d1; }
         .city-card .c-img { transition:transform .75s cubic-bezier(.16,1,.3,1); width:100%;height:100%;object-fit:cover; }
         .city-card:hover .c-img { transform:scale(1.07); }
 
@@ -285,7 +285,6 @@ export default function Cities() {
                   <div style={{ position:'absolute', inset:0, opacity:.05, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'80px', pointerEvents:'none' }} />
 
                   {/* Top accent bar */}
-                  <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
 
                   {/* Glow orb on hover */}
                   <div style={{ position:'absolute', bottom:-60, right:-60, width:220, height:220, borderRadius:'50%', background:'rgba(193,39,45,.12)', filter:'blur(60px)', transition:'opacity .4s', opacity: hot ? 1 : 0, pointerEvents:'none' }} />

@@ -45,7 +45,6 @@ export default function Footer() {
         <div style={{ position:'absolute', bottom:40, right:40, width:280, height:280, borderRadius:'50%', background:'rgba(0,98,51,.08)', filter:'blur(60px)', pointerEvents:'none' }} />
 
         {/* Red→green accent stripe at top — same as match-card */}
-        <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(to right,#C1272D,#006233)' }} />
 
         <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 24px', position:'relative', zIndex:10 }}>
 

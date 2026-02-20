@@ -360,7 +360,7 @@ export default function CityDetail() {
             {hotels.length===0 ? <EmptyState icon="hotel" msg="No accommodations available" /> : (
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:16 }}>
                 {hotels.map((h,i) => (
-                  <div key={h.id} className="item-card fu" style={{ animationDelay:`${i*.07}s` }} onClick={() => router.push(`/hotel/${h.id}`)}>
+                  <div key={h.id} className="item-card fu" style={{ animationDelay:`${i*.07}s` }} onClick={() => router.push(`/hotels/${h.id}`)}>
                     <div className="img-z" style={{ position:'relative', height:200, background:'#f5f5f4', overflow:'hidden' }}>
                       <img src={h.imageUrl||'/images/hotel-placeholder.jpg'} alt={h.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>e.target.style.display='none'} />
                       <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top,rgba(0,0,0,.4),transparent)' }} />
