@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
-const API = 'http://localhost:3309/api';
+const API = 'https://anas-gana1-fandb-backend.hf.space/api';
 
 export default function Favorites() {
   const router = useRouter();

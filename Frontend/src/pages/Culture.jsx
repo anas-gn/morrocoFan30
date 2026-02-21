@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-const API_BASE = 'http://localhost:3309/api';
+const API_BASE = 'https://anas-gana1-fandb-backend.hf.space/api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = (d) => {

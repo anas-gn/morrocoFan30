@@ -51,11 +51,11 @@ export default function MatchDetail() {
     const fetchAll = async () => {
       try {
         const [matchRes, eventsRes, lineupRes, predictionsRes, reviewsRes] = await Promise.all([
-          fetch(`http://localhost:3309/api/matches/matches/${id}`),
-          fetch(`http://localhost:3309/api/matches/matches/${id}/events`),
-          fetch(`http://localhost:3309/api/matches/matches/${id}/players/lineup`),
-          fetch(`http://localhost:3309/api/predictions/match/${id}`),
-          fetch(`http://localhost:3309/api/reviews/match/${id}`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/matches/matches/${id}`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/matches/matches/${id}/events`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/matches/matches/${id}/players/lineup`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/predictions/match/${id}`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/reviews/match/${id}`),
         ]);
         const [matchData, eventsData, lineupData, predictionsData, reviewsData] = await Promise.all([
           matchRes.json(), eventsRes.json(), lineupRes.json(), predictionsRes.json(), reviewsRes.json(),

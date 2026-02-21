@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
-const API_BASE = 'http://localhost:3309/api/auth';
-const TEAMS_API = 'http://localhost:3309/api/teams/teams/all';
+const API_BASE = 'https://anas-gana1-fandb-backend.hf.space/api/auth';
+const TEAMS_API = 'https://anas-gana1-fandb-backend.hf.space/api/teams/teams/all';
 
 export default function Login() {
   const router = useRouter();

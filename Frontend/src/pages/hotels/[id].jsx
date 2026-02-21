@@ -14,7 +14,7 @@ export default function HotelDetail() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`http://localhost:3309/api/hotels/${id}`)
+    fetch(`https://anas-gana1-fandb-backend.hf.space/api/hotels/${id}`)
       .then(res => res.json())
       .then(data => { setHotel(data); setLoading(false); })
       .catch(() => setLoading(false));

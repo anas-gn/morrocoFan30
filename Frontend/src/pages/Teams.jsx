@@ -18,7 +18,7 @@ export default function Teams() {
   const [filteredTeams, setFilteredTeams] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:3309/api/teams/teams/all')
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/teams/teams/all')
       .then(r => r.json())
       .then(data => {
         const arr = Array.isArray(data) ? data : [];
@@ -30,7 +30,7 @@ export default function Teams() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/accueil/groupes')
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/accueil/groupes')
       .then(r => r.json())
       .then(data => {
         const arr = Array.isArray(data) ? data : [];

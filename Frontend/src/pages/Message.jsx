@@ -39,7 +39,7 @@ export default function Community() {
     const fetchSupporter = async () => {
       if (!userId) return;
       try {
-        const res = await fetch(`http://localhost:3309/api/supporters/${userId}`);
+        const res = await fetch(`https://anas-gana1-fandb-backend.hf.space/api/supporters/${userId}`);
         if (!res.ok) throw new Error('error');
         const data = await res.json();
         if (data.country) setSelectedCountry(data.country);
@@ -54,7 +54,7 @@ export default function Community() {
   const fetchTeamImage = async (country) => {
     if (!country || teamImages[country]) return;
     try {
-      const res = await fetch(`http://localhost:3309/api/teams/getAll`);
+      const res = await fetch(`https://anas-gana1-fandb-backend.hf.space/api/teams/getAll`);
       if (!res.ok) return;
       const teams = await res.json();
       const team = teams.find(t => t.country === country);
@@ -65,7 +65,7 @@ export default function Community() {
   useEffect(() => {
     if (!selectedCountry) return;
     setIsLoading(true);
-    fetch(`http://localhost:3309/api/messages/community/${selectedCountry}`)
+    fetch(`https://anas-gana1-fandb-backend.hf.space/api/messages/community/${selectedCountry}`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -84,7 +84,7 @@ export default function Community() {
     if (!selectedCountry || isLoading) return;
     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     pollingIntervalRef.current = setInterval(() => {
-      fetch(`http://localhost:3309/api/messages/community/${selectedCountry}`)
+      fetch(`https://anas-gana1-fandb-backend.hf.space/api/messages/community/${selectedCountry}`)
         .then(r => r.json())
         .then(data => {
           if (!Array.isArray(data) || data.length === 0) return;
@@ -126,7 +126,7 @@ export default function Community() {
     params.append('supporterId', currentUser.id.toString());
     if (selectedImage) params.append('imageUrl', imagePreview);
     try {
-      const response = await fetch('http://localhost:3309/api/messages/send', {
+      const response = await fetch('https://anas-gana1-fandb-backend.hf.space/api/messages/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: params,

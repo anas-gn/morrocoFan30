@@ -14,7 +14,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
-const API_BASE = 'http://localhost:3309/api';
+const API_BASE = 'https://anas-gana1-fandb-backend.hf.space/api';
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 

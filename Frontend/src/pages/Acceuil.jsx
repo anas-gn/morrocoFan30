@@ -31,18 +31,18 @@ export default function Acceuil() {
 
   // ── Data fetching ────────────────────────────────────────
   useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/CityHosts/all')
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/CityHosts/all')
       .then(r => r.json()).then(d => { setCities(d); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
   }, []);
-  useEffect(() => { fetch('http://localhost:3309/api/acceuil/stade/all').then(r=>r.json()).then(setStades).catch(console.error); }, []);
-  useEffect(() => { fetch('http://localhost:3309/api/acceuil/accueil/groupes').then(r=>r.json()).then(setGroups).catch(console.error); }, []);
-  useEffect(() => { fetch('http://localhost:3309/api/acceuil/evants/upcaming').then(r=>r.json()).then(setUpcomingEvents).catch(console.error); }, []);
-  useEffect(() => { fetch('http://localhost:3309/api/acceuil/news/lastest').then(r=>r.json()).then(setLatestNews).catch(console.error); }, []);
-  useEffect(() => { fetch('http://localhost:3309/api/acceuil/culture/foryou').then(r=>r.json()).then(setCultures).catch(console.error); }, []);
-  useEffect(() => { fetch('http://localhost:3309/api/acceuil/teams/some').then(r=>r.json()).then(setTeams).catch(console.error); }, []);
+  useEffect(() => { fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/stade/all').then(r=>r.json()).then(setStades).catch(console.error); }, []);
+  useEffect(() => { fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/accueil/groupes').then(r=>r.json()).then(setGroups).catch(console.error); }, []);
+  useEffect(() => { fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/evants/upcaming').then(r=>r.json()).then(setUpcomingEvents).catch(console.error); }, []);
+  useEffect(() => { fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/news/lastest').then(r=>r.json()).then(setLatestNews).catch(console.error); }, []);
+  useEffect(() => { fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/culture/foryou').then(r=>r.json()).then(setCultures).catch(console.error); }, []);
+  useEffect(() => { fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/teams/some').then(r=>r.json()).then(setTeams).catch(console.error); }, []);
   useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/matches/upcoming')
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/matches/upcoming')
       .then(r=>r.json())
       .then(data => { const now=new Date(); setUpcomingMatches(data.filter(m=>new Date(m.dateOfMatch)>now)); })
       .catch(console.error);

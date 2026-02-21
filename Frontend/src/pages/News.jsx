@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-const API_BASE  = 'http://localhost:3309/api/news';
-const TEAMS_API = 'http://localhost:3309/api/teams/teams/all';
+const API_BASE  = 'https://anas-gana1-fandb-backend.hf.space/api/news';
+const TEAMS_API = 'https://anas-gana1-fandb-backend.hf.space/api/teams/teams/all';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = (d) => {

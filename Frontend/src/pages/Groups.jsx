@@ -13,7 +13,7 @@ export default function Groups() {
   const [activeGroup, setActiveGroup] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:3309/api/groups/getAll')
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/groups/getAll')
       .then(r => r.json())
       .then(d => { setGroups(d.groups || d || []); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });

@@ -19,18 +19,18 @@ export default function Matches() {
   const stats = { totalTeams: 48, totalVenues: 6 };
 
   useEffect(() => {
-    fetch('http://localhost:3309/api/matches/matches/allTriee')
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/matches/matches/allTriee')
       .then(r => r.json())
       .then(d => { setMatches(d); setFilteredMatches(d); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/stade/all').then(r => r.json()).then(setVenues).catch(() => {});
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/stade/all').then(r => r.json()).then(setVenues).catch(() => {});
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/teams/some').then(r => r.json()).then(setTeams).catch(() => {});
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/teams/some').then(r => r.json()).then(setTeams).catch(() => {});
   }, []);
 
   useEffect(() => {

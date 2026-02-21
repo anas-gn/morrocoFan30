@@ -22,10 +22,10 @@ export default function StadeDetail() {
     const fetchAll = async () => {
       try {
         const [sR, iR, mR, uR] = await Promise.all([
-          fetch(`http://localhost:3309/api/stade/stade/${id}`),
-          fetch(`http://localhost:3309/api/stade/images/stade/${id}`),
-          fetch(`http://localhost:3309/api/stade/stade/matches/${id}`),
-          fetch(`http://localhost:3309/api/stade/stade/${id}/upcomingMatches`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/stade/stade/${id}`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/stade/images/stade/${id}`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/stade/stade/matches/${id}`),
+          fetch(`https://anas-gana1-fandb-backend.hf.space/api/stade/stade/${id}/upcomingMatches`),
         ]);
         setStade(await sR.json());
         const iData = await iR.json(); setImages(Array.isArray(iData) ? iData : []);

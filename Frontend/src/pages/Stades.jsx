@@ -17,7 +17,7 @@ export default function Stades() {
   const [filteredStades, setFilteredStades] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/stade/all')
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/stade/all')
       .then(r => r.json())
       .then(data => {
         const arr = Array.isArray(data) ? data : [];
@@ -30,7 +30,7 @@ export default function Stades() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:3309/api/acceuil/CityHosts/all')
+    fetch('https://anas-gana1-fandb-backend.hf.space/api/acceuil/CityHosts/all')
       .then(r => r.json())
       .then(data => {
         const arr = Array.isArray(data) ? data : [];

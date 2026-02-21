@@ -30,7 +30,7 @@ export default function AttractionDetail() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`http://localhost:3309/api/attractions/${id}`)
+    fetch(`https://anas-gana1-fandb-backend.hf.space/api/attractions/${id}`)
       .then(r => r.json())
       .then(d => { setAttraction(d); setLoading(false); })
       .catch(() => setLoading(false));
@@ -39,13 +39,13 @@ export default function AttractionDetail() {
   const openModal = async () => {
     setShowModal(true);
     setLoadingItins(true);
-    const data = await safeFetch(`http://localhost:3309/api/itineraries/supporter/${supporterId}`);
+    const data = await safeFetch(`https://anas-gana1-fandb-backend.hf.space/api/itineraries/supporter/${supporterId}`);
     setItineraries(Array.isArray(data) ? data : data?.content || []);
     setLoadingItins(false);
   };
 
   const addToItinerary = (itId, itTitle) => {
-    fetch(`http://localhost:3309/api/itineraries/${itId}/add-attraction/${id}`, { method: 'POST' })
+    fetch(`https://anas-gana1-fandb-backend.hf.space/api/itineraries/${itId}/add-attraction/${id}`, { method: 'POST' })
       .then(r => r.json())
       .then(ok => {
         setShowModal(false);

@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/router';
 
-const BASE = 'http://localhost:3309/api';
+const BASE = 'https://anas-gana1-fandb-backend.hf.space/api';
 
 export default function TeamDetail() {
   const router = useRouter();

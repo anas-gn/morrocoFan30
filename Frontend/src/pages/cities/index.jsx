@@ -4,7 +4,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/router';
 
-const API = 'http://localhost:3309/api';
+const API = 'https://anas-gana1-fandb-backend.hf.space/api';
 
 async function safeFetch(url) {
   try {

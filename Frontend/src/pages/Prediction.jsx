@@ -20,9 +20,9 @@ export default function Predictions() {
     if (!supporterId) { setLoading(false); return; }
 
     Promise.all([
-      fetch(`http://localhost:3309/api/predictions/supporter/${supporterId}`).then(r => r.json()),
-      fetch(`http://localhost:3309/api/predictions/supporter/${supporterId}/stats`).then(r => r.json()),
-      fetch(`http://localhost:3309/api/predictions/leaderboard`).then(r => r.json()),
+      fetch(`https://anas-gana1-fandb-backend.hf.space/api/predictions/supporter/${supporterId}`).then(r => r.json()),
+      fetch(`https://anas-gana1-fandb-backend.hf.space/api/predictions/supporter/${supporterId}/stats`).then(r => r.json()),
+      fetch(`https://anas-gana1-fandb-backend.hf.space/api/predictions/leaderboard`).then(r => r.json()),
     ])
       .then(([preds, stats, board]) => {
         setMyPredictions(Array.isArray(preds) ? preds : []);

@@ -59,7 +59,7 @@ export default function Navbar() {
     if (!sid) return;
     setNotifLoading(true);
     try {
-      const res  = await fetch(`http://localhost:3309/api/notifications/supporter/${sid}`);
+      const res  = await fetch(`https://anas-gana1-fandb-backend.hf.space/api/notifications/supporter/${sid}`);
       const data = await res.json();
       setNotifications(Array.isArray(data) ? data : []);
     } catch (_) {}
@@ -86,20 +86,20 @@ export default function Navbar() {
 
   const markRead = async (id) => {
     try {
-      await fetch(`http://localhost:3309/api/notifications/${id}/read`, { method: "PUT" });
+      await fetch(`https://anas-gana1-fandb-backend.hf.space/api/notifications/${id}/read`, { method: "PUT" });
       setNotifications(p => p.map(n => n.id === id ? { ...n, isRead: true } : n));
     } catch (_) {}
   };
 
   const markAllRead = async () => {
     const ids = notifications.filter(n => !n.isRead).map(n => n.id);
-    await Promise.all(ids.map(id => fetch(`http://localhost:3309/api/notifications/${id}/read`, { method: "PUT" })));
+    await Promise.all(ids.map(id => fetch(`https://anas-gana1-fandb-backend.hf.space/api/notifications/${id}/read`, { method: "PUT" })));
     setNotifications(p => p.map(n => ({ ...n, isRead: true })));
   };
 
   const deleteNotif = async (id) => {
     try {
-      await fetch(`http://localhost:3309/api/notifications/${id}`, { method: "DELETE" });
+      await fetch(`https://anas-gana1-fandb-backend.hf.space/api/notifications/${id}`, { method: "DELETE" });
       setNotifications(p => p.filter(n => n.id !== id));
     } catch (_) {}
   };
@@ -116,7 +116,7 @@ export default function Navbar() {
 
   /* ── logout ── */
   const handleLogout = async () => {
-    try { await fetch("http://localhost:3309/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }); } catch (_) {}
+    try { await fetch("https://anas-gana1-fandb-backend.hf.space/api/auth/logout", { method: "POST", headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }); } catch (_) {}
     localStorage.clear(); setIsLoggedIn(false); router.push("/Login");
   };
 
