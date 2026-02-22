@@ -24,20 +24,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-          
       - name: Build with Maven
         run: |
           cd Backend/demo
           mvn clean package -DskipTests
 
+      - name: Install Sonar Scanner
+        run: npm install -g sonar-scanner
+
       - name: SonarQube Analysis (Backend + Frontend)
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          cd Backend/demo
-          mvn sonar:sonar \
-            -Dsonar.token=$SONAR_TOKEN \
-            -Dsonar.projectBaseDir=../../
+          sonar-scanner \
+            -Dsonar.token=$SONAR_TOKEN
 
       - name: Push Backend to HuggingFace Space
         env:
