@@ -1,0 +1,39 @@
+name: Deploy Backend to HuggingFace
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout MORROCOFAN30
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Push Backend to HuggingFace Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+          # Clone HuggingFace Space
+          git clone https://Anas-gana1:$HF_TOKEN@huggingface.co/spaces/Anas-gana1/fandb-backend hf-repo
+
+          # Copier src, pom.xml et Dockerfile
+          cp -r Backend/src hf-repo/
+          cp Backend/pom.xml hf-repo/
+          cp Backend/Dockerfile hf-repo/
+
+          # Push vers HuggingFace
+          cd hf-repo
+          git add .
+          git diff --staged --quiet || git commit -m "sync from GitHub - ${{ github.sha }}"
+          git push
