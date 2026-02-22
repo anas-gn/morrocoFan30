@@ -162,6 +162,7 @@ public class AcceuilController {
     public List<CultureDTO> getLastCulture() {
         List<Cultures> cul = cultureRepository.findAll();
 
+        
         return cul.stream()
                 .sorted(Comparator.comparing(Cultures::getDateOfCreation).reversed())
                 .limit(7)

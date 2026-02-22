@@ -7,6 +7,7 @@ on:
     paths:
       - 'Backend/demo/**'
       - 'Frontend/**'
+      - 'sonar-project.properties'
 
 jobs:
   deploy:
@@ -27,7 +28,7 @@ jobs:
       - name: Build with Maven
         run: |
           cd Backend/demo
-          mvn clean package -DskipTests
+          mvn clean package dependency:copy-dependencies -DskipTests
 
       - name: Install Sonar Scanner
         run: npm install -g sonar-scanner
