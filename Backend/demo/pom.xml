@@ -22,7 +22,7 @@
     <properties>
         <java.version>17</java.version>
         <lombok.version>1.18.32</lombok.version>
-        <sonar.projectKey>morrocoFan30</sonar.projectKey>
+        <sonar.projectKey>anas-gn_morrocoFan30</sonar.projectKey>
         <sonar.organization>anas-gn</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
