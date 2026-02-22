@@ -164,7 +164,7 @@ export default function Matches() {
       <header className="relative overflow-hidden" style={{ paddingTop: 80, minHeight: 460 }}>
         {/* BG image */}
         <div className="absolute inset-0">
-          <img src="/images/matches.jpg" alt="" className="w-full h-full object-cover" />
+          <img src="/images/matches.jpg" alt="" loading="lazy" className="w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg,rgba(45,10,14,.92) 0%,rgba(26,6,8,.85) 55%,rgba(0,98,51,.25) 100%)' }} />
           {/* Moroccan pattern */}
           <div className="absolute inset-0 opacity-[.07] pointer-events-none"
@@ -391,7 +391,7 @@ export default function Matches() {
                         {/* Team 1 */}
                         <div style={{ flex: 1, textAlign: 'center' }}>
                           <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: '2px solid #f5f5f4', margin: '0 auto 8px', background: '#fafaf9' }}>
-                            <img src={t1?.imageUrl} alt={t1?.teamName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={t1?.imageUrl} alt={t1?.teamName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                           <div style={{ fontSize: 12, fontWeight: 600, color: '#1c1917', lineHeight: 1.3 }} className="syne">{t1?.teamName}</div>
                           {done && <div style={{ fontSize: 26, fontWeight: 800, color: '#C1272D', lineHeight: 1.1, marginTop: 4 }} className="syne">{t1?.goals ?? 0}</div>}
@@ -407,7 +407,7 @@ export default function Matches() {
                         {/* Team 2 */}
                         <div style={{ flex: 1, textAlign: 'center' }}>
                           <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: '2px solid #f5f5f4', margin: '0 auto 8px', background: '#fafaf9' }}>
-                            <img src={t2?.imageUrl} alt={t2?.teamName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={t2?.imageUrl} alt={t2?.teamName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           </div>
                           <div style={{ fontSize: 12, fontWeight: 600, color: '#1c1917', lineHeight: 1.3 }} className="syne">{t2?.teamName}</div>
                           {done && <div style={{ fontSize: 26, fontWeight: 800, color: '#006233', lineHeight: 1.1, marginTop: 4 }} className="syne">{t2?.goals ?? 0}</div>}
@@ -475,7 +475,7 @@ export default function Matches() {
 
                               {/* Teams */}
                               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <img src={t1?.imageUrl} alt={t1?.teamName} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5f5f4' }} />
+                                <img src={t1?.imageUrl} alt={t1?.teamName} loading="lazy" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5f5f4' }} />
                                 <span className="syne" style={{ fontWeight: 700, fontSize: 14, color: '#1c1917' }}>{t1?.teamName}</span>
                                 {done && <span className="syne" style={{ fontSize: 20, fontWeight: 800, color: '#C1272D', marginLeft: 'auto' }}>{t1?.goals ?? 0}</span>}
                               </div>
@@ -483,7 +483,7 @@ export default function Matches() {
                               <div style={{ fontSize: 12, color: '#d6d3d1', fontWeight: 300, padding: '0 8px' }}>vs</div>
 
                               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, flexDirection: 'row-reverse' }}>
-                                <img src={t2?.imageUrl} alt={t2?.teamName} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5f5f4' }} />
+                                <img src={t2?.imageUrl} alt={t2?.teamName} loading="lazy" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5f5f4' }} />
                                 <span className="syne" style={{ fontWeight: 700, fontSize: 14, color: '#1c1917' }}>{t2?.teamName}</span>
                                 {done && <span className="syne" style={{ fontSize: 20, fontWeight: 800, color: '#006233', marginRight: 'auto' }}>{t2?.goals ?? 0}</span>}
                               </div>
@@ -510,13 +510,13 @@ export default function Matches() {
                                 <span className={`pill ${cls}`}>{label}</span>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <img src={t1?.imageUrl} alt={t1?.teamName} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5f5f4', flexShrink: 0 }} />
+                                <img src={t1?.imageUrl} alt={t1?.teamName} loading="lazy" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5f5f4', flexShrink: 0 }} />
                                 <span style={{ fontSize: 12, fontWeight: 600, flex: 1 }}>{t1?.teamName}</span>
                                 <div style={{ fontSize: 15, fontWeight: 800, color: done ? '#1c1917' : '#d6d3d1', padding: '0 8px' }}>
                                   {done ? `${t1?.goals ?? 0} – ${t2?.goals ?? 0}` : 'VS'}
                                 </div>
                                 <span style={{ fontSize: 12, fontWeight: 600, flex: 1, textAlign: 'right' }}>{t2?.teamName}</span>
-                                <img src={t2?.imageUrl} alt={t2?.teamName} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5f5f4', flexShrink: 0 }} />
+                                <img src={t2?.imageUrl} alt={t2?.teamName} loading="lazy" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid #f5f5f4', flexShrink: 0 }} />
                               </div>
                               <div style={{ paddingTop: 8, borderTop: '1px solid #f5f5f4', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#78716c' }}>
                                 <span className="material-icons" style={{ fontSize: 12, color: '#C1272D' }}>stadium</span>

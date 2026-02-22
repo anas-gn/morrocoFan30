@@ -263,7 +263,7 @@ export default function MatchDetail() {
             <span style={{ marginLeft:'auto', fontSize:9, fontWeight:700, color:c.ic, background:c.bg, border:'1px solid '+c.border, padding:'2px 8px', borderRadius:99, textTransform:'uppercase', letterSpacing:'.07em' }}>{c.lbl}</span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:12, background:'#fff', borderRadius:12, padding:'10px 14px', border:'1px solid #f5f5f4' }}>
-            <img src={selectedTeamId===t1?.teamId?t1?.imageUrl:t2?.imageUrl}
+            <img src={selectedTeamId===t1?.teamId?t1?.imageUrl:t2?.imageUrl} loading="lazy"
                  style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'2px solid #e7e5e4' }} alt={winnerName} />
             <div>
               <div style={{ fontSize:10, color:'#a8a29e', marginBottom:2 }}>Équipe pronostiquée</div>
@@ -309,7 +309,7 @@ export default function MatchDetail() {
               <div style={{ width:16, height:16, borderRadius:'50%', border:'2px solid '+(selectedTeamId===team?.teamId?'#C1272D':'#d6d3d1'), display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                 {selectedTeamId===team?.teamId && <div style={{ width:8, height:8, borderRadius:'50%', background:'#C1272D' }} />}
               </div>
-              <img src={team?.imageUrl} style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover', border:'1px solid #e7e5e4' }} alt={team?.teamName} />
+              <img src={team?.imageUrl} loading="lazy" style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover', border:'1px solid #e7e5e4' }} alt={team?.teamName} />
               <span style={{ fontSize:13, fontWeight:600, color:'#1c1917' }}>{team?.teamName}</span>
             </button>
           ))}
@@ -443,7 +443,7 @@ export default function MatchDetail() {
       <header style={{ position:'relative', background:'linear-gradient(135deg,#2d0a0e 0%,#1a0608 60%,rgba(0,98,51,.3) 100%)', overflow:'hidden', paddingTop:80 }}>
         {/* BG image */}
         <div style={{ position:'absolute', inset:0 }}>
-          <img src={match.imageUrl||'/images/default-stadium.jpg'} alt={match.stadeName}
+          <img src={match.imageUrl||'/images/default-stadium.jpg'} loading="lazy" alt={match.stadeName}
                style={{ width:'100%', height:'100%', objectFit:'cover', mixBlendMode:'overlay', opacity:.95 }} />
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(26,6,8,.6),rgba(26,6,8,.95))' }} />
           <div style={{ position:'absolute', inset:0, opacity:85, backgroundImage:"url('https://www.transparenttextures.com/patterns/moroccan-flower.png')", backgroundSize:'160px' }} />
@@ -498,7 +498,7 @@ export default function MatchDetail() {
               <div style={{ position:'relative' }}>
                 <div style={{ position:'absolute', inset:-12, borderRadius:'50%', background:'rgba(193,39,45,.2)', filter:'blur(20px)' }} />
                 <div style={{ position:'relative', width:100, height:100, borderRadius:'50%', border:'4px solid rgba(255,255,255,.15)', overflow:'hidden', background:'rgba(255,255,255,.1)', boxShadow:'0 8px 32px rgba(0,0,0,.4)' }}>
-                  <img src={team1?.imageUrl} alt={team1?.teamName} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                  <img src={team1?.imageUrl} alt={team1?.teamName} loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                 </div>
               </div>
               <h2 className="syne" style={{ fontSize:16, fontWeight:700, color:'#fff', textAlign:'center', lineHeight:1.3 }}>{team1?.teamName}</h2>
@@ -541,7 +541,7 @@ export default function MatchDetail() {
               <div style={{ position:'relative' }}>
                 <div style={{ position:'absolute', inset:-12, borderRadius:'50%', background:'rgba(240,165,0,.15)', filter:'blur(20px)' }} />
                 <div style={{ position:'relative', width:100, height:100, borderRadius:'50%', border:'4px solid rgba(255,255,255,.15)', overflow:'hidden', background:'rgba(255,255,255,.1)', boxShadow:'0 8px 32px rgba(0,0,0,.4)' }}>
-                  <img src={team2?.imageUrl} alt={team2?.teamName} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                  <img src={team2?.imageUrl} alt={team2?.teamName} loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                 </div>
               </div>
               <h2 className="syne" style={{ fontSize:16, fontWeight:700, color:'rgba(255,255,255,.7)', textAlign:'center', lineHeight:1.3 }}>{team2?.teamName}</h2>
@@ -688,7 +688,7 @@ export default function MatchDetail() {
                   return (
                     <div key={team?.teamId}>
                       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12, paddingBottom:10, borderBottom:'1px solid #f5f5f4' }}>
-                        <img src={team?.imageUrl} style={{ width:24, height:24, borderRadius:'50%', objectFit:'cover' }} alt={team?.teamName} />
+                        <img src={team?.imageUrl} loading="lazy" style={{ width:24, height:24, borderRadius:'50%', objectFit:'cover' }} alt={team?.teamName} />
                         <span style={{ fontSize:13, fontWeight:700, color:'#1c1917' }}>{team?.teamName}</span>
                       </div>
                       <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
@@ -716,7 +716,7 @@ export default function MatchDetail() {
                 return (
                   <div key={team?.teamId} style={{ background:'#fff', border:'2px solid '+acc, borderRadius:18, padding:24 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
-                      <img src={team?.imageUrl} style={{ width:44, height:44, borderRadius:'50%', border:'2px solid #f5f5f4', objectFit:'cover' }} alt={team?.teamName} />
+                      <img src={team?.imageUrl} loading="lazy" style={{ width:44, height:44, borderRadius:'50%', border:'2px solid #f5f5f4', objectFit:'cover' }} alt={team?.teamName} />
                       <span className="syne" style={{ fontSize:16, fontWeight:700, color:'#1c1917' }}>{team?.teamName}</span>
                     </div>
 
@@ -728,7 +728,7 @@ export default function MatchDetail() {
                             <div style={{ width:28, height:28, borderRadius:'50%', background:acc, color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, flexShrink:0 }}>
                               {p.jerseyNumber||i+1}
                             </div>
-                            {p.playerImgUrl && <img src={p.playerImgUrl} style={{ width:32,height:32,borderRadius:'50%',objectFit:'cover',border:'1px solid #e7e5e4' }} alt={p.playerName} />}
+                            {p.playerImgUrl && <img src={p.playerImgUrl} loading="lazy" style={{ width:32,height:32,borderRadius:'50%',objectFit:'cover',border:'1px solid #e7e5e4' }} alt={p.playerName} />}
                             <div>
                               <div style={{ fontSize:13, fontWeight:600, color:'#1c1917' }}>{p.playerName}</div>
                               <div style={{ fontSize:10, color:'#a8a29e' }}>{p.position||'N/A'}</div>
@@ -968,7 +968,7 @@ export default function MatchDetail() {
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:14 }}>
                 {manOfMatch.playerImgUrl && (
-                  <img src={manOfMatch.playerImgUrl} style={{ width:52, height:52, borderRadius:'50%', objectFit:'cover', border:'3px solid #C1272D' }} alt={manOfMatch.playerName} />
+                  <img src={manOfMatch.playerImgUrl} loading="lazy" style={{ width:52, height:52, borderRadius:'50%', objectFit:'cover', border:'3px solid #C1272D' }} alt={manOfMatch.playerName} />
                 )}
                 <div>
                   <div style={{ fontSize:14, fontWeight:700, color:'#1c1917' }}>{manOfMatch.playerName}</div>
