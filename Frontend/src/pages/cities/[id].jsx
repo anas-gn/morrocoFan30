@@ -12,7 +12,7 @@ async function safeFetch(url) {
     if (!res.ok) { console.warn(`[safeFetch] HTTP ${res.status} — ${url}`); return null; }
     const text = await res.text();
     if (!text || text === 'null') return null;
-    return JSON.parse(text);
+    return JSON.parse(text);                          
   } catch (err) { console.error(`[safeFetch] Error — ${url}`, err); return null; }
 }
 
