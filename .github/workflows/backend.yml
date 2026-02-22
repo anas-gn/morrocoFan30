@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'Backend/**'
+      - 'backend/**'
 
 jobs:
   deploy:
@@ -24,16 +25,25 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
 
+          # Debug - afficher la structure
+          echo "=== Structure du repo ==="
+          ls -la
+
+          # Détecter le dossier backend (majuscule ou minuscule)
+          BACKEND_DIR=$(ls -d [Bb]ackend 2>/dev/null | head -1)
+          echo "=== Backend trouvé: $BACKEND_DIR ==="
+          ls -la $BACKEND_DIR
+
           # Clone HuggingFace Space
           git clone https://Anas-gana1:$HF_TOKEN@huggingface.co/spaces/Anas-gana1/fandb-backend hf-repo
 
           # Copier src, pom.xml et Dockerfile
-          cp -r Backend/src hf-repo/
-          cp Backend/pom.xml hf-repo/
-          cp Backend/Dockerfile hf-repo/
+          cp -r $BACKEND_DIR/src hf-repo/
+          cp $BACKEND_DIR/pom.xml hf-repo/
+          cp $BACKEND_DIR/Dockerfile hf-repo/
 
           # Push vers HuggingFace
           cd hf-repo
           git add .
-          git diff --staged --quiet || git commit -m "sync from GitHub - ${{ github.sha }}"
+          git diff --staged --quiet || git commit -m "sync from GitHub - $GITHUB_SHA"
           git push
