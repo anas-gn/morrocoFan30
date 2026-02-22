@@ -34,7 +34,7 @@ jobs:
         run: |
           cd Backend/demo
           mvn sonar:sonar \
-            -Dsonar.projectKey=morrocoFan30 \
+            -Dsonar.projectKey=anas-gn_morrocoFan30 \
             -Dsonar.organization=anas-gn \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=$SONAR_TOKEN
