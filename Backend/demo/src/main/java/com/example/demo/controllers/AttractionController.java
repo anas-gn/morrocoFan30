@@ -89,6 +89,7 @@ public class AttractionController {
     }
 
     
+    
     @GetMapping("/images/attraction/{attractionId}")
     public List<ImageDTO> getAttractionImages(@PathVariable int attractionId) {
         List<Images> images = imageRepository.findByTypeAndOwnerID("attraction", attractionId); // ← minuscule
