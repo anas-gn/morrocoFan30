@@ -116,7 +116,7 @@ export default function CityDetail() {
     { key:'foods',       label:'Food',      icon:'restaurant',        badge:null              },
     { key:'guides',      label:'Guides',    icon:'record_voice_over', badge:null              },
   ];
-
+                    
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#fff' }}>
       <div style={{ width:40, height:40, border:'3px solid #C1272D', borderTopColor:'transparent', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
