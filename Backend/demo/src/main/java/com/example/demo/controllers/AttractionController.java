@@ -89,6 +89,8 @@ public class AttractionController {
     }
 
     
+
+    
     
     @GetMapping("/images/attraction/{attractionId}")
     public List<ImageDTO> getAttractionImages(@PathVariable int attractionId) {
