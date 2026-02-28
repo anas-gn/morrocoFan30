@@ -92,11 +92,15 @@ public class ResponsableController {
     }
 
     // POST - Ajouter un nouveau responsable
-    @PostMapping("/add")
-    public ResponseEntity<ResponsableDTO> addResponsable(@RequestBody Responsables responsable) {
-        Responsables savedResponsable = responsableRepository.save(responsable);
-        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedResponsable));
+   
+@PostMapping("/add")
+public ResponseEntity<ResponsableDTO> addResponsable(@RequestBody Responsables responsable) {
+    if (responsable.getPassword() != null && !responsable.getPassword().startsWith("$2a$")) {
+        responsable.setPassword(encoder.encode(responsable.getPassword()));
     }
+    Responsables saved = responsableRepository.save(responsable);
+    return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(saved));
+}
 
     // PUT - Mettre à jour un responsable existant
     @PutMapping("/update/{id}")
