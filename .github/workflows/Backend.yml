@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'Backend/demo/**'
-      
 
 jobs:
   deploy:
@@ -29,33 +28,36 @@ jobs:
           cd Backend/demo
           mvn clean package -DskipTests
 
-      # ✅ SonarQube séparé et non-bloquant (continue-on-error)
       - name: SonarQube Analysis
-        continue-on-error: true        # ← ne bloque plus le déploiement
+        continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           npm install -g sonar-scanner
           sonar-scanner -Dsonar.token=$SONAR_TOKEN
 
-      # ✅ Push vers HuggingFace — toujours exécuté
       - name: Push to HuggingFace
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
-          
+
           git clone https://Anas-gana1:$HF_TOKEN@huggingface.co/spaces/Anas-gana1/fandb-backend hf-repo
-          
-          # Copier les fichiers
+
+          # ✅ Supprimer l'ancien src avant de recopier (évite les fichiers fantômes)
+          rm -rf hf-repo/src
+
+          # Copier tous les fichiers frais depuis GitHub
           cp -r Backend/demo/src hf-repo/
           cp Backend/demo/pom.xml hf-repo/
           cp Backend/demo/Dockerfile hf-repo/
-          
+
           cd hf-repo
-          git add .
-          
-          # ✅ Force le commit même si "rien de changé" selon git
+          git add -A
+
+          # ✅ --allow-empty force le push même si git pense que rien n'a changé
           git commit --allow-empty -m "sync from GitHub - $GITHUB_SHA"
           git push
+
+          echo "✅ HuggingFace mis à jour : $(git log --oneline -1)"
