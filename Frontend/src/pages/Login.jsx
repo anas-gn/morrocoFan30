@@ -8,12 +8,13 @@ const TEAMS_API  = 'https://anas-gana1-fandb-backend.hf.space/api/teams/teams/al
 
 export default function Login() {
   const router = useRouter();
-  const [mode,    setMode]    = useState('login');
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
-  const [success, setSuccess] = useState('');
-  const [form,    setForm]    = useState({ name:'', age:'', email:'', password:'', phone:'', country:'' });
-  const [teams,   setTeams]   = useState([]);
+  const [mode,        setMode]        = useState('login');
+  const [accountType, setAccountType] = useState('supporter'); // 'supporter' | 'responsable'
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState('');
+  const [success,     setSuccess]     = useState('');
+  const [form,        setForm]        = useState({ name:'', age:'', email:'', password:'', phone:'', country:'' });
+  const [teams,       setTeams]       = useState([]);
 
   /* redirect if already logged in */
   useEffect(() => {
@@ -36,12 +37,12 @@ export default function Login() {
   };
 
   const saveSession = d => {
-    localStorage.setItem('token',     d.token);
-    localStorage.setItem('userType',  d.type);
-    localStorage.setItem('userId',    d.id);
+    localStorage.setItem('token',       d.token);
+    localStorage.setItem('userType',    d.type);
+    localStorage.setItem('userId',      d.id);
     localStorage.setItem('supporterId', d.id);
-    localStorage.setItem('userName',  d.name);
-    localStorage.setItem('userEmail', d.email);
+    localStorage.setItem('userName',    d.name);
+    localStorage.setItem('userEmail',   d.email);
     window.dispatchEvent(new Event('userLoggedIn'));
   };
 
@@ -52,10 +53,8 @@ export default function Login() {
       if (mode === 'login') {
         const body = { email: form.email, password: form.password };
 
-        /* 1) try supporter */
+        /* ── Try supporter first, then responsable ── */
         let result = await tryLogin('supporter', body);
-
-        /* 2) if fail → try responsable */
         if (!result.ok) result = await tryLogin('responsable', body);
 
         if (!result.ok) {
@@ -67,12 +66,11 @@ export default function Login() {
         saveSession(d);
         setSuccess(`Bienvenue, ${d.name} !`);
 
-        /* ── redirect based on type ── */
         const dest = d.type === 'SUPPORTER' ? '/Acceuil' : '/Dashboard';
         setTimeout(() => router.push(dest), 800);
 
       } else {
-        /* register → supporter only */
+        /* ── Register ── */
         const body = {
           name:     form.name,
           age:      form.age ? Number(form.age) : undefined,
@@ -81,16 +79,24 @@ export default function Login() {
           phone:    form.phone,
           country:  form.country,
         };
-        const res  = await fetch(`${API_BASE}/supporter/register`, {
+
+        /* Use the correct endpoint based on accountType */
+        const endpoint = accountType === 'responsable'
+          ? `${API_BASE}/responsable/register`
+          : `${API_BASE}/supporter/register`;
+
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
         const d = await res.json();
         if (!res.ok) { setError(d.error || "Une erreur s'est produite"); return; }
+
         saveSession(d);
         setSuccess(`Bienvenue, ${d.name} !`);
-        setTimeout(() => router.push('/Acceuil'), 800);
+        const dest = d.type === 'SUPPORTER' ? '/Acceuil' : '/Dashboard';
+        setTimeout(() => router.push(dest), 800);
       }
     } catch {
       setError('Impossible de joindre le serveur');
@@ -99,7 +105,7 @@ export default function Login() {
     }
   };
 
-  const switchMode = m => { setMode(m); setError(''); setSuccess(''); };
+  const switchMode = m => { setMode(m); setError(''); setSuccess(''); setAccountType('supporter'); };
 
   /* ═══ RENDER ═══ */
   return (
@@ -128,13 +134,9 @@ export default function Login() {
 
         {/* ── LEFT hero panel ── */}
         <div style={{ width:'44%', position:'relative', overflow:'hidden', padding:'52px 48px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
-          {/* bg photo */}
           <div style={{ position:'absolute', inset:0, backgroundImage:"url('https://images.unsplash.com/photo-1539020140153-e479b8c22e70?q=80&w=1400&auto=format&fit=crop')", backgroundSize:'cover', backgroundPosition:'center' }}/>
-          {/* overlay */}
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(145deg,rgba(45,10,14,.96) 0%,rgba(26,6,8,.88) 60%,rgba(0,98,51,.2) 100%)' }}/>
-          {/* pattern */}
           <div style={{ position:'absolute', inset:0, opacity:.04, backgroundImage:"repeating-linear-gradient(45deg,#C1272D 0,#C1272D 1px,transparent 0,transparent 50%)", backgroundSize:'18px 18px' }}/>
-          {/* glows */}
           <div style={{ position:'absolute', top:-60, left:-60, width:340, height:340, borderRadius:'50%', background:'#C1272D', filter:'blur(130px)', opacity:.25 }}/>
           <div style={{ position:'absolute', bottom:0, right:-40, width:260, height:260, borderRadius:'50%', background:'#006233', filter:'blur(110px)', opacity:.18 }}/>
 
@@ -179,7 +181,7 @@ export default function Login() {
         <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', background:'#fafaf9', padding:'40px 24px', backgroundImage:'radial-gradient(#e5e7eb 1px,transparent 1px)', backgroundSize:'22px 22px' }}>
           <div className="fu d1" style={{ width:'100%', maxWidth:420 }}>
 
-            {/* tabs */}
+            {/* tabs login / inscription */}
             <div style={{ display:'flex', gap:4, padding:5, background:'#f3f4f6', borderRadius:14, border:'1px solid #e5e7eb', marginBottom:30 }}>
               {[['login','Connexion'],['register','Inscription']].map(([m,l])=>(
                 <button key={m} onClick={()=>switchMode(m)}
@@ -192,7 +194,7 @@ export default function Login() {
             </div>
 
             {/* title */}
-            <div style={{ marginBottom:26 }}>
+            <div style={{ marginBottom:22 }}>
               <h2 style={{ fontFamily:'Syne,sans-serif', fontSize:30, color:'#1c1917', fontWeight:800, lineHeight:1.1, marginBottom:6, letterSpacing:'-.01em' }}>
                 {mode==='login' ? 'Bon retour !' : 'Créer un compte'}
               </h2>
@@ -200,6 +202,24 @@ export default function Login() {
                 {mode==='login' ? 'Connectez-vous à votre compte MoroccoFan2030' : 'Rejoignez la communauté MoroccoFan2030'}
               </p>
             </div>
+
+            {/* ── Account type selector (register only) ── */}
+            {mode === 'register' && (
+              <div style={{ marginBottom:22 }}>
+                <div style={{ fontSize:10, fontWeight:700, color:'#a8a29e', textTransform:'uppercase', letterSpacing:'.1em', fontFamily:'Syne,sans-serif', marginBottom:8 }}>
+                  Type de compte
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  {[['supporter','Supporter','sports_soccer'],['responsable','Responsable','manage_accounts']].map(([val,label,icon])=>(
+                    <button key={val} type="button" onClick={()=>setAccountType(val)}
+                            style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'10px 12px', borderRadius:10, border:`2px solid ${accountType===val?'#C1272D':'#e5e7eb'}`, background: accountType===val?'rgba(193,39,45,.06)':'#fff', cursor:'pointer', transition:'all .18s', fontFamily:'Syne,sans-serif', fontWeight:700, fontSize:12, color: accountType===val?'#C1272D':'#9ca3af' }}>
+                      <span className="material-icons" style={{ fontSize:16 }}>{icon}</span>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* alerts */}
             {error&&(
@@ -218,12 +238,17 @@ export default function Login() {
               <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
                 {mode==='register'&&(<>
-                  <Field label="Nom complet"    name="name"  type="text"   icon="badge"       value={form.name}  onChange={handleChange} required />
+                  <Field label="Nom complet" name="name"  type="text"   icon="badge"  value={form.name}  onChange={handleChange} required />
                   <div style={{ display:'flex', gap:12 }}>
-                    <Field label="Âge"       name="age"   type="number" icon="cake"        value={form.age}   onChange={handleChange} />
-                    <Field label="Téléphone" name="phone" type="tel"    icon="phone"       value={form.phone} onChange={handleChange} />
+                    <Field label="Âge"       name="age"   type="number" icon="cake"   value={form.age}   onChange={handleChange} />
+                    <Field label="Téléphone" name="phone" type="tel"    icon="phone"  value={form.phone} onChange={handleChange} />
                   </div>
-                  <SelectField label="Pays / Équipe" name="country" icon="public" value={form.country} onChange={handleChange} options={teams} required />
+
+                  {/* Supporters pick a team; responsables pick a country */}
+                  {accountType === 'supporter'
+                    ? <SelectField label="Pays / Équipe" name="country" icon="public" value={form.country} onChange={handleChange} options={teams} required />
+                    : <Field label="Pays" name="country" type="text" icon="public" value={form.country} onChange={handleChange} required />
+                  }
                 </>)}
 
                 <Field label="Adresse email" name="email"    type="email"    icon="alternate_email" value={form.email}    onChange={handleChange} required />
@@ -241,7 +266,10 @@ export default function Login() {
                       </span>
                     : mode==='login'
                       ? <span style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>Se connecter <span className="material-icons" style={{ fontSize:17 }}>arrow_forward</span></span>
-                      : <span style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>Créer un compte <span className="material-icons" style={{ fontSize:17 }}>how_to_reg</span></span>
+                      : <span style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                          {accountType==='responsable' ? 'Créer un compte Responsable' : 'Créer un compte Supporter'}
+                          <span className="material-icons" style={{ fontSize:17 }}>how_to_reg</span>
+                        </span>
                   }
                 </button>
               </div>
