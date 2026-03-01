@@ -101,8 +101,10 @@ export default function Dashboard() {
     setLoading(false);
   }, []);
 
-  const liveCount     = matches.filter(m => ["live","started","direct"].includes(m.status?.toLowerCase())).length;
-  const finishedCount = matches.filter(m => m.status?.toLowerCase() === "finished").length;
+  /* backend uses "statut" not "status" */
+  const normS = s => (s||"").toLowerCase();
+  const liveCount     = matches.filter(m => ["live","started","direct","commence"].includes(normS(m.statut))).length;
+  const finishedCount = matches.filter(m => ["finished","termine"].includes(normS(m.statut))).length;
 
   const logout   = () => { localStorage.clear(); router.push("/Login"); };
   const userName  = typeof window !== "undefined" ? localStorage.getItem("userName")  || "Admin" : "Admin";
@@ -297,15 +299,17 @@ export default function Dashboard() {
                   <span style={{fontFamily:"'Syne',sans-serif",fontWeight:800,fontSize:14,color:"#fff"}}>Derniers Matches</span>
                   <button className="btn-s" style={{padding:"5px 12px",fontSize:11}} onClick={()=>setTab("matches")}>Voir tout →</button>
                 </div>
-                {matches.slice(0,6).map((m,i)=>{
-                  const sc=statusCol(m.status);
-                  return(
+                {matches.slice(0,6).map((m, i) => {
+                  const t1 = m.matchTeams?.[0] || {};
+                  const t2 = m.matchTeams?.[1] || {};
+                  const sc = statusCol(m.statut);
+                  return (
                     <div key={m.id||i} className="db-trow" style={{gridTemplateColumns:"1fr 70px 1fr 120px 100px",cursor:"pointer"}} onClick={()=>setTab("matches")}>
-                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:12,color:"#fff",textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.team1Name||"—"}</div>
-                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:900,fontSize:13,color:"#C1272D",textAlign:"center"}}>{m.goalsTeam1??"-"} : {m.goalsTeam2??"-"}</div>
-                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:600,fontSize:12,color:"rgba(255,255,255,.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.team2Name||"—"}</div>
+                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:700,fontSize:12,color:"#fff",textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t1.teamName||"—"}</div>
+                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:900,fontSize:13,color:"#C1272D",textAlign:"center"}}>{t1.goals ?? "-"} : {t2.goals ?? "-"}</div>
+                      <div style={{fontFamily:"'Syne',sans-serif",fontWeight:600,fontSize:12,color:"rgba(255,255,255,.6)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t2.teamName||"—"}</div>
                       <div style={{fontSize:11,color:"rgba(255,255,255,.38)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.stadeName||"—"}</div>
-                      <div><span className="badge" style={{background:sc.bg,color:sc.color,borderColor:sc.border}}>{m.status||"—"}</span></div>
+                      <div><span className="badge" style={{background:sc.bg,color:sc.color,borderColor:sc.border}}>{m.statut||"—"}</span></div>
                     </div>
                   );
                 })}
