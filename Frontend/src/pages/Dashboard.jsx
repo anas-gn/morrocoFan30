@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import MatchesRespo from "./matchesRespo";
+import MatchesRespo from "./MatchesRespo";
 
 const BASE = "https://anas-gana1-fandb-backend.hf.space/api";
 
