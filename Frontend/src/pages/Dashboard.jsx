@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import SidebarRespo from "../components/SidebarRespo"; // ← import du composant
+import SidebarRespo from "../components/Sidebarrespo"; // ← import du composant
 
 const BASE = "https://anas-gana1-fandb-backend.hf.space/api";
 
