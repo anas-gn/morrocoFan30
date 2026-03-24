@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/teams")
 @CrossOrigin(origins = "*")
+@RequestMapping("/api/teams")
 public class TeamsController {
 
     @Autowired

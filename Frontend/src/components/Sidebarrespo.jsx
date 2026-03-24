@@ -22,6 +22,8 @@ const NAV = [
   { label: "Stades",         icon: "stadium",        href: "/StadesRespo"       },
   { label: "Attractions",    icon: "attractions",    href: "/AttractionsRespo"  },
   { label: "Prédictions",    icon: "psychology",     href: "/PredictionsRespo"  },
+  { label: "News",           icon: "article",        href: "/NewsRespo"     },
+  { label: "Culture",        icon: "event_busy",     href: "/CultureRespo"  },
 ];
 
 export default function SidebarRespo() {
