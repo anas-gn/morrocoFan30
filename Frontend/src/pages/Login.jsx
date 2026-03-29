@@ -21,7 +21,7 @@ export default function Login() {
     if (typeof window === 'undefined') return;
     const t = localStorage.getItem('userType');
     if (t === 'SUPPORTER')   { router.replace('/Acceuil');   return; }
-    if (t === 'RESPONSABLE') { router.replace('/Dashboard'); return; }
+    if (t === 'RESPONSABLE') { router.replace('/Admin/Dashboard'); return; }
     fetch(TEAMS_API).then(r => r.ok ? r.json() : []).then(setTeams).catch(() => {});
   }, []);
 
