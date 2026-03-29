@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import SidebarRespo from "../components/Sidebarrespo"; // ← import du composant
+import SidebarRespo from "@/components/Sidebarrespo";
 
 const BASE = "https://anas-gana1-fandb-backend.hf.space/api";
 
@@ -152,7 +152,7 @@ export default function Dashboard() {
 
         /* ── main wrapper shifts right by sidebar width ── */
         .main-wrap{
-          margin-left:240px;height:100vh;overflow-y:auto;
+          width:100%;height:100vh;overflow-y:auto;
           transition:margin-left .28s cubic-bezier(.4,0,.2,1);
           display:flex;flex-direction:column;
         }
@@ -205,9 +205,6 @@ export default function Dashboard() {
         .btn-ghost{background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1)}
         .btn-ghost:hover{background:rgba(255,255,255,.1)}
       `}</style>
-
-      {/* ══ SIDEBAR (composant séparé) ══ */}
-      <SidebarRespo />
 
       {/* ══ MAIN ══ */}
       <div className="main-wrap">

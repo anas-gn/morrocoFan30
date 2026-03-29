@@ -1,7 +1,13 @@
+import { useRouter } from 'next/router';
 import styles from '../styles/globals.css'
+import SidebarRespo from "@/components/SidebarRespo";
 
 export default function MyApp({ Component, pageProps }) {
+    const router = useRouter();
     return (
-        <Component {...pageProps} />
+        <div className='flex'>
+            {router.pathname.includes('Admin') && <SidebarRespo />}
+            <Component {...pageProps} />
+        </div>
     )
 }

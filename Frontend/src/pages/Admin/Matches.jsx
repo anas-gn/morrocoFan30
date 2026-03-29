@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import SidebarRespo from "../components/Sidebarrespo";
+import SidebarRespo from "@/components/Sidebarrespo";
 
 const BASE = "https://anas-gana1-fandb-backend.hf.space/api";
 
@@ -301,7 +301,7 @@ export default function MatchesRespo() {
 
         /* ── main wrapper shifts right by sidebar ── */
         .main-wrap{
-          margin-left:240px;height:100vh;overflow:hidden;
+          width:100%;height:100vh;overflow:hidden;
           display:flex;flex-direction:column;
           transition:margin-left .28s cubic-bezier(.4,0,.2,1);
         }
@@ -421,9 +421,6 @@ export default function MatchesRespo() {
           .mr-thead div:nth-child(4),.mr-row div:nth-child(4){display:none;}
         }
       `}</style>
-
-      {/* ══ SIDEBAR ══ */}
-      <SidebarRespo />
 
       {/* ══ MAIN ══ */}
       <div className="main-wrap">

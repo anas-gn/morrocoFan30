@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -332,6 +333,7 @@ public class GroupController {
         }
     }
 
+    @Transactional
     @PutMapping("/update/{id}")
     public ResponseEntity<GroupDTO> updateGroup(@PathVariable int id, @RequestBody CreateGroupDTO updateGroupDTO) {
         try {
@@ -343,13 +345,10 @@ public class GroupController {
             Groups group = groupOptional.get();
             group.setName(updateGroupDTO.getName());
 
-            // Supprimer les anciens GroupTeams
-            if (group.getGroupTeams() != null) {
-                groupTeamRepository.deleteAll(group.getGroupTeams());
-            }
+            // ✅ Vider la collection EN PLACE (pas de setGroupTeams avec new ArrayList) 
+            group.getGroupTeams().clear();
 
-            // Créer les nouveaux GroupTeams
-            List<GroupTeam> groupTeams = new ArrayList<>();
+            // ✅ Construire et ajouter les nouveaux GroupTeams directement dans la collection
             if (updateGroupDTO.getGroupTeams() != null) {
                 for (CreateGroupTeamDTO gtDto : updateGroupDTO.getGroupTeams()) {
                     Optional<Teams> teamOptional = teamsRepository.findById(gtDto.getTeamID());
@@ -362,19 +361,18 @@ public class GroupController {
                         groupTeam.setGoalsConceded(gtDto.getGoalsConceded());
                         groupTeam.setGroup(group);
                         groupTeam.setTeam(teamOptional.get());
-                        groupTeams.add(groupTeam);
+                        // ✅ Ajouter dans la collection existante, pas dans une nouvelle liste
+                        group.getGroupTeams().add(groupTeam);
                     }
                 }
             }
 
-            // Sauvegarder les nouveaux GroupTeams
-            groupTeamRepository.saveAll(groupTeams);
-            group.setGroupTeams(groupTeams);
-
+            // ✅ Plus besoin de saveAll ni de setGroupTeams — cascade gère tout
             Groups updatedGroup = groupsRepository.save(group);
-            GroupDTO groupDTO = new GroupDTO(updatedGroup);
-            return ResponseEntity.ok(groupDTO);
+            return ResponseEntity.ok(new GroupDTO(updatedGroup));
+
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
