@@ -20,6 +20,8 @@ const NAV = [
   { label: "Groupes",        icon: "diversity_3",    href: "/Admin/Groups"      },
   { label: "Joueurs",        icon: "person",         href: "/Admin/Players"     },
   { label: "Supporters",     icon: "favorite",       href: "/Admin/Supporters"  },
+  { label: "Culture",        icon: "public",         href: "/Admin/Culture"     },
+  { label: "News",           icon: "article",        href: "/Admin/News"     },
   { label: "Villes",         icon: "location_city",  href: "/Admin/Cities"      },
   { label: "Stades",         icon: "stadium",        href: "/Admin/Stades"      },
   { label: "Attractions",    icon: "attractions",    href: "/Admin/Attractions" },

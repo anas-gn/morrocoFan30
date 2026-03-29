@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import SidebarRespo from "../components/Sidebarrespo";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "https://anas-gana1-fandb-backend.hf.space/api";
 
@@ -282,7 +281,7 @@ export default function NewsRespo() {
         .nr-up    {animation:fadeUp .4s cubic-bezier(.22,.68,0,1.2) both}
 
         .main-wrap{
-          margin-left:240px;height:100vh;overflow:hidden;
+          width:100%;height:100vh;overflow:hidden;
           display:flex;flex-direction:column;
           transition:margin-left .28s cubic-bezier(.4,0,.2,1);
         }
@@ -375,9 +374,6 @@ export default function NewsRespo() {
           .nr-thead div:nth-child(4),.nr-row div:nth-child(4){display:none;}
         }
       `}</style>
-
-      {/* ══ SIDEBAR ══ */}
-      <SidebarRespo />
 
       {/* ══ MAIN ══ */}
       <div className="main-wrap">

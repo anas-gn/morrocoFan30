@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import SidebarRespo from "@/components/Sidebarrespo";
 
 const BASE = "http://localhost:7860/api/teams";
 
