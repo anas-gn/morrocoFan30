@@ -5,7 +5,7 @@ import SidebarRespo from "@/components/SidebarRespo";
 export default function MyApp({ Component, pageProps }) {
     const router = useRouter();
     return (
-        <div className='flex'>
+        <div className={router.pathname.includes('Admin') && "flex"}>
             {router.pathname.includes('Admin') && <SidebarRespo />}
             <Component {...pageProps} />
         </div>
