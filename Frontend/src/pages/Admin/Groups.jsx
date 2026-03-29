@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
-const BASE_GROUPS = "http://localhost:7860/api/groups";
-const BASE_TEAMS  = "http://localhost:7860/api/teams";
+const BASE_GROUPS = "https://anas-gana1-fandb-backend.hf.space/api/groups";
+const BASE_TEAMS  = "https://anas-gana1-fandb-backend.hf.space/api/teams";
 
 const sf = async (url, opts) => {
   const r = await fetch(url, opts);
