@@ -10,3 +10,6 @@ body {
 .decorative-font {
   font-family: 'Aref Ruqaa', serif;
 }
+/* * {
+  transform: rotate(1deg) !important;
+} */

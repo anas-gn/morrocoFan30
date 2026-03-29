@@ -1,10 +1,12 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "Fangroups")
+@Table(name = "groups")
 public class Groups {
 
     @Id
@@ -13,8 +15,8 @@ public class Groups {
 
     private String name;
 
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<GroupTeam> groupTeams;
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<GroupTeam> groupTeams = new ArrayList<>();
 
     public Groups() {
     }
