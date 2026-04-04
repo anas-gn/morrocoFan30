@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-const BASE_PLAYERS = "https://anas-gana1-fandb-backend.hf.space/api/players";
-const BASE_TEAMS = "https://anas-gana1-fandb-backend.hf.space/api/teams";
+const BASE_PLAYERS = "http://localhost:7860/api/players";
+const BASE_TEAMS = "http://localhost:7860/api/teams";
 
 const sf = async (url, opts) => {
   const r = await fetch(url, opts);
@@ -182,7 +182,7 @@ export default function PlayersRespo() {
 
   const loadPlayers = () => {
     setLoading(true);
-    fetch(`${BASE_PLAYERS}/players/all`)
+    fetch(`${BASE_PLAYERS}/all`)
       .then(r => r.json())
       .then(d => { setPlayers(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
@@ -192,7 +192,7 @@ export default function PlayersRespo() {
     fetch(`${BASE_TEAMS}/getAll`)
       .then(r => r.json())
       .then(d => { setTeams(Array.isArray(d) ? d : []); })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   useEffect(() => { loadPlayers(); loadTeams(); }, []);
@@ -217,17 +217,31 @@ export default function PlayersRespo() {
         weight: addForm.weight ? parseFloat(addForm.weight) : 0,
         goals: addForm.goals ? parseInt(addForm.goals) : 0,
         age: addForm.age ? parseInt(addForm.age) : 0,
-        teamID: parseInt(addForm.teamId),
-        imgUrl: addForm.imgUrl || null,
+        teamId: parseInt(addForm.teamId),
+        urlImage: addForm.imgUrl || null,
       };
-      const res = await fetch(`${BASE_PLAYERS}/players/add/`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+
+      console.log("Body envoyé:", JSON.stringify(body)); // ← vérification
+
+      const res = await fetch(`${BASE_PLAYERS}/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
+
+      const text = await res.text();
+      console.log("Réponse serveur:", res.status, text);
+
       if (res.ok) {
         showToast("success", "Joueur ajouté avec succès !");
         setShowAdd(false); setAddForm(EMPTY_ADD); loadPlayers();
-      } else showToast("error", "Échec de l'ajout.");
-    } catch { showToast("error", "Erreur réseau."); }
+      } else {
+        showToast("error", `Échec: ${text}`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("error", "Erreur réseau.");
+    }
     setSavingAdd(false);
   };
 
@@ -257,7 +271,7 @@ export default function PlayersRespo() {
         teamID: parseInt(updateForm.teamId),
         imgUrl: updateForm.imgUrl || null,
       };
-      const res = await fetch(`${BASE_PLAYERS}/players/update/${updateTarget.id}`, {
+      const res = await fetch(`${BASE_PLAYERS}/update/${updateTarget.id}`, {
         method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       if (res.ok) {
@@ -271,7 +285,7 @@ export default function PlayersRespo() {
     if (!deleteTarget) return;
     setDeletingPlayer(true);
     try {
-      const res = await fetch(`${BASE_PLAYERS}/players/${deleteTarget.id}`, { method: "DELETE" });
+      const res = await fetch(`${BASE_PLAYERS}/${deleteTarget.id}`, { method: "DELETE" });
       if (res.ok) {
         showToast("success", "Joueur supprimé !");
         setPlayers(p => p.filter(t => t.id !== deleteTarget.id));
@@ -284,7 +298,7 @@ export default function PlayersRespo() {
   const openPlayer = async player => {
     setSelected(player); setDetail(null); setLoadingDetail(true);
     try {
-      const d = await sf(`${BASE_PLAYERS}/players/${player.id}`);
+      const d = await sf(`${BASE_PLAYERS}/${player.id}`);
       setDetail(d);
     } catch { showToast("error", "Impossible de charger les détails."); }
     setLoadingDetail(false);

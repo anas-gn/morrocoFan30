@@ -1,17 +1,5 @@
 package com.example.demo.controllers;
-
-import com.example.demo.repositories.GroupTeamRepository;
-import com.example.demo.repositories.MatchRepository;
-import com.example.demo.repositories.StadeRepository;
-import com.example.demo.repositories.MatchTeamRepository;
-import com.example.demo.repositories.MatchEventsRepository;
-import com.example.demo.repositories.MatchPlayerRepository;
-import com.example.demo.repositories.PredictionRepository;
-import com.example.demo.repositories.SupporterRepository;
-import com.example.demo.repositories.PlayerRepository;
-import com.example.demo.repositories.NotificationRepository;
-import com.example.demo.repositories.FavoriteRepository;
-import com.example.demo.repositories.TeamRepository;
+import com.example.demo.repositories.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

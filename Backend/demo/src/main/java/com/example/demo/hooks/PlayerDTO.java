@@ -1,7 +1,7 @@
 package com.example.demo.hooks;
 
 public class PlayerDTO {
-
+ 
     private int id;
     private String name;
     private String team;
