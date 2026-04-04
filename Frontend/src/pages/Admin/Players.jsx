@@ -183,7 +183,7 @@ export default function PlayersRespo() {
   const loadPlayers = () => {
     setLoading(true);
     // FIX: was "/players/all" — correct endpoint is "/all"
-    fetch(`${BASE_PLAYERS}/all`)
+    fetch(`${BASE_PLAYERS}/players/all`)
       .then(r => r.json())
       .then(d => { setPlayers(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
