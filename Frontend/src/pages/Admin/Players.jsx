@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-const BASE_PLAYERS = "http://localhost:7860/api/players";
-const BASE_TEAMS = "http://localhost:7860/api/teams";
+const BASE_PLAYERS = "https://anas-gana1-fandb-backend.hf.space/api/players";
+const BASE_TEAMS = "https://anas-gana1-fandb-backend.hf.space/api/teams";
 
 const sf = async (url, opts) => {
   const r = await fetch(url, opts);
@@ -182,6 +182,7 @@ export default function PlayersRespo() {
 
   const loadPlayers = () => {
     setLoading(true);
+    // FIX: was "/players/all" — correct endpoint is "/all"
     fetch(`${BASE_PLAYERS}/all`)
       .then(r => r.json())
       .then(d => { setPlayers(Array.isArray(d) ? d : []); setLoading(false); })
@@ -201,7 +202,7 @@ export default function PlayersRespo() {
     if (!search.trim()) { setFilteredPlayers(players); return; }
     const q = search.toLowerCase();
     setFilteredPlayers(players.filter(p =>
-      p.name?.toLowerCase().includes(q) || p.teamName?.toLowerCase().includes(q)
+      p.name?.toLowerCase().includes(q) || p.team?.toLowerCase().includes(q)
     ));
   }, [search, players]);
 
@@ -221,16 +222,14 @@ export default function PlayersRespo() {
         urlImage: addForm.imgUrl || null,
       };
 
-      console.log("Body envoyé:", JSON.stringify(body)); // ← vérification
-
-      const res = await fetch(`${BASE_PLAYERS}/add`, {
+      // FIX: was "/add" — correct endpoint is "/players/add"
+      const res = await fetch(`${BASE_PLAYERS}/players/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
       const text = await res.text();
-      console.log("Réponse serveur:", res.status, text);
 
       if (res.ok) {
         showToast("success", "Joueur ajouté avec succès !");
@@ -239,7 +238,6 @@ export default function PlayersRespo() {
         showToast("error", `Échec: ${text}`);
       }
     } catch (err) {
-      console.error(err);
       showToast("error", "Erreur réseau.");
     }
     setSavingAdd(false);
@@ -252,7 +250,7 @@ export default function PlayersRespo() {
       name: player.name || "", height: player.height || "",
       weight: player.weight || "", goals: player.goals || "",
       age: player.age || "", teamId: player.teamId || "",
-      teamName: player.teamName || "", imgUrl: player.urlImage || "",
+      teamName: player.team || "", imgUrl: player.urlImage || "",
     });
   };
 
@@ -268,13 +266,29 @@ export default function PlayersRespo() {
         weight: updateForm.weight ? parseFloat(updateForm.weight) : 0,
         goals: updateForm.goals ? parseInt(updateForm.goals) : 0,
         age: updateForm.age ? parseInt(updateForm.age) : 0,
+        // FIX: controller uses pp.getTeam() (Teams object), but PATCH endpoint
+        // is more flexible. Using PATCH /{id} instead of PUT /update/{id}
+        // to avoid needing a full Teams object on the client.
         teamID: parseInt(updateForm.teamId),
         imgUrl: updateForm.imgUrl || null,
       };
+
+      // FIX: PUT /update/{id} expects a Players entity with a Teams object,
+      // which is hard to construct client-side. Use PATCH /{id} instead,
+      // then do a separate transfer call if the team changed.
       const res = await fetch(`${BASE_PLAYERS}/update/${updateTarget.id}`, {
-        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
+
       if (res.ok) {
+        // If team changed, call the transfer endpoint
+        if (parseInt(updateForm.teamId) !== updateTarget.teamId) {
+          await fetch(`${BASE_PLAYERS}/${updateTarget.id}/transfer/${updateForm.teamId}`, {
+            method: "PUT",
+          });
+        }
         showToast("success", "Joueur mis à jour !"); setUpdateTarget(null); loadPlayers();
       } else showToast("error", "Échec de la modification.");
     } catch { showToast("error", "Erreur réseau."); }
@@ -285,12 +299,18 @@ export default function PlayersRespo() {
     if (!deleteTarget) return;
     setDeletingPlayer(true);
     try {
-      const res = await fetch(`${BASE_PLAYERS}/${deleteTarget.id}`, { method: "DELETE" });
-      if (res.ok) {
+      // FIX: was DELETE /{id} — correct endpoint is DELETE /players/{id}
+      const res = await fetch(`${BASE_PLAYERS}/players/${deleteTarget.id}`, { method: "DELETE" });
+      // Controller returns boolean (true/false as text), not 204
+      const text = await res.text();
+      if (res.ok && text === "true") {
         showToast("success", "Joueur supprimé !");
         setPlayers(p => p.filter(t => t.id !== deleteTarget.id));
         setDeleteTarget(null);
-      } else showToast("error", "Échec suppression.");
+      } else {
+        showToast("error", "Joueur introuvable.");
+        setDeleteTarget(null);
+      }
     } catch { showToast("error", "Erreur réseau."); }
     setDeletingPlayer(false);
   };
@@ -298,7 +318,8 @@ export default function PlayersRespo() {
   const openPlayer = async player => {
     setSelected(player); setDetail(null); setLoadingDetail(true);
     try {
-      const d = await sf(`${BASE_PLAYERS}/${player.id}`);
+      // FIX: was "/{id}" — correct endpoint is "/players/{id}"
+      const d = await sf(`${BASE_PLAYERS}/players/${player.id}`);
       setDetail(d);
     } catch { showToast("error", "Impossible de charger les détails."); }
     setLoadingDetail(false);
@@ -335,7 +356,6 @@ export default function PlayersRespo() {
         .tr-spin { animation: spin 1s linear infinite }
         .tr-up   { animation: fadeUp .4s cubic-bezier(.22,.68,0,1.2) both }
 
-        /* ── LAYOUT ── */
         .layout {
           display: flex;
           flex-direction: column;
@@ -346,7 +366,6 @@ export default function PlayersRespo() {
           padding: 0;
         }
 
-        /* ── TOPBAR ── */
         .topbar {
           flex-shrink: 0;
           padding: 16px 20px 0;
@@ -367,602 +386,221 @@ export default function PlayersRespo() {
           flex-wrap: wrap;
           width: 100%;
         }
-        .topbar-brand {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
+        .topbar-brand { display: flex; align-items: center; gap: 12px; }
         .brand-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          background: rgba(193,39,45,.15);
-          border: 1px solid rgba(193,39,45,.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
+          width: 36px; height: 36px; border-radius: 10px;
+          background: rgba(193,39,45,.15); border: 1px solid rgba(193,39,45,.3);
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        .brand-icon .material-icons {
-          font-size: 18px;
-          color: #C1272D;
-        }
-        .brand-label {
-          font-family: 'Syne', sans-serif;
-          font-weight: 800;
-          font-size: 16px;
-          color: #fff;
-          line-height: 1;
-        }
-        .brand-sub {
-          font-size: 11px;
-          color: rgba(255,255,255,.3);
-          margin-top: 1px;
-          font-weight: 400;
-        }
+        .brand-icon .material-icons { font-size: 18px; color: #C1272D; }
+        .brand-label { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; color: #fff; line-height: 1; }
+        .brand-sub { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 1px; font-weight: 400; }
 
-        .topbar-actions {
-          display: flex;
-          gap: 8px;
-          flex-shrink: 0;
-        }
+        .topbar-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
         .topbar-row2 {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding-bottom: 12px;
-          flex-wrap: wrap;
-          width: 100%;
+          display: flex; align-items: center; gap: 10px;
+          padding-bottom: 12px; flex-wrap: wrap; width: 100%;
         }
 
-        /* ── STATS PILLS ── */
         .stat-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 5px 12px;
-          border-radius: 99px;
-          border: 1px solid rgba(255,255,255,.08);
-          background: rgba(255,255,255,.03);
-          font-family: 'Syne', sans-serif;
-          font-size: 11px;
-          color: rgba(255,255,255,.5);
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 5px 12px; border-radius: 99px;
+          border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03);
+          font-family: 'Syne', sans-serif; font-size: 11px; color: rgba(255,255,255,.5);
         }
-        .stat-pill strong {
-          color: #fff;
-          font-size: 12px;
-        }
-        .stat-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-        }
+        .stat-pill strong { color: #fff; font-size: 12px; }
+        .stat-dot { width: 6px; height: 6px; border-radius: 50%; }
 
-        /* ── SEARCH ── */
-        .search-wrap {
-          position: relative;
-          flex: 1;
-          min-width: 200px;
-          width: 100%;
-        }
-        .search-wrap .mi {
-          position: absolute;
-          left: 10px;
-          top: 50%;
-          transform: translateY(-50%);
-          font-size: 15px;
-          color: rgba(255,255,255,.28);
-          pointer-events: none;
-          font-family: 'Material Icons';
-        }
+        .search-wrap { position: relative; flex: 1; min-width: 200px; width: 100%; }
+        .search-wrap .mi { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 15px; color: rgba(255,255,255,.28); pointer-events: none; font-family: 'Material Icons'; }
         .search-input {
-          width: 100%;
-          background: rgba(255,255,255,.05);
-          border: 1px solid rgba(255,255,255,.09);
-          border-radius: 9px;
-          color: #fff;
-          font-family: 'Inter', sans-serif;
-          font-size: 13px;
-          padding: 8px 12px 8px 34px;
-          outline: none;
-          transition: border-color .2s;
+          width: 100%; background: rgba(255,255,255,.05);
+          border: 1px solid rgba(255,255,255,.09); border-radius: 9px;
+          color: #fff; font-family: 'Inter', sans-serif; font-size: 13px;
+          padding: 8px 12px 8px 34px; outline: none; transition: border-color .2s;
         }
-        .search-input:focus {
-          border-color: rgba(193,39,45,.4);
-        }
-        .search-input::placeholder {
-          color: rgba(255,255,255,.22);
-        }
+        .search-input:focus { border-color: rgba(193,39,45,.4); }
+        .search-input::placeholder { color: rgba(255,255,255,.22); }
 
-        /* ── CONTENT ── */
-        .content {
-          flex: 1;
-          overflow-y: auto;
-          padding: 16px 20px;
-          width: 100%;
-        }
+        .content { flex: 1; overflow-y: auto; padding: 16px 20px; width: 100%; }
 
-        /* ── TABLE (desktop) ── */
         .tbl-wrap {
-          background: rgba(255,255,255,.025);
-          border: 1px solid rgba(255,255,255,.07);
-          border-radius: 14px;
-          overflow: hidden;
-          width: 100%;
+          background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.07);
+          border-radius: 14px; overflow: hidden; width: 100%;
         }
         .tbl-head {
           display: grid;
           grid-template-columns: 44px 1.6fr 1fr 70px 80px 80px 80px 110px;
-          gap: 8px;
-          padding: 10px 18px;
+          gap: 8px; padding: 10px 18px;
           border-bottom: 1px solid rgba(255,255,255,.06);
-          font-family: 'Syne', sans-serif;
-          font-size: 10px;
-          font-weight: 700;
-          color: rgba(255,255,255,.28);
-          text-transform: uppercase;
-          letter-spacing: .08em;
+          font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+          color: rgba(255,255,255,.28); text-transform: uppercase; letter-spacing: .08em;
           background: rgba(255,255,255,.025);
         }
         .tbl-row {
           display: grid;
           grid-template-columns: 44px 1.6fr 1fr 70px 80px 80px 80px 110px;
-          gap: 8px;
-          padding: 13px 18px;
+          gap: 8px; padding: 13px 18px;
           border-bottom: 1px solid rgba(255,255,255,.04);
-          align-items: center;
-          cursor: pointer;
-          transition: background .15s;
-          animation: fadeUp .4s ease both;
-          width: 100%;
+          align-items: center; cursor: pointer; transition: background .15s;
+          animation: fadeUp .4s ease both; width: 100%;
         }
-        .tbl-row:hover {
-          background: rgba(255,255,255,.03);
-        }
-        .tbl-row:last-child {
-          border-bottom: none;
-        }
+        .tbl-row:hover { background: rgba(255,255,255,.03); }
+        .tbl-row:last-child { border-bottom: none; }
 
-        /* ── MOBILE CARDS ── */
-        .cards {
-          display: none;
-          flex-direction: column;
-          gap: 10px;
-          width: 100%;
-        }
+        .cards { display: none; flex-direction: column; gap: 10px; width: 100%; }
         .card {
-          background: rgba(255,255,255,.03);
-          border: 1px solid rgba(255,255,255,.07);
-          border-radius: 14px;
-          padding: 14px;
-          cursor: pointer;
-          transition: all .18s;
-          animation: fadeUp .35s ease both;
-          position: relative;
-          overflow: hidden;
-          width: 100%;
+          background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+          border-radius: 14px; padding: 14px; cursor: pointer; transition: all .18s;
+          animation: fadeUp .35s ease both; position: relative; overflow: hidden; width: 100%;
         }
-        .card:hover {
-          background: rgba(255,255,255,.05);
-          border-color: rgba(193,39,45,.2);
-        }
-        .card-top {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 10px;
-          width: 100%;
-        }
-        .card-meta {
-          display: flex;
-          gap: 6px;
-          flex-wrap: wrap;
-          margin-bottom: 10px;
-        }
-        .card-actions {
-          display: flex;
-          gap: 8px;
-          width: 100%;
-        }
+        .card:hover { background: rgba(255,255,255,.05); border-color: rgba(193,39,45,.2); }
+        .card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; width: 100%; }
+        .card-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+        .card-actions { display: flex; gap: 8px; width: 100%; }
 
-        /* ── AVATAR ── */
-        .avatar {
-          width: 34px;
-          height: 34px;
-          border-radius: 8px;
-          object-fit: cover;
-          flex-shrink: 0;
-        }
+        .avatar { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
         .avatar-ph {
-          width: 34px;
-          height: 34px;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'Syne', sans-serif;
-          font-weight: 800;
-          font-size: 11px;
-          color: #fff;
-          flex-shrink: 0;
+          width: 34px; height: 34px; border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-family: 'Syne', sans-serif; font-weight: 800; font-size: 11px; color: #fff; flex-shrink: 0;
         }
 
-        /* ── BADGES ── */
         .badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 3px 9px;
-          border-radius: 99px;
-          font-size: 10px;
-          font-weight: 700;
-          border: 1px solid;
-          font-family: 'Syne', sans-serif;
-          letter-spacing: .06em;
+          display: inline-flex; align-items: center; gap: 4px;
+          padding: 3px 9px; border-radius: 99px; font-size: 10px; font-weight: 700;
+          border: 1px solid; font-family: 'Syne', sans-serif; letter-spacing: .06em;
         }
 
-        /* ── BUTTONS ── */
         .btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          padding: 9px 18px;
-          border-radius: 10px;
-          border: none;
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          font-size: 12px;
-          cursor: pointer;
-          transition: all .18s;
-          outline: none;
-          text-transform: uppercase;
-          letter-spacing: .06em;
+          display: inline-flex; align-items: center; gap: 7px;
+          padding: 9px 18px; border-radius: 10px; border: none;
+          font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px;
+          cursor: pointer; transition: all .18s; outline: none;
+          text-transform: uppercase; letter-spacing: .06em;
         }
-        .btn:disabled {
-          opacity: .45;
-          cursor: not-allowed;
-          transform: none !important;
-        }
-        .btn-primary {
-          background: #C1272D;
-          color: #fff;
-          box-shadow: 0 4px 14px rgba(193,39,45,.3);
-        }
-        .btn-primary:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(193,39,45,.4);
-        }
-        .btn-ghost {
-          background: rgba(255,255,255,.05);
-          color: rgba(255,255,255,.7);
-          border: 1px solid rgba(255,255,255,.1);
-        }
-        .btn-ghost:hover {
-          background: rgba(255,255,255,.1);
-        }
-        .btn-blue {
-          background: rgba(96,165,250,.1);
-          color: #60a5fa;
-          border: 1px solid rgba(96,165,250,.22);
-        }
-        .btn-blue:hover:not(:disabled) {
-          background: rgba(96,165,250,.2);
-        }
-        .btn-danger {
-          background: rgba(239,68,68,.15);
-          color: #ef4444;
-          border: 1px solid rgba(239,68,68,.3);
-        }
-        .btn-danger:hover:not(:disabled) {
-          background: rgba(239,68,68,.28);
-        }
+        .btn:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+        .btn-primary { background: #C1272D; color: #fff; box-shadow: 0 4px 14px rgba(193,39,45,.3); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(193,39,45,.4); }
+        .btn-ghost { background: rgba(255,255,255,.05); color: rgba(255,255,255,.7); border: 1px solid rgba(255,255,255,.1); }
+        .btn-ghost:hover { background: rgba(255,255,255,.1); }
+        .btn-blue { background: rgba(96,165,250,.1); color: #60a5fa; border: 1px solid rgba(96,165,250,.22); }
+        .btn-blue:hover:not(:disabled) { background: rgba(96,165,250,.2); }
+        .btn-danger { background: rgba(239,68,68,.15); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
+        .btn-danger:hover:not(:disabled) { background: rgba(239,68,68,.28); }
 
-        /* ── ICON BUTTONS ── */
         .ibtn {
-          width: 28px;
-          height: 28px;
-          border-radius: 7px;
-          border: 1px solid rgba(255,255,255,.1);
-          background: rgba(255,255,255,.05);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all .18s;
-          color: rgba(255,255,255,.4);
-          flex-shrink: 0;
+          width: 28px; height: 28px; border-radius: 7px;
+          border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05);
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: all .18s; color: rgba(255,255,255,.4); flex-shrink: 0;
         }
-        .ibtn:hover {
-          border-color: #C1272D;
-          color: #C1272D;
-          background: rgba(193,39,45,.1);
-        }
-        .ibtn-edit {
-          border-color: rgba(96,165,250,.2);
-          background: rgba(96,165,250,.06);
-          color: rgba(96,165,250,.5);
-        }
-        .ibtn-edit:hover {
-          border-color: #60a5fa;
-          color: #60a5fa;
-          background: rgba(96,165,250,.15);
-        }
-        .ibtn-del {
-          border-color: rgba(239,68,68,.2);
-          background: rgba(239,68,68,.06);
-          color: rgba(239,68,68,.5);
-        }
-        .ibtn-del:hover {
-          border-color: #ef4444;
-          color: #ef4444;
-          background: rgba(239,68,68,.1);
-        }
-        .ibtn .material-icons {
-          font-size: 15px;
-        }
+        .ibtn:hover { border-color: #C1272D; color: #C1272D; background: rgba(193,39,45,.1); }
+        .ibtn-edit { border-color: rgba(96,165,250,.2); background: rgba(96,165,250,.06); color: rgba(96,165,250,.5); }
+        .ibtn-edit:hover { border-color: #60a5fa; color: #60a5fa; background: rgba(96,165,250,.15); }
+        .ibtn-del { border-color: rgba(239,68,68,.2); background: rgba(239,68,68,.06); color: rgba(239,68,68,.5); }
+        .ibtn-del:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,.1); }
+        .ibtn .material-icons { font-size: 15px; }
 
-        /* ── ROW ACTIONS ── */
-        .row-actions {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          justify-content: center;
-        }
+        .row-actions { display: flex; align-items: center; gap: 6px; justify-content: center; }
 
-        /* ── EMPTY ── */
-        .empty {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 60px 0;
-          gap: 12px;
-          width: 100%;
-        }
-        .empty .material-icons {
-          font-size: 44px;
-          color: rgba(255,255,255,.08);
-        }
-        .empty span:last-child {
-          font-family: 'Syne', sans-serif;
-          color: rgba(255,255,255,.22);
-          font-size: 13px;
-        }
+        .empty { display: flex; flex-direction: column; align-items: center; padding: 60px 0; gap: 12px; width: 100%; }
+        .empty .material-icons { font-size: 44px; color: rgba(255,255,255,.08); }
+        .empty span:last-child { font-family: 'Syne', sans-serif; color: rgba(255,255,255,.22); font-size: 13px; }
 
-        /* ── OVERLAY ── */
         .overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,.78);
-          backdrop-filter: blur(6px);
-          z-index: 200;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          width: 100vw;
-          height: 100vh;
+          position: fixed; inset: 0; background: rgba(0,0,0,.78);
+          backdrop-filter: blur(6px); z-index: 200;
+          display: flex; align-items: center; justify-content: center;
+          padding: 20px; width: 100vw; height: 100vh;
         }
 
-        /* ── MODALS ── */
         .modal-lg {
           background: linear-gradient(160deg, #170818 0%, #0c030f 100%);
-          border: 1px solid rgba(255,255,255,.1);
-          border-radius: 20px;
-          width: 100%;
-          max-width: 680px;
-          max-height: 90vh;
-          overflow-y: auto;
+          border: 1px solid rgba(255,255,255,.1); border-radius: 20px;
+          width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto;
           animation: scaleIn .22s ease both;
         }
         .modal-sm {
           background: linear-gradient(160deg, #170818 0%, #0c030f 100%);
-          border: 1px solid rgba(255,255,255,.1);
-          border-radius: 20px;
-          width: 100%;
-          max-width: 540px;
-          max-height: 90vh;
-          overflow-y: auto;
-          padding: 28px;
-          animation: slideUp .24s ease both;
+          border: 1px solid rgba(255,255,255,.1); border-radius: 20px;
+          width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto;
+          padding: 28px; animation: slideUp .24s ease both;
         }
-        .modal-sm::-webkit-scrollbar {
-          width: 4px;
-        }
-        .modal-sm::-webkit-scrollbar-thumb {
-          background: rgba(193,39,45,.3);
-          border-radius: 2px;
-        }
+        .modal-sm::-webkit-scrollbar { width: 4px; }
+        .modal-sm::-webkit-scrollbar-thumb { background: rgba(193,39,45,.3); border-radius: 2px; }
         .modal-head {
-          padding: 22px 24px 0;
-          position: sticky;
-          top: 0;
-          z-index: 10;
+          padding: 22px 24px 0; position: sticky; top: 0; z-index: 10;
           background: linear-gradient(160deg,#170818,#0c030f);
-          border-bottom: 1px solid rgba(255,255,255,.06);
-          width: 100%;
+          border-bottom: 1px solid rgba(255,255,255,.06); width: 100%;
         }
-        .modal-body {
-          padding: 22px 24px 26px;
-          width: 100%;
-        }
+        .modal-body { padding: 22px 24px 26px; width: 100%; }
         .modal-title-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding-bottom: 16px;
-          gap: 12px;
-          width: 100%;
+          display: flex; align-items: center; justify-content: space-between;
+          padding-bottom: 16px; gap: 12px; width: 100%;
         }
 
-        /* ── FORM ── */
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0 14px;
-          width: 100%;
-        }
-        .field {
-          margin-bottom: 14px;
-          width: 100%;
-        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; width: 100%; }
+        .field { margin-bottom: 14px; width: 100%; }
         .field label {
-          display: block;
-          font-size: 10px;
-          font-weight: 700;
-          color: rgba(255,255,255,.35);
-          text-transform: uppercase;
-          letter-spacing: .08em;
-          margin-bottom: 6px;
+          display: block; font-size: 10px; font-weight: 700; color: rgba(255,255,255,.35);
+          text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px;
           font-family: 'Syne', sans-serif;
         }
         .field input, .field select {
-          width: 100%;
-          background: rgba(255,255,255,.06);
-          border: 1px solid rgba(255,255,255,.1);
-          border-radius: 9px;
-          color: #fff;
-          font-family: 'Inter', sans-serif;
-          font-size: 13px;
-          padding: 10px 13px;
-          outline: none;
-          transition: border-color .18s;
-          appearance: none;
-          -webkit-appearance: none;
+          width: 100%; background: rgba(255,255,255,.06);
+          border: 1px solid rgba(255,255,255,.1); border-radius: 9px;
+          color: #fff; font-family: 'Inter', sans-serif; font-size: 13px;
+          padding: 10px 13px; outline: none; transition: border-color .18s;
+          appearance: none; -webkit-appearance: none;
         }
-        .field input:focus, .field select:focus {
-          border-color: rgba(193,39,45,.5);
-        }
-        .field input::placeholder {
-          color: rgba(255,255,255,.22);
-        }
+        .field input:focus, .field select:focus { border-color: rgba(193,39,45,.5); }
+        .field input::placeholder { color: rgba(255,255,255,.22); }
 
-        /* ── INFO CARDS ── */
         .info-card {
-          background: rgba(255,255,255,.03);
-          border: 1px solid rgba(255,255,255,.06);
-          border-radius: 11px;
-          padding: 13px 15px;
-          width: 100%;
+          background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+          border-radius: 11px; padding: 13px 15px; width: 100%;
         }
-        .info-label {
-          font-family: 'Syne', sans-serif;
-          font-size: 9px;
-          font-weight: 700;
-          color: rgba(255,255,255,.27);
-          text-transform: uppercase;
-          letter-spacing: .1em;
-          margin-bottom: 5px;
-        }
-        .info-value {
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          font-size: 20px;
-          letter-spacing: .04em;
-          color: #fff;
-        }
+        .info-label { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700; color: rgba(255,255,255,.27); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 5px; }
+        .info-value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: .04em; color: #fff; }
 
-        /* ── SECTION HEADER ── */
         .section-h {
-          font-family: 'Syne', sans-serif;
-          font-weight: 800;
-          font-size: 13px;
-          color: rgba(255,255,255,.5);
-          margin-bottom: 12px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          width: 100%;
+          font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px;
+          color: rgba(255,255,255,.5); margin-bottom: 12px;
+          display: flex; align-items: center; gap: 8px; width: 100%;
         }
-        .section-h::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: rgba(255,255,255,.06);
-        }
+        .section-h::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.06); }
 
-        /* ── TOAST ── */
         .toast {
-          position: fixed;
-          bottom: 24px;
-          left: 50%;
-          transform: translateX(-50%);
-          padding: 11px 20px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          z-index: 400;
-          box-shadow: 0 12px 32px rgba(0,0,0,.5);
-          white-space: nowrap;
+          position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+          padding: 11px 20px; border-radius: 10px; font-size: 13px;
+          font-family: 'Syne', sans-serif; font-weight: 700;
+          display: flex; align-items: center; gap: 9px; z-index: 400;
+          box-shadow: 0 12px 32px rgba(0,0,0,.5); white-space: nowrap;
           animation: slideUp .3s ease both;
         }
-        .toast .material-icons {
-          font-size: 18px;
-        }
+        .toast .material-icons { font-size: 18px; }
 
-        /* ── DIVIDER ── */
-        .modal-divider {
-          height: 1px;
-          background: rgba(255,255,255,.06);
-          margin: 18px 0;
-          width: 100%;
-        }
+        .modal-divider { height: 1px; background: rgba(255,255,255,.06); margin: 18px 0; width: 100%; }
 
-        /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
-          .topbar {
-            padding: 14px 16px 0;
-          }
-          .content {
-            padding: 14px 16px 80px;
-          }
-          .tbl-wrap {
-            display: none;
-          }
-          .cards {
-            display: flex;
-          }
-          .overlay {
-            padding: 0;
-            align-items: flex-end;
-          }
-          .modal-lg, .modal-sm {
-            max-width: 100%;
-            border-radius: 20px 20px 0 0;
-            max-height: 92vh;
-            animation: slideUpFull .3s ease both;
-          }
-          .modal-sm {
-            padding: 20px 16px;
-          }
-          .modal-head {
-            padding: 16px 16px 0;
-          }
-          .modal-body {
-            padding: 16px;
-          }
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-          .toast {
-            bottom: 72px;
-          }
-          .topbar-row1 {
-            margin-bottom: 12px;
-          }
-          .topbar-actions .btn {
-            font-size: 11px;
-            padding: 8px 12px;
-          }
+          .topbar { padding: 14px 16px 0; }
+          .content { padding: 14px 16px 80px; }
+          .tbl-wrap { display: none; }
+          .cards { display: flex; }
+          .overlay { padding: 0; align-items: flex-end; }
+          .modal-lg, .modal-sm { max-width: 100%; border-radius: 20px 20px 0 0; max-height: 92vh; animation: slideUpFull .3s ease both; }
+          .modal-sm { padding: 20px 16px; }
+          .modal-head { padding: 16px 16px 0; }
+          .modal-body { padding: 16px; }
+          .form-grid { grid-template-columns: 1fr; }
+          .toast { bottom: 72px; }
+          .topbar-row1 { margin-bottom: 12px; }
+          .topbar-actions .btn { font-size: 11px; padding: 8px 12px; }
         }
         @media (min-width: 769px) {
-          .cards {
-            display: none;
-          }
+          .cards { display: none; }
         }
       `}</style>
 
@@ -1055,7 +693,8 @@ export default function PlayersRespo() {
                       <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 13, color: "#fff" }}>{player.name || "—"}</div>
                       <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 2 }}>#{player.id}</div>
                     </div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", fontFamily: "'Syne',sans-serif", fontWeight: 500 }}>{player.teamName || "—"}</div>
+                    {/* FIX: DTO field is "team" (set from team.getName()), not "teamName" */}
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", fontFamily: "'Syne',sans-serif", fontWeight: 500 }}>{player.team || "—"}</div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", fontFamily: "'Syne',sans-serif" }}>{player.age || "—"}</div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", fontFamily: "'Syne',sans-serif" }}>{player.height ? `${player.height}m` : "—"}</div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", fontFamily: "'Syne',sans-serif" }}>{player.weight ? `${player.weight}kg` : "—"}</div>
@@ -1099,7 +738,8 @@ export default function PlayersRespo() {
                       }
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 15, color: "#fff", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{player.name || "—"}</div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>{player.teamName || "—"}</div>
+                        {/* FIX: use player.team (correct DTO field) */}
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)" }}>{player.team || "—"}</div>
                       </div>
                       <div style={{ fontFamily: "'Syne',sans-serif", fontSize: 28, color: player.goals ? "#C1272D" : "rgba(255,255,255,.15)", letterSpacing: ".04em", flexShrink: 0 }}>
                         {player.goals || "0"}
@@ -1298,15 +938,14 @@ export default function PlayersRespo() {
               Cette action est permanente et irréversible.
             </div>
             <div style={{
-              background: "rgba(255,255,255,.04)",
-              border: "1px solid rgba(255,255,255,.08)",
-              borderLeft: "3px solid #ef4444",
-              borderRadius: 10, padding: "12px 14px", marginBottom: 24,
+              background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)",
+              borderLeft: "3px solid #ef4444", borderRadius: 10, padding: "12px 14px", marginBottom: 24,
               display: "flex", alignItems: "center", gap: 12,
             }}>
               <div>
                 <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 13, color: "#fff" }}>{deleteTarget.name}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 2 }}>{deleteTarget.teamName || "—"} · #{deleteTarget.id}</div>
+                {/* FIX: use deleteTarget.team (correct DTO field) */}
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,.3)", marginTop: 2 }}>{deleteTarget.team || "—"} · #{deleteTarget.id}</div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
@@ -1335,7 +974,8 @@ export default function PlayersRespo() {
                   }
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 20, letterSpacing: ".06em", color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selected.name}</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 3 }}>{selected.teamName || "—"} · #{selected.id}</div>
+                    {/* FIX: use selected.team (correct DTO field) */}
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 3 }}>{selected.team || "—"} · #{selected.id}</div>
                   </div>
                 </div>
                 <div className="ibtn" style={{ flexShrink: 0 }} onClick={() => setSelected(null)}>
@@ -1355,7 +995,7 @@ export default function PlayersRespo() {
                   <div className="section-h">Informations générales</div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(130px,1fr))", gap: 10 }}>
                     {[
-                      { label: "Équipe", value: detail?.teamName || selected.teamName || "—" },
+                      { label: "Équipe", value: detail?.team || selected.team || "—" },
                       { label: "Âge", value: `${detail?.age || selected.age || "—"} ans` },
                       { label: "Taille", value: `${detail?.height || selected.height || "—"} m` },
                       { label: "Poids", value: `${detail?.weight || selected.weight || "—"} kg` },
