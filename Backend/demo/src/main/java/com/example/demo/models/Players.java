@@ -18,8 +18,8 @@ public class Players {
     private int goals;
     private int age;
 
-    @ManyToOne
-    @JoinColumn(name = "teamID")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "teamID", nullable = false)
     private Teams team;
 
     public Players(String name, double height, double weight, int goals, int age, Teams team) {

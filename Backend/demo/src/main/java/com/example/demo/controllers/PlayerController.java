@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 
 @RestController
 @RequestMapping("/api/players")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class PlayerController {
 
     @Autowired
@@ -155,25 +157,49 @@ public class PlayerController {
     }
 
     // DELETE - Supprimer tous les joueurs
-    @DeleteMapping("/players/all")
+    @DeleteMapping("/all")
     public ResponseEntity<Void> deleteAllPlayers() {
         playerRepository.deleteAll();
         return ResponseEntity.noContent().build();
     }
 
     // POST - Ajouter un joueur
-    @PostMapping("players/add/")
-    public boolean addPlayer(@RequestBody Players pp) {
-        if (pp == null) {
-            return false;
-        } else {
-            playerRepository.save(pp);
-            return true;
+    @PostMapping("players/add")
+    public ResponseEntity<?> addPlayer(@RequestBody PlayerDTO dto) {
+        System.out.println("=== DTO reçu ===");
+        System.out.println("name: " + dto.getName());
+        System.out.println("teamId: " + dto.getTeamId());
+        System.out.println("age: " + dto.getAge());
+        System.out.println("urlImage: " + dto.getUrlImage());
+
+        try {
+            Teams team = teamRepository.findById(dto.getTeamId()).orElse(null);
+            System.out.println("team trouvée: " + team);
+
+            if (team == null) {
+                return ResponseEntity.badRequest().body("Team not found with id: " + dto.getTeamId());
+            }
+
+            Players p = new Players();
+            p.setName(dto.getName());
+            p.setAge(dto.getAge());
+            p.setGoals(dto.getGoals());
+            p.setHeight(dto.getHeight());
+            p.setWeight(dto.getWeight());
+            p.setImgUrl(dto.getUrlImage());
+            p.setTeam(team);
+
+            playerRepository.save(p);
+            return ResponseEntity.ok("Player created");
+
+        } catch (Exception e) {
+            e.printStackTrace(); // <-- affiche l'erreur complète dans le terminal
+            return ResponseEntity.status(500).body("Erreur: " + e.getMessage());
         }
     }
 
     // PUT - Mettre à jour un joueur
-    @PutMapping("/players/update/{id}")
+    @PutMapping("/update/{id}")
     public boolean updatePlayer(@PathVariable int id, @RequestBody Players pp) {
         Players p = playerRepository.findById(id);
         if (p == null) {
@@ -191,7 +217,7 @@ public class PlayerController {
     }
 
     // PATCH - Mise à jour partielle
-    @PatchMapping("/players/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<PlayerDTO> patchPlayer(
             @PathVariable int id,
             @RequestBody Players player) {
@@ -225,7 +251,7 @@ public class PlayerController {
     }
 
     // PUT - Ajouter un but
-    @PutMapping("/players/addgoal/{id}")
+    @PutMapping("/addgoal/{id}")
     public boolean addGoal(@PathVariable int id) {
         Players p = playerRepository.findById(id);
         if (p == null) {
@@ -238,7 +264,7 @@ public class PlayerController {
     }
 
     // PUT - Retirer un but
-    @PutMapping("/players/removegoal/{id}")
+    @PutMapping("/removegoal/{id}")
     public ResponseEntity<PlayerDTO> removeGoal(@PathVariable int id) {
         Players p = playerRepository.findById(id);
         if (p == null) {
@@ -255,7 +281,7 @@ public class PlayerController {
     }
 
     // PUT - Changer d'équipe
-    @PutMapping("/players/{playerId}/transfer/{teamId}")
+    @PutMapping("/{playerId}/transfer/{teamId}")
     public ResponseEntity<PlayerDTO> transferPlayer(
             @PathVariable int playerId,
             @PathVariable int teamId) {
@@ -281,8 +307,14 @@ public class PlayerController {
         dto.setName(player.getName());
         dto.setAge(player.getAge());
         dto.setUrlImage(player.getImgUrl());
-        dto.setTeam(player.getTeam().getName());
-        dto.setTeamId(player.getTeam().getId());
+
+        if (player.getTeam() != null) {
+            dto.setTeam(player.getTeam().getName());
+            dto.setTeamId(player.getTeam().getId());
+        } else {
+            dto.setTeam("No Team");
+            dto.setTeamId(0);
+        }
 
         return dto;
     }
