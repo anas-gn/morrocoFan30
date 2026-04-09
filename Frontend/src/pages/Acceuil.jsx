@@ -198,7 +198,8 @@ export default function Acceuil() {
       <header style={{position:'relative',width:'100%',paddingTop:160,paddingBottom:96,overflow:'hidden',borderBottom:'1px solid #e7e5e4'}}>
         <div style={{position:'absolute',inset:0,zIndex:0}}>
           <video autoPlay muted loop playsInline style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}}>
-            <source src="/videos/maroc.mp4" type="video/mp4" />
+            {/* <source src="/videos/maroc.mp4" type="video/mp4" /> */}
+            <source src="https://res.cloudinary.com/dojxqpgai/video/upload/v1775740662/maroc_k6w0gr.mp4" type="video/mp4" />
           </video>
           <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(0,0,0,.62),rgba(0,0,0,.42),rgba(0,0,0,.72))'}} />
           <div className="anim-float" style={{position:'absolute',top:-60,left:-60,width:480,height:480,background:'radial-gradient(circle,rgba(193,39,45,.32),transparent 70%)',filter:'blur(60px)',pointerEvents:'none'}} />
